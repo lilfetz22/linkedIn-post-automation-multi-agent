@@ -1,0 +1,40 @@
+[flake8]
+# Maximum line length
+max-line-length = 100
+
+# Error codes to check
+select = 
+    E,      # pycodestyle errors
+    W,      # pycodestyle warnings
+    F,      # pyflakes
+    C,      # McCabe complexity
+    B,      # flake8-bugbear
+
+# Specific error codes we want to enforce
+# E722: bare except statement (the main focus of this issue)
+enable-extensions = E722
+
+# Exclude directories
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    ENV,
+    .tox,
+    build,
+    dist,
+    *.egg-info,
+    .pytest_cache,
+    runs,
+    .github
+
+# Show source code for each error
+show-source = True
+
+# Count the number of occurrences of each error/warning code
+count = True
+
+# Print total number of errors
+statistics = True

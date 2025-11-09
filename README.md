@@ -260,6 +260,54 @@ Key libraries include:
 
 See `requirements.txt` for complete list.
 
+## Development
+
+### Code Quality and Linting
+
+This project enforces code quality standards using flake8. To maintain code quality:
+
+**Run linting checks:**
+```bash
+python -m flake8 .
+```
+
+**Check for bare except statements specifically:**
+```bash
+python -m flake8 . --select=E722
+```
+
+**Run tests (including linting checks):**
+```bash
+pytest tests/
+```
+
+#### Why No Bare Except Statements?
+
+Bare `except:` statements (without specifying an exception type) are prohibited because they:
+- Catch ALL exceptions, including SystemExit and KeyboardInterrupt
+- Make debugging extremely difficult by silently swallowing errors
+- Can mask serious bugs and make the application fail silently
+
+**Instead of:**
+```python
+try:
+    risky_operation()
+except:  # ❌ This will cause linting to fail
+    pass
+```
+
+**Use specific exceptions:**
+```python
+try:
+    risky_operation()
+except ValueError as e:  # ✅ Specific exception
+    logger.error(f"Invalid value: {e}")
+except Exception as e:  # ✅ Or catch Exception (but not bare)
+    logger.error(f"Unexpected error: {e}")
+```
+
+The flake8 E722 rule ensures this standard is enforced across the codebase.
+
 ## Future Development
 
 Planned enhancements:
