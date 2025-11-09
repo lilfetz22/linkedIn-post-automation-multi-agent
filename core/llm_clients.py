@@ -169,7 +169,7 @@ class GeminiImageClient:
             response = self.model.generate_content(
                 prompt,
                 generation_config={
-                    "response_modalities": ["Text"],
+                    "response_modalities": ["Image"],
                 },
             )
 
