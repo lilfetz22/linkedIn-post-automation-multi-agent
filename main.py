@@ -17,7 +17,7 @@ from pathlib import Path
 def main():
     """
     Main execution function.
-    
+
     Workflow:
     1. Check for config.json; if missing, run first-time setup
     2. Load configuration
@@ -26,12 +26,12 @@ def main():
     """
     print("LinkedIn Post Automation Multi-Agent System")
     print("=" * 50)
-    
+
     # TODO: Implement first-run onboarding
     # TODO: Load configuration
     # TODO: Call orchestrator
     # TODO: Display status summary
-    
+
     print("\n[Placeholder] Main entry point initialized.")
     print("Implementation pending: Phase 6 (Main Entry Point)")
 
