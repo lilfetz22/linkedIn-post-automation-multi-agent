@@ -301,6 +301,53 @@ Detailed agent personas and behavioral guidelines are maintained in `system_prom
 
 This project is currently in active development. Contributions, issues, and feature requests are welcome!
 
+### Commit Message Convention
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. This enables automated changelog generation and semantic versioning.
+
+#### Format
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+#### Types
+
+- **feat**: A new feature
+- **fix**: A bug fix
+- **docs**: Documentation only changes
+- **style**: Changes that don't affect code meaning (formatting, whitespace)
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **perf**: Performance improvement
+- **test**: Adding or correcting tests
+- **chore**: Changes to build process or auxiliary tools
+
+#### Examples
+
+```
+feat(agents): add prompt generator agent with Strategic Content Architect persona
+
+fix(orchestrator): correct character count loop termination condition
+
+docs(readme): add conventional commits documentation
+
+test(agents): add persona fidelity tests for Writer Agent
+```
+
+#### Breaking Changes
+
+For breaking changes, add `BREAKING CHANGE:` in the footer:
+
+```
+feat(api)!: change agent envelope structure
+
+BREAKING CHANGE: Agent return format now requires 'metrics' field
+```
+
 ## License
 
 [License information to be added]
