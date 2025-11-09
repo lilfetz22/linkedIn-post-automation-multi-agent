@@ -47,6 +47,22 @@ Thumbs.db
 # Logs
 *.log
 
-# Project specific
+# Project specific - Runtime artifacts
+runs/
 data/
 output/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+.hypothesis/
+.tox/
+
+# Event logs
+events.jsonl
+
+# Database journals
+*.db-journal
