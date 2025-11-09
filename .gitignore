@@ -66,3 +66,6 @@ events.jsonl
 
 # Database journals
 *.db-journal
+
+# Accidentally created files
+=*.*
