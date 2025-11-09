@@ -1,0 +1,107 @@
+I want to create an app that will automate the production of my LinkedIn posts. I will use a multi-agent architecture. We will have an orchestration agent, then several sub-agents that will perform the following tasks. 1. Research - this agent will perform research on the topic chosen for the day. 2. Topic Agent - this agent will decide the topic of the day based upon the previous topics covered and all the different possible topics within the overarching field that the topic is within. 3. Strategic type agent - this agent will have access a memory bank of “The Tech Audience Accelerator” newsletter and uses the best practices from the newsletter memory bank to develop a strategic design and best structure of the post to help the post perform well on LinkedIn. (The Tech Audience Accelerator The go-to newsletter for tech creators building serious audiences. Steal the exact frameworks, templates, and tactics behind my 30M+ impressions (and counting). No fluff, no guesswork. Just high-leverage strategies that work). 4. Writer - this agent will write the post based upon everything it has been fed from the previous agents 5. Reviewer - this agent reads the post produced by the writer agent, checking for spelling, grammar, and whether the post makes sense given the information provided from the same agents as the writer. This Reviewer agent should have one pass focused on contextual understanding and a second pass focused on spelling and Grammar.  Afterwards the Reviewer will send the post to the Orchestrator who will make sure that the post is less than 3000 characters by passing it through a python script that counts the number of characters, if it fails the character count it will be sent back to the Writer which will then go to the Reviewer then back to the Orchestrator. Then the Orchestrator will pass the post on to agent #6 - image prompt generator which will generate the text prompt to be passed into the agent #7: AI image generator. The orchestrator will then pass this image generation prompt over to agent #7.
+
+Please help me create the project_spec.md file for this application. This application will be on my local device, and I will be using Gemini 2.5 Pro as the LLM for the brains for each of the agents except for the AI Image Generator, that will be `gemini-2.5-flash-image-preview`
+
+Start asking me questions in order to create an in-depth project_spec.md that I can feed to a AI coding agent.
+
+
+Of course. I can help you create a detailed `project_spec.md` file for your LinkedIn post automation application. To ensure the specification is as comprehensive and useful as possible for an AI coding agent, I need to ask you a few clarifying questions.
+
+Let's start with the high-level concept and the data the system will use.
+
+### **1. Core Content and Strategy**
+
+*   **Overarching Field:** What is the main subject area or industry for your LinkedIn content? (e.g., "Artificial Intelligence for SaaS," "Cybersecurity Trends," "Growth Marketing for Tech Startups"). This is crucial for the Topic and Research agents.
+*   **"The Tech Audience Accelerator" Memory Bank:**
+    *   In what format is this newsletter content available to you? (e.g., a collection of emails, text files, PDFs, or a live website).
+    *   How do you envision the Strategic Type Agent accessing this information? Should it read from a local folder of documents, or will you provide a single file with all the content?
+*   **Desired Output:** What is the final desired output of the entire process? Should the application stop after generating the post text and the image and save them locally? Or are you expecting it to go a step further and post directly to LinkedIn (which would require setting up API access)?
+
+### **2. Agent and Workflow Mechanics**
+
+*   **Agent Communication:** How do you imagine the agents passing information to one another? For example, when the Research agent finishes, does it save a file that the Writer agent then reads, or does it pass a data object directly in memory?
+*   **Topic Selection:**
+    *   How will the application store the list of "previous topics covered"? (e.g., a simple `.txt` file, a CSV, or a local database).
+    *   How should the application know the "different possible topics within the overarching field"? Will you provide a predefined list of potential topics, or should the Topic Agent be smart enough to generate new ideas on its own?
+*   **Error Handling:** What should the Orchestrator do if an agent fails? For instance, if the Research agent cannot find any relevant information on a topic, should it report an error and stop, or should it ask the Topic Agent for a new topic and try again?
+
+### **3. Technical Implementation**
+
+*   **Project Structure:** You mentioned this will be on your local device. Do you have a preference for the project structure? (e.g., a single Python script, a more organized project with multiple files and folders).
+*   **API Keys:** The application will need an API key for the Gemini models. How do you plan to store and manage this key securely? (e.g., an environment variable, a configuration file).
+*   **Initiation:** How will you run this application? Do you want to trigger it manually from your command line each day, or do you envision it running on a schedule?
+
+Once you provide answers to these questions, I will have a much clearer picture and can begin to draft a robust `project_spec.md` that an AI coding agent can effectively use to build your application.
+
+ANSWERS
+
+1.
+a) My main industry is Data Science, specifically around optimizations and time-series analysis, but I'm also really into the Gen AI and AI agents space as well. However, this needs to be something that the user can select as part of the onboarding to the app, with the above things that I mentioned as defaults
+b) These are a collection of emails that I will gather into a corpus for the memory bank. I envison the memory bank being a embedded RAG layer that the Strategic Type Agent can query against
+c) The final desired output is to have the post text and image saved locally in a structured format (e.g., a folder with the post text as a `.txt` file and the image as a `.png` file).
+2. 
+a) Agent Communication (Hybrid Approach): Use in-memory data passing (Python objects) between agents under a single Orchestrator process for speed and simplicity, while ALSO persisting every step’s inputs/outputs to disk for traceability. Concretely: for each run create `runs/{date}-{runId}/` containing: `00_config.json` (user selections + model versions), `10_topic.json`, `20_research.json` (sources, citations), `30_strategy.json` (structure decisions), `40_draft.md`, `50_review.json` (contextual + grammar passes, diffs), `60_final_post.txt`, `70_image_prompt.txt`, `80_image.png`, plus `prompts/` and `completions/` (sanitized LLM prompt/response artifacts). Maintain an append-only `events.jsonl` log (one JSON object per event: timestamp, step, status, duration_ms, model, token_usage, error if any) and optionally a lightweight `runs.db` (SQLite) to query historical performance and failures. Writes should be atomic (temp file then rename). In-memory handoff avoids file-system polling complexity; persisted artifacts give auditability, reproducibility, and monitoring. If any agent errors, Orchestrator logs failure, can retry or request a new topic (policy to be defined). 
+b) 
+    i) Previous Topics Storage: A local SQLite database (`topics.db`) with a table for `previous_topics` (id, topic_name, date_posted) and another for `potential_topics` (id, topic_name, field). The Topic Agent will query this database to select topics intelligently.
+    ii) the Topic Agent should be smart enough to generate new ideas on its own
+c) Error Handling (Best Practices):
+    Goal: keep runs resilient, auditable, and fail-fast when unrecoverable while maximizing successful completion.
+    1. Error Taxonomy:
+        - ValidationError (e.g., post exceeds character limit, missing required sections)
+        - DataNotFoundError (Research found no credible sources)
+        - ModelError (LLM API returned error / malformed response)
+        - ExternalAPITimeout (network / rate limit)
+        - ResourceLimitError (token/length constraints)
+        - CorruptionError (cannot parse an artifact just written)
+        - UnexpectedError (unhandled exception)
+    2. Standard Agent Output Envelope:
+        {"status": "ok"|"error", "data": <agent payload or null>, "error": {"type": str, "message": str, "retryable": bool, "details": {...}} , "metrics": {"duration_ms": int, "token_usage": {"prompt": int, "completion": int}} }
+    3. Retry Policy:
+        - Automatic retries (max_attempts=3 total) for retryable errors: ModelError, ExternalAPITimeout, transient network issues.
+        - Exponential backoff: base_delay_seconds = 1, delay = base * 2^(attempt-1) + jitter(0-300ms).
+        - No automatic retry for ValidationError (requires adjustment) or CorruptionError (immediate abort + mark run failed).
+    4. Fallback Strategies:
+        - Research: if DataNotFoundError, request alternative topic from Topic Agent (max 2 topic pivots) before abort.
+        - Writer: on ModelError after final retry, fallback to simplified prompt template (shorter context, bullet outline only).
+        - Reviewer: if grammar pass fails due to ModelError, fallback to basic local rule-based spelling/grammar check (e.g., simple Python library) and proceed.
+        - Image Prompt Generator: on failure, generate minimal prompt from final_post summary (first 3 bullets + tone hints).
+    5. Circuit Breaker:
+        - Maintain consecutive_model_failures counter; if >=3 across any agents in one run, abort run early (status="aborted").
+    6. Character Count Enforcement:
+        - Post length validation treated as ValidationError; orchestrator sends revision request to Writer with: {"target_max":2950,"over_by":N,"preserve_sections":[...]} to retain key structure while trimming.
+    7. Artifact Integrity:
+        - After writing each JSON artifact: re-open & parse; on failure raise CorruptionError -> write run_failed.json and stop.
+    8. Logging & Metrics:
+        - Every attempt (success or failure) appended to events.jsonl with fields: {timestamp, run_id, step, attempt, status, error_type?, duration_ms, model, token_usage, retryable, backoff_ms}.
+        - Aggregate per-run summary (success, aborted, partial) stored in runs.db (table runs + table errors).
+    9. Escalation Artifacts:
+        - On abort: create runs/{runId}/run_failed.json capturing last successful step, failing step, error envelope, suggestions (automated heuristics: e.g. switch topic, reduce context size).
+    10. Observability Thresholds:
+        - If average research duration > configured threshold (e.g., 20s) for last 5 runs, mark a performance warning in summary.
+    11. Security & Privacy:
+        - Truncate and mask any API keys appearing in error messages before persistence.
+    12. Pseudocode Flow Sketch:
+        ```
+        for step in pipeline:
+            attempts = 0
+            while attempts < MAX_ATTEMPTS:
+                result = run_agent(step, context)
+                log_event(result)
+                if result.status == 'ok':
+                    persist_artifact(step, result.data)
+                    break
+                if not result.error.retryable:
+                    handle_non_retryable(step, result.error)
+                    abort_run();
+                    return
+                attempts += 1
+                sleep(compute_backoff(attempts))
+            if attempts == MAX_ATTEMPTS and result.status != 'ok':
+                apply_fallback_or_abort(step, result.error)
+        verify_final_constraints()
+        ```
+    13. Testing Strategy (to implement later): unit tests for retry logic, artifact integrity, character limit loop, fallback activation.
+3.
+a) organized project with multiple files and folders
+b) environment variable
+c) Probably command line at first then scheduled later
