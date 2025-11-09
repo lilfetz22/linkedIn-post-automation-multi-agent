@@ -18,7 +18,7 @@
 - [ ] Create directory `runs/` (ensure gitignored)
 - [ ] Create directory `tests/` with subfolders per spec
 - [ ] Add root files: `main.py`, `orchestrator.py`
-- [ ] Add `.env.example` (placeholder for `GOOGLE_API_KEY`)
+- [ ] Add `.env` (placeholder for `GOOGLE_API_KEY`) - prompt user to fill in API key
 - [ ] Add `events.jsonl` (empty file or create lazily on first log)
 
 ## Phase 2: Shared Infrastructure Code
