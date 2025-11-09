@@ -29,7 +29,7 @@ if not GOOGLE_API_KEY:
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Model names
-TEXT_MODEL = "gemini-2.0-flash-exp"
+TEXT_MODEL = "gemini-2.5-pro"
 IMAGE_MODEL = "gemini-2.0-flash-image-generation-exp"
 
 
