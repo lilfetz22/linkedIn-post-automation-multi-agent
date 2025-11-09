@@ -8,7 +8,6 @@ Usage:
     python main.py
 """
 
-import sys
 import json
 from pathlib import Path
 
