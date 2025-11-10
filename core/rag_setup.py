@@ -211,10 +211,6 @@ def get_rag_store(
                     # File system errors should be logged and propagated
                     logger.error(f"File system error initializing RAG store: {e}")
                     raise
-                except FileNotFoundError as e:
-                    # Memory bank not found - should be logged and propagated
-                    logger.error(f"Memory bank not found: {e}")
-                    raise
                 except ValueError as e:
                     # No .txt files or other validation errors
                     logger.error(f"Validation error initializing RAG store: {e}")
