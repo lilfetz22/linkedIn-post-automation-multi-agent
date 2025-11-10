@@ -53,7 +53,7 @@ def log_event(
         ... )
     """
     event = {
-        "timestamp": datetime.now(timezone.utc).isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "run_id": run_id,
         "step": step,
         "attempt": attempt,
