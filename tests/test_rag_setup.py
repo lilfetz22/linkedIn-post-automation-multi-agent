@@ -184,7 +184,7 @@ class TestGetRAGStore:
         assert store.collection is None
 
     def test_get_rag_store_memory_bank_not_exists(self, chromadb_dir):
-        """Test that missing memory bank doesn't raise when auto_init=True."""
+        """Test that missing memory bank path is silently skipped during auto-initialization."""
         # Should not raise - memory bank path doesn't exist so init is skipped
         store = get_rag_store(
             persist_directory=chromadb_dir,
