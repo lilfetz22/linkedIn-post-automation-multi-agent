@@ -128,7 +128,7 @@ class RAGVectorStore:
                 self.collection = self.client.get_collection(name=COLLECTION_NAME)
             except ValueError:
                 raise ValueError(
-                    "Vector store not initialized. Call init_vector_store() first."
+                    "Vector store not initialized. Call init_vector_store() or use get_rag_store(auto_init=True)."
                 )
 
         # Perform semantic search
