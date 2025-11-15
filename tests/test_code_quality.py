@@ -29,7 +29,7 @@ def test_no_bare_except_statements():
         cwd=project_root,
         capture_output=True,
         text=True,
-        timeout=60
+        timeout=60,
     )
 
     # If flake8 found violations, the test should fail
@@ -48,11 +48,15 @@ def test_flake8_installed():
         [sys.executable, "-m", "flake8", "--version"],
         capture_output=True,
         text=True,
-        timeout=10
+        timeout=10,
     )
 
     assert result.returncode == 0, "flake8 is not installed or not available"
-    assert "flake8" in result.stdout.lower(), "flake8 version check failed"
+    # Check for version pattern (e.g., "7.3.0") instead of "flake8" string
+    assert any(char.isdigit() for char in result.stdout), "flake8 version check failed"
+    assert (
+        "mccabe" in result.stdout.lower() or "pycodestyle" in result.stdout.lower()
+    ), "flake8 version output unexpected"
 
 
 def test_flake8_config_exists():

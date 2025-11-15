@@ -69,39 +69,47 @@
   - [x] Unit test with dummy memory docs
 
 ## Phase 3: Database Setup
+**Granular Breakdown (expanded based on Phase 2 patterns & resilience needs)**
 - [x] Add `database/init_db.py`
-  - [x] Define constant `DEFAULT_DB_PATH = "database/topics.db"`
-  - [x] Function `ensure_db_dir(db_path=DEFAULT_DB_PATH)` creates parent dir if missing
-  - [x] Function `init_db(db_path=DEFAULT_DB_PATH)` (idempotent):
-    - [x] Create tables if not exist:
-      - [x] `previous_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL, date_posted TEXT NOT NULL)`
-      - [x] `potential_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL UNIQUE, field TEXT NOT NULL)`
-    - [x] Create indices if not exist:
-      - [x] `idx_previous_topics_date_posted` on `previous_topics(date_posted DESC)`
-      - [x] `idx_potential_topics_field` on `potential_topics(field, topic_name)`
-  - [x] Function `seed_potential_topics(rows, db_path=DEFAULT_DB_PATH)` inserts rows with `INSERT OR IGNORE`
-  - [x] CLI entrypoint (optional): `python -m database.init_db --seed` to init and seed
-- [x] Seed `potential_topics` with sample rows for both fields
-  - [x] At least 8 topics per field
-  - [x] Fields:
+  - [x] Constant `DEFAULT_DB_PATH = "database/topics.db"`
+  - [x] `ensure_db_dir(db_path)` creates parent dir if missing
+  - [x] `init_db(db_path)` idempotent table + index creation
+    - [x] Table: `previous_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL, date_posted TEXT NOT NULL)`
+    - [x] Table: `potential_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL UNIQUE, field TEXT NOT NULL)`
+    - [x] Index: `idx_previous_topics_date_posted` on `previous_topics(date_posted DESC)`
+    - [x] Index: `idx_potential_topics_field` on `potential_topics(field, topic_name)`
+  - [x] `seed_potential_topics(rows, db_path)` uses `INSERT OR IGNORE`
+  - [x] CLI: `python -m database.init_db --seed` prints inserted count
+- [x] Seed `potential_topics`
+  - [x] ≥8 topics per field
+  - [x] Field enum values:
     - [x] "Data Science (Optimizations & Time-Series Analysis)"
     - [x] "Generative AI & AI Agents"
+  - [ ] Add guard: validate field value belongs to supported enum before selection (utility function)
 - [x] Add helper `database/operations.py`
-  - [x] `get_connection(db_path=DEFAULT_DB_PATH)` context manager returning sqlite3 connection
-  - [x] `get_recent_topics(limit=10, db_path=DEFAULT_DB_PATH)` returns list of topic names ordered by `date_posted` DESC
-  - [x] `record_posted_topic(topic_name, date_posted=None, db_path=DEFAULT_DB_PATH)` inserts with ISO8601 date (UTC) if none provided
-  - [x] `select_new_topic(field, recent_limit=10, db_path=DEFAULT_DB_PATH)`:
-    - [x] Exclude topics in last `recent_limit` of `previous_topics`
-    - [x] Filter by `field`
-    - [x] Deterministic selection: smallest `id` among remaining (avoid randomness for testability)
-    - [x] Return `{"topic": str}` or `None` if none available
-- [x] Tests for DB
-  - [x] Schema existence (both tables, required columns)
-  - [x] Uniqueness constraint on `potential_topics.topic_name`
-  - [x] `record_posted_topic` writes retrievable row with ISO date
-  - [x] `get_recent_topics` ordering is correct (most recent first)
-  - [x] `select_new_topic` excludes recent topics and respects `field`
-  - [x] All functions accept `db_path` override for test isolation
+  - [x] Context-managed `get_connection(db_path)` enabling foreign keys
+  - [x] `_iso_now()` returns UTC ISO8601 `YYYY-MM-DDTHH:MM:SSZ`
+  - [x] `get_recent_topics(limit, db_path)` newest-first ordering by `date_posted` DESC
+  - [x] `record_posted_topic(topic_name, date_posted=None, db_path)` auto-populates ISO timestamp
+  - [x] `select_new_topic(field, recent_limit, db_path)` deterministic smallest id excluding recent set
+  - [ ] Add `validate_field(field)` raising `ValueError` for unsupported field (used by agents + tests)
+  - [ ] Add `list_all_potential(field, db_path)` for future analytics & debug tooling
+- [ ] Add DB utilities test coverage enhancements
+  - [x] Schema existence (tables + columns)
+  - [x] Uniqueness constraint enforcement
+  - [x] `record_posted_topic` persists ISO timestamp format
+  - [x] Recent ordering correctness
+  - [x] Deterministic selection excludes recents & filters by field
+  - [ ] Test index presence (`PRAGMA index_list` / `PRAGMA index_info`)
+  - [ ] Test seed function rowcount vs duplicates
+  - [ ] Test `validate_field` rejects invalid values
+  - [ ] Test `_iso_now()` format compliance
+  - [ ] Test `list_all_potential` returns sorted deterministic list
+- [ ] Add resilience/edge utilities (optional backlog)
+  - [ ] Optional `purge_previous(before_days)` archival helper
+  - [ ] Optional `export_topics_csv(db_path, dest)` for analytics
+
+Note: Unchecked items added for future granularity; can be scheduled before Phase 5 orchestration for stronger guarantees.
 
 ## Phase 4: Agent Implementations
 ### Design Pattern
@@ -110,61 +118,61 @@
 - [ ] Each agent logs events with attempt info
 
 ### 4.1 Topic Agent (`agents/topic_agent.py`)
-- [ ] Input: `field` from config
-- [ ] Output: `{"topic": str}` persisted to `10_topic.json`
-- [ ] Avoid recent topics (DB query)
+- [x] Input: `field` from config
+- [x] Output: `{"topic": str}` persisted to `10_topic.json`
+- [x] Avoid recent topics (DB query)
 - [ ] Tests: selection uniqueness, correct envelope
 
 ### 4.2 Research Agent (`agents/research_agent.py`)
-- [ ] Input: `topic`
-- [ ] Simulated research (stub external calls for now)
-- [ ] Output JSON: `{"topic": ..., "sources": [...], "summary": str}` → `20_research.json`
-- [ ] Handle empty sources → raise `DataNotFoundError`
+- [x] Input: `topic`
+- [x] Simulated research (stub external calls for now)
+- [x] Output JSON: `{"topic": ..., "sources": [...], "summary": str}` → `20_research.json`
+- [x] Handle empty sources → raise `DataNotFoundError`
 - [ ] Tests for fallback pivot logic (simulate two pivots max)
 
 ### 4.3 Prompt Generator Agent (`agents/prompt_generator_agent.py`)
-- [ ] Load persona template from `system_prompts.md`
-- [ ] Construct prompt and call LLM
-- [ ] Output structured fields per spec → `25_structured_prompt.json`
-- [ ] Validate required keys present (else `ValidationError`)
+- [x] Load persona template from `system_prompts.md`
+- [x] Construct prompt and call LLM (stub call now)
+- [x] Output structured fields per spec → `25_structured_prompt.json`
+- [x] Validate required keys present (else `ValidationError`)
 - [ ] Persona fidelity tests (no clichés, template sections present)
 
 ### 4.4 Strategic Type Agent (`agents/strategic_type_agent.py`)
-- [ ] Use RAG query (structured_prompt + research summary as query)
-- [ ] Output: `{"structure": ..., "strategic_angle": ...}` → `30_strategy.json`
+- [x] Use RAG query (structured_prompt + research summary as query) (stub query now)
+- [x] Output: `{"structure": ..., "strategic_angle": ...}` → `30_strategy.json`
 - [ ] Tests: ensures RAG docs influence output (mock vector store)
 
 ### 4.5 Writer Agent (`agents/writer_agent.py`)
-- [ ] Input: structured prompt + strategy
-- [ ] Persona: Witty Expert (verify formatting rules)
-- [ ] Output draft markdown → `40_draft.md`
+- [x] Input: structured prompt + strategy
+- [x] Persona: Witty Expert (basic formatting stub)
+- [x] Output draft markdown → `40_draft.md`
 - [ ] Tests: structure sections present, tone heuristics
 
 ### 4.6 Reviewer Agent (`agents/reviewer_agent.py`)
-- [ ] Two passes: contextual coherence then grammar/spelling
-- [ ] Output JSON diff structure: `{"original": ..., "revised": ..., "changes": [...]}` → `50_review.json`
-- [ ] Local grammar fallback (simple heuristic) if LLM fails
+- [x] Two passes: contextual coherence then grammar/spelling (stubbed)
+- [x] Output JSON diff structure: `{"original": ..., "revised": ..., "changes": [...]}` → `50_review.json`
+- [x] Local grammar fallback (simple heuristic) if LLM fails
 - [ ] Tests for pass separation
 
 ### 4.7 Character Count Loop (Orchestrator Responsibility)
-- [ ] Implement loop after review
+- [ ] Implement loop after review (pending Phase 5)
 - [ ] If >=3000 chars: send shortening instruction to Writer Agent (include target length)
-- [ ] Persist each iteration's draft & review (version suffix or overwrite?) → Decide: overwrite artifacts for simplicity; log iteration count in events
+- [ ] Persist each iteration's draft & review (overwrite; log iteration count)
 - [ ] Tests: simulate >3000 then <3000 convergence
 
 ### 4.8 Final Post Assembly
-- [ ] Save approved post to `60_final_post.txt`
+- [ ] Save approved post to `60_final_post.txt` (pending orchestrator)
 
 ### 4.9 Image Prompt Generator Agent (`agents/image_prompt_agent.py`)
-- [ ] Input: final post text
-- [ ] Output prompt text → `70_image_prompt.txt`
-- [ ] Fallback minimal prompt if error
+- [x] Input: final post text (stub placeholder)
+- [x] Output prompt text → `70_image_prompt.txt`
+- [x] Fallback minimal prompt if error
 - [ ] Tests: presence of thematic keywords
 
 ### 4.10 Image Generator Agent (`agents/image_generator_agent.py`)
-- [ ] Input: prompt text
-- [ ] Output PNG → `80_image.png`
-- [ ] Validate file saved & non-empty size
+- [x] Input: prompt text (stub placeholder)
+- [x] Output PNG → `80_image.png` (stub placeholder binary)
+- [x] Validate file saved & non-empty size
 - [ ] Tests: stub image generation if offline
 
 ## Phase 5: Orchestrator Implementation (`orchestrator.py`)
