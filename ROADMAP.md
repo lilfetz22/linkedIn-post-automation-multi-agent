@@ -3,70 +3,70 @@
 > Purpose: A granular, executable checklist for an AI coding agent to implement everything defined in `project_spec.md` and `system_prompts.md`. Follow phases in order. Each task uses GitHub-style checkboxes. Nested tasks must be completed before their parent can be checked.
 
 ## Phase 0: Repository & Planning
-- [ ] Confirm Python version >= 3.10
-- [ ] Create initial virtual environment
-- [ ] Add `.gitignore` (include: `runs/`, `__pycache__/`, `.env`, coverage reports)
-- [ ] Ensure `README.md` exists with high-level summary (expand later)
-- [ ] Add placeholder `requirements.txt`
-- [ ] Initialize Conventional Commit discipline (document in README)
+- [x] Confirm Python version >= 3.10
+- [x] Create initial virtual environment
+- [x] Add `.gitignore` (include: `runs/`, `__pycache__/`, `.env`, coverage reports)
+- [x] Ensure `README.md` exists with high-level summary (expand later)
+- [x] Add placeholder `requirements.txt`
+- [x] Initialize Conventional Commit discipline (document in README)
 
 ## Phase 1: Core Project Skeleton
-- [ ] Create directory `agents/` with `__init__.py`
-- [ ] Create directory `core/`
-- [ ] Create directory `database/`
-- [ ] Create directory `memory_bank/` (seed later)
-- [ ] Create directory `runs/` (ensure gitignored)
-- [ ] Create directory `tests/` with subfolders per spec
-- [ ] Add root files: `main.py`, `orchestrator.py`
-- [ ] Add `.env` (placeholder for `GOOGLE_API_KEY`) - prompt user to fill in API key
-- [ ] Add `events.jsonl` (empty file or create lazily on first log)
+- [x] Create directory `agents/` with `__init__.py`
+- [x] Create directory `core/`
+- [x] Create directory `database/`
+- [x] Create directory `memory_bank/` (seed later)
+- [x] Create directory `runs/` (ensure gitignored)
+- [x] Create directory `tests/` with subfolders per spec
+- [x] Add root files: `main.py`, `orchestrator.py`
+- [x] Add `.env` (placeholder for `GOOGLE_API_KEY`) - prompt user to fill in API key
+- [x] Add `events.jsonl` (empty file or create lazily on first log)
 
 ## Phase 2: Shared Infrastructure Code
 ### 2.1 Standard Return Envelope & Errors
-- [ ] Define `core/errors.py`
-  - [ ] `BaseAgentError(Exception)`
-  - [ ] `ValidationError`
-  - [ ] `DataNotFoundError`
-  - [ ] `ModelError`
-  - [ ] `CorruptionError`
-- [ ] Define `core/envelope.py`
-  - [ ] Function `ok(data: dict, metrics: dict|None)`
-  - [ ] Function `err(error_type: str, message: str, retryable: bool, metrics: dict|None)`
-  - [ ] Dataclass or schema validator for envelope
+- [x] Define `core/errors.py`
+  - [x] `BaseAgentError(Exception)`
+  - [x] `ValidationError`
+  - [x] `DataNotFoundError`
+  - [x] `ModelError`
+  - [x] `CorruptionError`
+- [x] Define `core/envelope.py`
+  - [x] Function `ok(data: dict, metrics: dict|None)`
+  - [x] Function `err(error_type: str, message: str, retryable: bool, metrics: dict|None)`
+  - [x] Dataclass or schema validator for envelope
 ### 2.2 Atomic File Persistence Utilities
-- [ ] Create `core/persistence.py`
-  - [ ] `atomic_write_json(path, obj)` (write temp + rename)
-  - [ ] `atomic_write_text(path, text)`
-  - [ ] `verify_json(path)` (re-open & parse; raise `CorruptionError` if failure)
-  - [ ] `write_and_verify_json(path, obj)` wrapper
-- [ ] Implement character counting utility (`count_chars(text: str)`)
+- [x] Create `core/persistence.py`
+  - [x] `atomic_write_json(path, obj)` (write temp + rename)
+  - [x] `atomic_write_text(path, text)`
+  - [x] `verify_json(path)` (re-open & parse; raise `CorruptionError` if failure)
+  - [x] `write_and_verify_json(path, obj)` wrapper
+- [x] Implement character counting utility (`count_chars(text: str)`)
 ### 2.3 Event Logging
-- [ ] Create `core/logging.py`
-  - [ ] `log_event(run_id, step, attempt, status, error_type=None, duration_ms=None, model=None, token_usage=None)` appends JSON line
-  - [ ] Ensure thread-safety (simple file append lock)
+- [x] Create `core/logging.py`
+  - [x] `log_event(run_id, step, attempt, status, error_type=None, duration_ms=None, model=None, token_usage=None)` appends JSON line
+  - [x] Ensure thread-safety (simple file append lock)
 ### 2.4 Run Directory Management
-- [ ] Create `core/run_context.py`
-  - [ ] `create_run_dir(base='runs/')` returns run_id & path
-  - [ ] Utility to build artifact path by step code (`00_config.json`, etc.)
+- [x] Create `core/run_context.py`
+  - [x] `create_run_dir(base='runs/')` returns run_id & path
+  - [x] Utility to build artifact path by step code (`00_config.json`, etc.)
 ### 2.5 Circuit Breaker & Retry Logic
-- [ ] Create `core/retry.py`
-  - [ ] Exponential backoff function (`sleep_seconds = base * 2**(attempt-1)`)
-  - [ ] `execute_with_retries(func, max_attempts=3)` handles retryable errors
-  - [ ] Circuit breaker state (consecutive LLM failures counter)
-  - [ ] Reset logic after success
+- [x] Create `core/retry.py`
+  - [x] Exponential backoff function (`sleep_seconds = base * 2**(attempt-1)`)
+  - [x] `execute_with_retries(func, max_attempts=3)` handles retryable errors
+  - [x] Circuit breaker state (consecutive LLM failures counter)
+  - [x] Reset logic after success
 ### 2.6 LLM Client Abstraction
-- [ ] Create `core/llm_clients.py`
-  - [ ] Load API key from `.env`
-  - [ ] Wrapper for Gemini text model (`gemini-2.5-pro`): `generate_text(prompt, temperature, ...)`
-  - [ ] Wrapper for Gemini image model (`gemini-2.5-flash-image-preview`): `generate_image(prompt)`
-  - [ ] Capture token usage (if available) into metrics
+- [x] Create `core/llm_clients.py`
+  - [x] Load API key from `.env`
+  - [x] Wrapper for Gemini text model (`gemini-2.5-pro`): `generate_text(prompt, temperature, ...)`
+  - [x] Wrapper for Gemini image model (`gemini-2.5-flash-image-preview`): `generate_image(prompt)`
+  - [x] Capture token usage (if available) into metrics
 ### 2.7 RAG Layer
-- [ ] Decide RAG library (`chromadb` recommended for simplicity)
-- [ ] Add to `requirements.txt`
-- [ ] Create `core/rag_setup.py`
-  - [ ] `init_vector_store(memory_bank_path)` ingest `.txt` files
-  - [ ] `query_memory_bank(query, k=5)` returns list of docs
-  - [ ] Unit test with dummy memory docs
+- [x] Decide RAG library (`chromadb` recommended for simplicity)
+- [x] Add to `requirements.txt`
+- [x] Create `core/rag_setup.py`
+  - [x] `init_vector_store(memory_bank_path)` ingest `.txt` files
+  - [x] `query_memory_bank(query, k=5)` returns list of docs
+  - [x] Unit test with dummy memory docs
 
 ## Phase 3: Database Setup
 - [ ] Add `database/init_db.py`
