@@ -36,7 +36,9 @@ def get_recent_topics(limit: int = 10, db_path: str = DEFAULT_DB_PATH) -> List[s
         return [r[0] for r in rows]
 
 
-def record_posted_topic(topic_name: str, date_posted: Optional[str] = None, db_path: str = DEFAULT_DB_PATH) -> None:
+def record_posted_topic(
+    topic_name: str, date_posted: Optional[str] = None, db_path: str = DEFAULT_DB_PATH
+) -> None:
     """Insert a row into previous_topics with ISO8601 timestamp if not provided."""
     ts = date_posted or _iso_now()
     with get_connection(db_path) as conn:
@@ -48,7 +50,9 @@ def record_posted_topic(topic_name: str, date_posted: Optional[str] = None, db_p
         conn.commit()
 
 
-def select_new_topic(field: str, recent_limit: int = 10, db_path: str = DEFAULT_DB_PATH) -> Optional[dict]:
+def select_new_topic(
+    field: str, recent_limit: int = 10, db_path: str = DEFAULT_DB_PATH
+) -> Optional[dict]:
     """Select a topic from potential_topics for the given field avoiding recent topics.
 
     Deterministic: pick the smallest id among candidates not in the recent set.
@@ -67,9 +71,7 @@ def select_new_topic(field: str, recent_limit: int = 10, db_path: str = DEFAULT_
             )
             params = (field, *sorted(recent))
         else:
-            query = (
-                "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
-            )
+            query = "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
             params = (field,)
         cur.execute(query, params)
         row = cur.fetchone()

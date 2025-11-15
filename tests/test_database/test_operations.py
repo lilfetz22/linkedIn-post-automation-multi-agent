@@ -9,7 +9,13 @@ if str(ROOT) not in sys.path:
 import sqlite3
 from time import sleep
 
-from database.init_db import init_db, seed_potential_topics, DEFAULT_SEED_ROWS, DEFAULT_FIELD_DS, DEFAULT_FIELD_GAI
+from database.init_db import (
+    init_db,
+    seed_potential_topics,
+    DEFAULT_SEED_ROWS,
+    DEFAULT_FIELD_DS,
+    DEFAULT_FIELD_GAI,
+)
 from database.operations import get_recent_topics, record_posted_topic, select_new_topic
 
 
@@ -17,7 +23,9 @@ def _all_previous_topics(db_path):
     conn = sqlite3.connect(db_path)
     try:
         cur = conn.cursor()
-        cur.execute("SELECT topic_name, date_posted FROM previous_topics ORDER BY id ASC;")
+        cur.execute(
+            "SELECT topic_name, date_posted FROM previous_topics ORDER BY id ASC;"
+        )
         return cur.fetchall()
     finally:
         conn.close()
@@ -49,7 +57,9 @@ def test_select_new_topic_excludes_recent_and_filters_by_field(tmp_path):
     seed_potential_topics(DEFAULT_SEED_ROWS, db_path)
 
     # Pick one DS topic as recently posted
-    ds_topic = next(name for name, field in DEFAULT_SEED_ROWS if field == DEFAULT_FIELD_DS)
+    ds_topic = next(
+        name for name, field in DEFAULT_SEED_ROWS if field == DEFAULT_FIELD_DS
+    )
     record_posted_topic(ds_topic, db_path=db_path)
 
     # Should select a DS topic that is not the recently posted one
@@ -61,5 +71,7 @@ def test_select_new_topic_excludes_recent_and_filters_by_field(tmp_path):
     sel_gai = select_new_topic(DEFAULT_FIELD_GAI, recent_limit=10, db_path=db_path)
     assert sel_gai is not None
     # Ensure it comes from GAI set
-    gai_topics = [name for name, field in DEFAULT_SEED_ROWS if field == DEFAULT_FIELD_GAI]
+    gai_topics = [
+        name for name, field in DEFAULT_SEED_ROWS if field == DEFAULT_FIELD_GAI
+    ]
     assert sel_gai["topic"] in gai_topics

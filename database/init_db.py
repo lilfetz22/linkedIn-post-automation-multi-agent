@@ -59,7 +59,9 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
         conn.commit()
 
 
-def seed_potential_topics(rows: Iterable[Tuple[str, str]], db_path: str = DEFAULT_DB_PATH) -> int:
+def seed_potential_topics(
+    rows: Iterable[Tuple[str, str]], db_path: str = DEFAULT_DB_PATH
+) -> int:
     """Seed potential_topics with (topic_name, field) rows using INSERT OR IGNORE.
 
     Returns the number of rows actually inserted (ignored duplicates excluded).
@@ -104,9 +106,15 @@ def _iso_now() -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Initialize and optionally seed topics DB")
-    parser.add_argument("--db", dest="db", default=DEFAULT_DB_PATH, help="Path to topics.db")
-    parser.add_argument("--seed", dest="seed", action="store_true", help="Seed potential topics")
+    parser = argparse.ArgumentParser(
+        description="Initialize and optionally seed topics DB"
+    )
+    parser.add_argument(
+        "--db", dest="db", default=DEFAULT_DB_PATH, help="Path to topics.db"
+    )
+    parser.add_argument(
+        "--seed", dest="seed", action="store_true", help="Seed potential topics"
+    )
     args = parser.parse_args()
 
     init_db(args.db)

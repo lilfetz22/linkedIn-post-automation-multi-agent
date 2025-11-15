@@ -7,7 +7,12 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 import sqlite3
-from database.init_db import init_db, ensure_db_dir, seed_potential_topics, DEFAULT_SEED_ROWS
+from database.init_db import (
+    init_db,
+    ensure_db_dir,
+    seed_potential_topics,
+    DEFAULT_SEED_ROWS,
+)
 
 
 def test_init_creates_tables(tmp_path):
