@@ -69,39 +69,39 @@
   - [x] Unit test with dummy memory docs
 
 ## Phase 3: Database Setup
-- [ ] Add `database/init_db.py`
-  - [ ] Define constant `DEFAULT_DB_PATH = "database/topics.db"`
-  - [ ] Function `ensure_db_dir(db_path=DEFAULT_DB_PATH)` creates parent dir if missing
-  - [ ] Function `init_db(db_path=DEFAULT_DB_PATH)` (idempotent):
-    - [ ] Create tables if not exist:
-      - [ ] `previous_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL, date_posted TEXT NOT NULL)`
-      - [ ] `potential_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL UNIQUE, field TEXT NOT NULL)`
-    - [ ] Create indices if not exist:
-      - [ ] `idx_previous_topics_date_posted` on `previous_topics(date_posted DESC)`
-      - [ ] `idx_potential_topics_field` on `potential_topics(field, topic_name)`
-  - [ ] Function `seed_potential_topics(rows, db_path=DEFAULT_DB_PATH)` inserts rows with `INSERT OR IGNORE`
-  - [ ] CLI entrypoint (optional): `python -m database.init_db --seed` to init and seed
-- [ ] Seed `potential_topics` with sample rows for both fields
-  - [ ] At least 8 topics per field
-  - [ ] Fields:
-    - [ ] "Data Science (Optimizations & Time-Series Analysis)"
-    - [ ] "Generative AI & AI Agents"
-- [ ] Add helper `database/operations.py`
-  - [ ] `get_connection(db_path=DEFAULT_DB_PATH)` context manager returning sqlite3 connection
-  - [ ] `get_recent_topics(limit=10, db_path=DEFAULT_DB_PATH)` returns list of topic names ordered by `date_posted` DESC
-  - [ ] `record_posted_topic(topic_name, date_posted=None, db_path=DEFAULT_DB_PATH)` inserts with ISO8601 date (UTC) if none provided
-  - [ ] `select_new_topic(field, recent_limit=10, db_path=DEFAULT_DB_PATH)`:
-    - [ ] Exclude topics in last `recent_limit` of `previous_topics`
-    - [ ] Filter by `field`
-    - [ ] Deterministic selection: smallest `id` among remaining (avoid randomness for testability)
-    - [ ] Return `{"topic": str}` or `None` if none available
-- [ ] Tests for DB
-  - [ ] Schema existence (both tables, required columns)
-  - [ ] Uniqueness constraint on `potential_topics.topic_name`
-  - [ ] `record_posted_topic` writes retrievable row with ISO date
-  - [ ] `get_recent_topics` ordering is correct (most recent first)
-  - [ ] `select_new_topic` excludes recent topics and respects `field`
-  - [ ] All functions accept `db_path` override for test isolation
+- [x] Add `database/init_db.py`
+  - [x] Define constant `DEFAULT_DB_PATH = "database/topics.db"`
+  - [x] Function `ensure_db_dir(db_path=DEFAULT_DB_PATH)` creates parent dir if missing
+  - [x] Function `init_db(db_path=DEFAULT_DB_PATH)` (idempotent):
+    - [x] Create tables if not exist:
+      - [x] `previous_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL, date_posted TEXT NOT NULL)`
+      - [x] `potential_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL UNIQUE, field TEXT NOT NULL)`
+    - [x] Create indices if not exist:
+      - [x] `idx_previous_topics_date_posted` on `previous_topics(date_posted DESC)`
+      - [x] `idx_potential_topics_field` on `potential_topics(field, topic_name)`
+  - [x] Function `seed_potential_topics(rows, db_path=DEFAULT_DB_PATH)` inserts rows with `INSERT OR IGNORE`
+  - [x] CLI entrypoint (optional): `python -m database.init_db --seed` to init and seed
+- [x] Seed `potential_topics` with sample rows for both fields
+  - [x] At least 8 topics per field
+  - [x] Fields:
+    - [x] "Data Science (Optimizations & Time-Series Analysis)"
+    - [x] "Generative AI & AI Agents"
+- [x] Add helper `database/operations.py`
+  - [x] `get_connection(db_path=DEFAULT_DB_PATH)` context manager returning sqlite3 connection
+  - [x] `get_recent_topics(limit=10, db_path=DEFAULT_DB_PATH)` returns list of topic names ordered by `date_posted` DESC
+  - [x] `record_posted_topic(topic_name, date_posted=None, db_path=DEFAULT_DB_PATH)` inserts with ISO8601 date (UTC) if none provided
+  - [x] `select_new_topic(field, recent_limit=10, db_path=DEFAULT_DB_PATH)`:
+    - [x] Exclude topics in last `recent_limit` of `previous_topics`
+    - [x] Filter by `field`
+    - [x] Deterministic selection: smallest `id` among remaining (avoid randomness for testability)
+    - [x] Return `{"topic": str}` or `None` if none available
+- [x] Tests for DB
+  - [x] Schema existence (both tables, required columns)
+  - [x] Uniqueness constraint on `potential_topics.topic_name`
+  - [x] `record_posted_topic` writes retrievable row with ISO date
+  - [x] `get_recent_topics` ordering is correct (most recent first)
+  - [x] `select_new_topic` excludes recent topics and respects `field`
+  - [x] All functions accept `db_path` override for test isolation
 
 ## Phase 4: Agent Implementations
 ### Design Pattern
