@@ -5,12 +5,17 @@ Ingests newsletter content from memory_bank/ directory and provides
 semantic search for strategic content patterns.
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import List, Dict, Any
 
 import chromadb
 from chromadb.config import Settings
+from chromadb.errors import InternalError, NotFoundError
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Default memory bank location
 DEFAULT_MEMORY_BANK = "memory_bank"
@@ -67,7 +72,7 @@ class RAGVectorStore:
         # Delete existing collection if it exists
         try:
             self.client.delete_collection(name=COLLECTION_NAME)
-        except ValueError:
+        except NotFoundError:
             pass  # Collection doesn't exist yet
 
         # Create new collection
@@ -123,7 +128,7 @@ class RAGVectorStore:
                 self.collection = self.client.get_collection(name=COLLECTION_NAME)
             except ValueError:
                 raise ValueError(
-                    "Vector store not initialized. Call init_vector_store() first."
+                    "Vector store not initialized. Call init_vector_store() or use get_rag_store(auto_init=True)."
                 )
 
         # Perform semantic search
@@ -183,9 +188,33 @@ def get_rag_store(
             if memory_path.exists():
                 try:
                     _rag_store.init_vector_store(memory_bank_path)
-                except Exception:
-                    # Collection might already exist
-                    pass
+                except InternalError as e:
+                    # Collection already exists - try to get it instead
+                    if "already exists" in str(e):
+                        logger.info(
+                            f"Collection {COLLECTION_NAME} already exists, using existing collection"
+                        )
+                        try:
+                            _rag_store.collection = _rag_store.client.get_collection(
+                                name=COLLECTION_NAME
+                            )
+                        except Exception as get_error:
+                            logger.error(
+                                f"Failed to get existing collection: {get_error}"
+                            )
+                            raise
+                    else:
+                        # Other internal errors should be logged and propagated
+                        logger.error(f"ChromaDB internal error: {e}")
+                        raise
+                except (OSError, PermissionError) as e:
+                    # File system errors should be logged and propagated
+                    logger.error(f"File system error initializing RAG store: {e}")
+                    raise
+                except ValueError as e:
+                    # No .txt files or other validation errors
+                    logger.error(f"Validation error initializing RAG store: {e}")
+                    raise
 
     return _rag_store
 
