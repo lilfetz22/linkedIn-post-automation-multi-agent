@@ -30,7 +30,7 @@ genai.configure(api_key=GOOGLE_API_KEY)
 
 # Model names
 TEXT_MODEL = "gemini-2.5-pro"
-IMAGE_MODEL = "gemini-2.5-flash-image-preview"
+IMAGE_MODEL = "gemini-2.5-flash-image"
 
 
 class GeminiTextClient:
