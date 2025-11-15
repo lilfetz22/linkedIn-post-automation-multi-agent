@@ -101,10 +101,6 @@ DEFAULT_SEED_ROWS = [
 ]
 
 
-def _iso_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Initialize and optionally seed topics DB"
