@@ -75,3 +75,60 @@ def test_select_new_topic_excludes_recent_and_filters_by_field(tmp_path):
         name for name, field in DEFAULT_SEED_ROWS if field == DEFAULT_FIELD_GAI
     ]
     assert sel_gai["topic"] in gai_topics
+
+
+def test_record_posted_topic_iso_date_format(tmp_path):
+    """Verify record_posted_topic writes ISO8601 formatted dates."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+
+    # Record without explicit date (should use ISO8601 UTC)
+    record_posted_topic("Test Topic", db_path=db_path)
+
+    all_rows = _all_previous_topics(db_path)
+    assert len(all_rows) == 1
+    topic_name, date_posted = all_rows[0]
+    assert topic_name == "Test Topic"
+    # Check ISO8601 format: YYYY-MM-DDTHH:MM:SSZ
+    assert "T" in date_posted
+    assert date_posted.endswith("Z")
+
+    # Record with explicit date
+    custom_date = "2024-01-15T12:30:45Z"
+    record_posted_topic("Another Topic", date_posted=custom_date, db_path=db_path)
+
+    all_rows = _all_previous_topics(db_path)
+    assert len(all_rows) == 2
+    assert all_rows[1][1] == custom_date
+
+
+def test_all_functions_accept_db_path_override(tmp_path):
+    """Verify all database operations accept db_path parameter for test isolation."""
+    db_path1 = os.path.join(tmp_path, "db1.db")
+    db_path2 = os.path.join(tmp_path, "db2.db")
+
+    # Initialize two separate databases
+    init_db(db_path1)
+    init_db(db_path2)
+
+    # Seed only db1
+    seed_potential_topics(DEFAULT_SEED_ROWS, db_path1)
+
+    # Record topic in db1
+    record_posted_topic("Topic in DB1", db_path=db_path1)
+
+    # Verify db1 has data
+    recent1 = get_recent_topics(limit=10, db_path=db_path1)
+    assert len(recent1) == 1
+    assert recent1[0] == "Topic in DB1"
+
+    # Verify db2 is empty
+    recent2 = get_recent_topics(limit=10, db_path=db_path2)
+    assert len(recent2) == 0
+
+    # Verify select_new_topic works with both
+    sel1 = select_new_topic(DEFAULT_FIELD_DS, recent_limit=10, db_path=db_path1)
+    assert sel1 is not None  # Has seeded topics
+
+    sel2 = select_new_topic(DEFAULT_FIELD_DS, recent_limit=10, db_path=db_path2)
+    assert sel2 is None  # No seeded topics
