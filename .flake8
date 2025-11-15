@@ -12,7 +12,6 @@ select =
 
 # Specific error codes we want to enforce
 # E722: bare except statement (the main focus of this issue)
-enable-extensions = E722
 
 # Exclude directories
 exclude = 
