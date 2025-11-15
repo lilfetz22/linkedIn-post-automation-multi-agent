@@ -52,7 +52,9 @@ def test_flake8_installed():
     )
 
     assert result.returncode == 0, "flake8 is not installed or not available"
-    assert "flake8" in result.stdout.lower(), "flake8 version check failed"
+    # Check for version pattern (e.g., "7.3.0") instead of "flake8" string
+    assert any(char.isdigit() for char in result.stdout), "flake8 version check failed"
+    assert "mccabe" in result.stdout.lower() or "pycodestyle" in result.stdout.lower(), "flake8 version output unexpected"
 
 
 def test_flake8_config_exists():
