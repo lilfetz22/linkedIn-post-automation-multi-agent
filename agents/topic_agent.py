@@ -12,7 +12,7 @@ from core.errors import DataNotFoundError, ValidationError
 from core.persistence import write_and_verify_json
 from core.logging import log_event
 from core.run_context import get_artifact_path
-from database.operations import select_new_topic, record_posted_topic
+from database.operations import select_new_topic
 
 
 STEP_CODE = "10_topic"
@@ -37,9 +37,6 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         topic_data = select_new_topic(field=field, db_path=db_path) if db_path else select_new_topic(field=field)
         if not topic_data:
             raise DataNotFoundError(f"No selectable topics remain for field '{field}'")
-
-        # Persist selection to previous_topics immediately for uniqueness enforcement
-        record_posted_topic(topic_data["topic"], db_path=db_path) if db_path else record_posted_topic(topic_data["topic"]) 
 
         artifact_path = get_artifact_path(run_path, STEP_CODE)
         write_and_verify_json(artifact_path, topic_data)
