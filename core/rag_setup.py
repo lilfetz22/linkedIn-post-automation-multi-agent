@@ -31,9 +31,7 @@ class RAGVectorStore:
         Args:
             persist_directory: Directory to persist vector database
         """
-        self.client = chromadb.Client(
-            Settings(persist_directory=persist_directory, anonymized_telemetry=False)
-        )
+        self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = None
 
     def init_vector_store(self, memory_bank_path: str | Path) -> None:
