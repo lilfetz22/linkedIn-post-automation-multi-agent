@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 import pytest
 import json
-import sqlite3
 
 from agents.topic_agent import run
 from core.envelope import validate_envelope
