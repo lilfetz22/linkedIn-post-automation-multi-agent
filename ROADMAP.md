@@ -70,13 +70,38 @@
 
 ## Phase 3: Database Setup
 - [ ] Add `database/init_db.py`
-  - [ ] Create `topics.db` with tables `previous_topics`, `potential_topics`
+  - [ ] Define constant `DEFAULT_DB_PATH = "database/topics.db"`
+  - [ ] Function `ensure_db_dir(db_path=DEFAULT_DB_PATH)` creates parent dir if missing
+  - [ ] Function `init_db(db_path=DEFAULT_DB_PATH)` (idempotent):
+    - [ ] Create tables if not exist:
+      - [ ] `previous_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL, date_posted TEXT NOT NULL)`
+      - [ ] `potential_topics (id INTEGER PRIMARY KEY, topic_name TEXT NOT NULL UNIQUE, field TEXT NOT NULL)`
+    - [ ] Create indices if not exist:
+      - [ ] `idx_previous_topics_date_posted` on `previous_topics(date_posted DESC)`
+      - [ ] `idx_potential_topics_field` on `potential_topics(field, topic_name)`
+  - [ ] Function `seed_potential_topics(rows, db_path=DEFAULT_DB_PATH)` inserts rows with `INSERT OR IGNORE`
+  - [ ] CLI entrypoint (optional): `python -m database.init_db --seed` to init and seed
 - [ ] Seed `potential_topics` with sample rows for both fields
+  - [ ] At least 8 topics per field
+  - [ ] Fields:
+    - [ ] "Data Science (Optimizations & Time-Series Analysis)"
+    - [ ] "Generative AI & AI Agents"
 - [ ] Add helper `database/operations.py`
-  - [ ] `get_recent_topics(limit=10)`
-  - [ ] `select_new_topic(field)` (avoid recent)
-  - [ ] `record_posted_topic(topic)`
-- [ ] Tests for uniqueness & schema existence
+  - [ ] `get_connection(db_path=DEFAULT_DB_PATH)` context manager returning sqlite3 connection
+  - [ ] `get_recent_topics(limit=10, db_path=DEFAULT_DB_PATH)` returns list of topic names ordered by `date_posted` DESC
+  - [ ] `record_posted_topic(topic_name, date_posted=None, db_path=DEFAULT_DB_PATH)` inserts with ISO8601 date (UTC) if none provided
+  - [ ] `select_new_topic(field, recent_limit=10, db_path=DEFAULT_DB_PATH)`:
+    - [ ] Exclude topics in last `recent_limit` of `previous_topics`
+    - [ ] Filter by `field`
+    - [ ] Deterministic selection: smallest `id` among remaining (avoid randomness for testability)
+    - [ ] Return `{"topic": str}` or `None` if none available
+- [ ] Tests for DB
+  - [ ] Schema existence (both tables, required columns)
+  - [ ] Uniqueness constraint on `potential_topics.topic_name`
+  - [ ] `record_posted_topic` writes retrievable row with ISO date
+  - [ ] `get_recent_topics` ordering is correct (most recent first)
+  - [ ] `select_new_topic` excludes recent topics and respects `field`
+  - [ ] All functions accept `db_path` override for test isolation
 
 ## Phase 4: Agent Implementations
 ### Design Pattern
