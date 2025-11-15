@@ -21,11 +21,11 @@ def _write_placeholder_png(path: Path) -> None:
         b"\x00\x00\x00\rIHDR"  # IHDR chunk length + type
         b"\x00\x00\x00\x01\x00\x00\x00\x01"  # 1x1 px
         b"\x08\x02\x00\x00\x00"  # bit depth, color type
-        b"\x90wS\xDE"  # CRC (placeholder)
-        b"\x00\x00\x00\x0AIDAT"  # IDAT chunk (length placeholder)
-        b"\x08\xD7c``\x00\x00\x00\x05\x00\x01"  # compressed data (tiny)
-        b"\x02\x7F\xE5\x92"  # CRC
-        b"\x00\x00\x00\x00IEND\xAE\x42\x60\x82"  # IEND
+        b"\x90wS\xde"  # CRC (placeholder)
+        b"\x00\x00\x00\x0aIDAT"  # IDAT chunk (length placeholder)
+        b"\x08\xd7c``\x00\x00\x00\x05\x00\x01"  # compressed data (tiny)
+        b"\x02\x7f\xe5\x92"  # CRC
+        b"\x00\x00\x00\x00IEND\xae\x42\x60\x82"  # IEND
     )
     path.write_bytes(png_bytes)
 
@@ -49,9 +49,13 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     except (ValidationError, ModelError) as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
-        log_event(run_id, "image_generation", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "image_generation", attempt, "error", error_type=type(e).__name__
+        )
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)
-        log_event(run_id, "image_generation", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "image_generation", attempt, "error", error_type=type(e).__name__
+        )
         return response

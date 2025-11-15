@@ -14,7 +14,9 @@ STEP_CODE = "70_image_prompt"
 
 def _build_image_prompt(final_post: str) -> str:
     # Very naive extraction for now
-    first_line = final_post.splitlines()[0] if final_post else "Insightful technical post"
+    first_line = (
+        final_post.splitlines()[0] if final_post else "Insightful technical post"
+    )
     return (
         f"High-resolution conceptual illustration reflecting: '{first_line}'. "
         "Modern minimal style, subtle gradients, clean typography accent, professional tone."
@@ -28,7 +30,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     attempt = 1
     try:
         if not final_post:
-            raise ValidationError("Missing 'final_post' text for image prompt generation")
+            raise ValidationError(
+                "Missing 'final_post' text for image prompt generation"
+            )
         prompt = _build_image_prompt(final_post)
         artifact_path = get_artifact_path(run_path, STEP_CODE, extension="txt")
         atomic_write_text(artifact_path, prompt)

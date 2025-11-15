@@ -34,7 +34,11 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         if not field:
             raise ValidationError("Missing 'field' in topic agent input")
 
-        topic_data = select_new_topic(field=field, db_path=db_path) if db_path else select_new_topic(field=field)
+        topic_data = (
+            select_new_topic(field=field, db_path=db_path)
+            if db_path
+            else select_new_topic(field=field)
+        )
         if not topic_data:
             raise DataNotFoundError(f"No selectable topics remain for field '{field}'")
 
@@ -48,9 +52,13 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     except (ValidationError, DataNotFoundError) as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
-        log_event(run_id, "topic_selection", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "topic_selection", attempt, "error", error_type=type(e).__name__
+        )
         return response
     except Exception as e:  # Unexpected; treat as retryable generic error
         response = err(type(e).__name__, str(e), retryable=True)
-        log_event(run_id, "topic_selection", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "topic_selection", attempt, "error", error_type=type(e).__name__
+        )
         return response

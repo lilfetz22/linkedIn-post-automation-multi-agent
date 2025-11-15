@@ -59,13 +59,19 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     except (ValidationError,) as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
-        log_event(run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__
+        )
         return response
     except ModelError as e:  # Placeholder for future LLM errors
         response = err(type(e).__name__, str(e), retryable=True)
-        log_event(run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__
+        )
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)
-        log_event(run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "prompt_generator", attempt, "error", error_type=type(e).__name__
+        )
         return response

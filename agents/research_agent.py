@@ -20,7 +20,10 @@ def _simulate_research(topic: str) -> List[Dict[str, str]]:
     # Simple heuristic stub; later replaced with real research.
     return [
         {"title": f"Deep dive into {topic}", "url": "https://example.com/article1"},
-        {"title": f"Practical considerations for {topic}", "url": "https://example.com/article2"},
+        {
+            "title": f"Practical considerations for {topic}",
+            "url": "https://example.com/article2",
+        },
     ]
 
 

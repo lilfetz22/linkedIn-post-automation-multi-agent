@@ -32,7 +32,11 @@ def _diff(original: str, revised: str) -> List[Dict[str, str]]:
     if original == revised:
         return []
     return [
-        {"change": "modified", "original_len": str(len(original)), "revised_len": str(len(revised))}
+        {
+            "change": "modified",
+            "original_len": str(len(original)),
+            "revised_len": str(len(revised)),
+        }
     ]
 
 

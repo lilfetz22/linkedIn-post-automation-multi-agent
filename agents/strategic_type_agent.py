@@ -15,7 +15,9 @@ from core.run_context import get_artifact_path
 STEP_CODE = "30_strategy"
 
 
-def _derive_strategy(structured: Dict[str, Any], research: Dict[str, Any]) -> Dict[str, Any]:
+def _derive_strategy(
+    structured: Dict[str, Any], research: Dict[str, Any]
+) -> Dict[str, Any]:
     # Placeholder strategy derivation
     return {
         "structure": "Hook -> Pain -> Insight -> Example -> Impact -> CTA -> Sign-off",
@@ -43,9 +45,13 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     except ValidationError as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
-        log_event(run_id, "strategic_type", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "strategic_type", attempt, "error", error_type=type(e).__name__
+        )
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)
-        log_event(run_id, "strategic_type", attempt, "error", error_type=type(e).__name__)
+        log_event(
+            run_id, "strategic_type", attempt, "error", error_type=type(e).__name__
+        )
         return response

@@ -8,7 +8,12 @@ import sqlite3
 
 from agents.topic_agent import run
 from core.envelope import validate_envelope
-from database.init_db import init_db, seed_potential_topics, DEFAULT_FIELD_DS, DEFAULT_FIELD_GAI
+from database.init_db import (
+    init_db,
+    seed_potential_topics,
+    DEFAULT_FIELD_DS,
+    DEFAULT_FIELD_GAI,
+)
 
 
 @pytest.fixture
@@ -17,16 +22,20 @@ def temp_db(tmp_path):
     db_path = str(tmp_path / "test_topics.db")
     init_db(db_path)
     # Seed with test topics
-    seed_potential_topics([
-        ("Test topic 1", DEFAULT_FIELD_DS),
-        ("Test topic 2", DEFAULT_FIELD_DS),
-        ("Test topic 3", DEFAULT_FIELD_GAI),
-    ], db_path)
-    
+    seed_potential_topics(
+        [
+            ("Test topic 1", DEFAULT_FIELD_DS),
+            ("Test topic 2", DEFAULT_FIELD_DS),
+            ("Test topic 3", DEFAULT_FIELD_GAI),
+        ],
+        db_path,
+    )
+
     yield db_path
-    
+
     # Cleanup: Force garbage collection to release file handles
     import gc
+
     gc.collect()
 
 
@@ -42,19 +51,19 @@ def test_topic_agent_success(temp_db, temp_run_dir):
     """Test successful topic selection."""
     input_obj = {"field": DEFAULT_FIELD_DS, "db_path": temp_db}
     context = {"run_id": "test-run-001", "run_path": temp_run_dir}
-    
+
     response = run(input_obj, context)
-    
+
     # Validate envelope structure
     validate_envelope(response)
     assert response["status"] == "ok"
     assert "topic" in response["data"]
     assert response["data"]["topic"] in ["Test topic 1", "Test topic 2"]
-    
+
     # Verify artifact persistence
     artifact_path = temp_run_dir / "10_topic.json"
     assert artifact_path.exists()
-    
+
     with open(artifact_path) as f:
         artifact_data = json.load(f)
     assert artifact_data["topic"] == response["data"]["topic"]
@@ -64,9 +73,9 @@ def test_topic_agent_field_filtering(temp_db, temp_run_dir):
     """Test that topics are filtered by field."""
     input_obj = {"field": DEFAULT_FIELD_GAI, "db_path": temp_db}
     context = {"run_id": "test-run-002", "run_path": temp_run_dir}
-    
+
     response = run(input_obj, context)
-    
+
     assert response["status"] == "ok"
     assert response["data"]["topic"] == "Test topic 3"
 
@@ -75,9 +84,9 @@ def test_topic_agent_missing_field(temp_run_dir):
     """Test error handling when field is missing."""
     input_obj = {}
     context = {"run_id": "test-run-003", "run_path": temp_run_dir}
-    
+
     response = run(input_obj, context)
-    
+
     validate_envelope(response)
     assert response["status"] == "error"
     assert response["error"]["type"] == "ValidationError"
@@ -90,20 +99,21 @@ def test_topic_agent_no_available_topics(temp_run_dir, tmp_path):
     db_path = str(tmp_path / "empty_db.db")
     init_db(db_path)
     # Don't seed any topics
-    
+
     input_obj = {"field": DEFAULT_FIELD_DS, "db_path": db_path}
     context = {"run_id": "test-run-004", "run_path": temp_run_dir}
-    
+
     response = run(input_obj, context)
-    
+
     validate_envelope(response)
     assert response["status"] == "error"
     assert response["error"]["type"] == "DataNotFoundError"
     assert "no selectable topics" in response["error"]["message"].lower()
     assert response["error"]["retryable"] is False
-    
+
     # Force garbage collection to release handles
     import gc
+
     gc.collect()
 
 
@@ -111,8 +121,8 @@ def test_topic_agent_deterministic_selection(temp_db, temp_run_dir):
     """Test that topic selection is deterministic (smallest id)."""
     input_obj = {"field": DEFAULT_FIELD_DS, "db_path": temp_db}
     context = {"run_id": "test-run-005", "run_path": temp_run_dir}
-    
+
     response1 = run(input_obj, context)
-    
+
     # Should always select the first topic for the field
     assert response1["data"]["topic"] == "Test topic 1"
