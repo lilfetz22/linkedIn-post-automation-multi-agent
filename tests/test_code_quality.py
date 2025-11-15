@@ -28,7 +28,8 @@ def test_no_bare_except_statements():
         [sys.executable, "-m", "flake8", ".", "--select=E722"],
         cwd=project_root,
         capture_output=True,
-        text=True
+        text=True,
+        timeout=60
     )
 
     # If flake8 found violations, the test should fail
@@ -46,7 +47,8 @@ def test_flake8_installed():
     result = subprocess.run(
         [sys.executable, "-m", "flake8", "--version"],
         capture_output=True,
-        text=True
+        text=True,
+        timeout=10
     )
 
     assert result.returncode == 0, "flake8 is not installed or not available"
