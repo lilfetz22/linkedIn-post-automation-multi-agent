@@ -69,7 +69,7 @@ def select_new_topic(
                 f"WHERE field = ? AND topic_name NOT IN ({placeholders}) "
                 f"ORDER BY id ASC LIMIT 1;"
             )
-            params = (field, *sorted(recent))
+            params = (field, *recent)
         else:
             query = "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
             params = (field,)
