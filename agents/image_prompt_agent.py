@@ -47,5 +47,6 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)
+        validate_envelope(response)
         log_event(run_id, "image_prompt", attempt, "error", error_type=type(e).__name__)
         return response
