@@ -40,6 +40,20 @@ essential_fields = [
 ]
 
 
+def test_seed_data_contains_all_essential_fields(tmp_path):
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+    seed_potential_topics(DEFAULT_SEED_ROWS, db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT DISTINCT field FROM potential_topics;")
+        present_fields = {row[0] for row in cur.fetchall()}
+        for field in essential_fields:
+            assert field in present_fields, f"Missing field in seed data: {field}"
+    finally:
+        conn.close()
 def test_uniqueness_constraint_on_topic_name(tmp_path):
     db_path = os.path.join(tmp_path, "topics.db")
     init_db(db_path)
