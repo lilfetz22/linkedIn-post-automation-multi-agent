@@ -118,41 +118,22 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [ ] Each agent logs events with attempt info
 
 ### 4.1 Topic Agent (`agents/topic_agent.py`)
-- [x] Input: `field` from config
-- [x] Output: `{"topic": str}` persisted to `10_topic.json`
-- [x] Avoid recent topics (DB query)
-- [ ] Tests: selection uniqueness, correct envelope
+- [x] Tests: selection uniqueness, correct envelope
 
 ### 4.2 Research Agent (`agents/research_agent.py`)
-- [x] Input: `topic`
-- [x] Simulated research (stub external calls for now)
-- [x] Output JSON: `{"topic": ..., "sources": [...], "summary": str}` → `20_research.json`
-- [x] Handle empty sources → raise `DataNotFoundError`
-- [ ] Tests for fallback pivot logic (simulate two pivots max)
+- [x] Tests for fallback pivot logic (simulate two pivots max)
 
 ### 4.3 Prompt Generator Agent (`agents/prompt_generator_agent.py`)
-- [x] Load persona template from `system_prompts.md`
-- [x] Construct prompt and call LLM (stub call now)
-- [x] Output structured fields per spec → `25_structured_prompt.json`
-- [x] Validate required keys present (else `ValidationError`)
-- [ ] Persona fidelity tests (no clichés, template sections present)
+- [x] Persona fidelity tests (no clichés, template sections present)
 
 ### 4.4 Strategic Type Agent (`agents/strategic_type_agent.py`)
-- [x] Use RAG query (structured_prompt + research summary as query) (stub query now)
-- [x] Output: `{"structure": ..., "strategic_angle": ...}` → `30_strategy.json`
-- [ ] Tests: ensures RAG docs influence output (mock vector store)
+- [x] Tests: ensures RAG docs influence output (mock vector store)
 
 ### 4.5 Writer Agent (`agents/writer_agent.py`)
-- [x] Input: structured prompt + strategy
-- [x] Persona: Witty Expert (basic formatting stub)
-- [x] Output draft markdown → `40_draft.md`
-- [ ] Tests: structure sections present, tone heuristics
+- [x] Tests: structure sections present, tone heuristics
 
 ### 4.6 Reviewer Agent (`agents/reviewer_agent.py`)
-- [x] Two passes: contextual coherence then grammar/spelling (stubbed)
-- [x] Output JSON diff structure: `{"original": ..., "revised": ..., "changes": [...]}` → `50_review.json`
-- [x] Local grammar fallback (simple heuristic) if LLM fails
-- [ ] Tests for pass separation
+- [x] Tests for pass separation
 
 ### 4.7 Character Count Loop (Orchestrator Responsibility)
 - [ ] Implement loop after review (pending Phase 5)
@@ -164,16 +145,10 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [ ] Save approved post to `60_final_post.txt` (pending orchestrator)
 
 ### 4.9 Image Prompt Generator Agent (`agents/image_prompt_agent.py`)
-- [x] Input: final post text (stub placeholder)
-- [x] Output prompt text → `70_image_prompt.txt`
-- [x] Fallback minimal prompt if error
-- [ ] Tests: presence of thematic keywords
+- [x] Tests: presence of thematic keywords
 
 ### 4.10 Image Generator Agent (`agents/image_generator_agent.py`)
-- [x] Input: prompt text (stub placeholder)
-- [x] Output PNG → `80_image.png` (stub placeholder binary)
-- [x] Validate file saved & non-empty size
-- [ ] Tests: stub image generation if offline
+- [x] Tests: stub image generation if offline
 
 ## Phase 5: Orchestrator Implementation (`orchestrator.py`)
 - [ ] Load config & field
