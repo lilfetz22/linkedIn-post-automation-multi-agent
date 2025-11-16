@@ -4,8 +4,7 @@ from pathlib import Path
 import pytest
 
 from core.errors import ValidationError
-from main import ensure_config, ALLOWED_FIELDS, validate_field, prompt_select_field
-
+from main import ensure_config, ALLOWED_FIELDS, validate_field, prompt_select_field, load_config
 
 def test_validate_field_accepts_allowed():
     for f in ALLOWED_FIELDS:
