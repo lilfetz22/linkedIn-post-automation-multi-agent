@@ -6,7 +6,6 @@ character count loop, topic pivot logic, and error handling scenarios.
 """
 
 import pytest
-import json
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
