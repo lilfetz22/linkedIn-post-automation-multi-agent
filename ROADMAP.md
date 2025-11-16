@@ -222,7 +222,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Call with retry wrapper
   - [x] Extract image prompt from response
 - [x] Execute Image Generator Agent (Step 9)
-  - [x] Build input: `{"prompt": image_prompt}`
+  - [x] Build input: `{"image_prompt_path": image_prompt_path}`
   - [x] Call with retry wrapper
   - [x] Verify image artifact exists at `80_image.png`
 
@@ -279,6 +279,32 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [ ] Call orchestrator
 - [ ] Print concise status summary to console
 - [ ] Tests: config creation logic
+
+### Phase 5 Verification Notes (Implemented)
+- Config handling: Orchestrator validates `config['field']` but does not load `config.json`; loading is deferred to Phase 6 (`main.py`). Orchestrator persists `00_config.json` via `core.run_context.get_artifact_path`.
+- Run setup: `create_run_dir()` sets `run_id`/`run_path` and `context` for agents; initialization event is logged.
+- Retry + breaker: `_execute_agent_with_retry()` wraps calls with `execute_with_retries()` and records per-agent metrics; breaker trips after 3 consecutive LLM failures.
+- Pipeline: Steps 1–6 call agents in order and pass structured IO; topic pivot logic respects max of 2 pivots and logs pivots.
+- Character loop: Writer→Reviewer loop enforces `<3000` chars, emits shortening instructions with target `2950`, and caps at 5 iterations.
+- Artifact updates: Writer overwrites `40_draft.md`; Reviewer overwrites `50_review.json` each iteration; Orchestrator writes `60_final_post.txt` on success.
+- Images: Image prompt path is returned and passed to image generator as `image_prompt_path`; final PNG verified at `80_image.png`.
+- Completion/failure: Success returns summary with artifacts and metrics; failures write `run_failed.json` with breaker state and stack trace.
+- Tests: `tests/test_orchestrator.py` covers initialization, breaker, char loop, pivots, success/failure flows, and integration with mocked agents.
+
+### Handoff Notes To Phase 6
+- Main responsibilities:
+  - Load or create `config.json` with `{"field": "Data Science (Optimizations & Time-Series Analysis)"|"Generative AI & AI Agents"}`.
+  - Instantiate `Orchestrator(config)` and call `run()`.
+  - Print a concise summary: `run_id`, `run_path`, key artifact paths, and status.
+- First-run onboarding:
+  - If no `config.json`, prompt user to choose a field; write it atomically and validate the value (align with DB supported fields).
+  - Optionally call `database.init_db` seeding path on first run (optional convenience).
+- Artifacts & persistence:
+  - Orchestrator will write `00_config.json` into the run directory automatically; `main.py` just needs to supply a valid in-memory config.
+- Windows execution policy (PowerShell): ensure sessions run with `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` before invoking scripts.
+- Nice-to-have outputs:
+  - Print relative paths to: `60_final_post.txt`, `70_image_prompt.txt`, `80_image.png`.
+  - Exit with non-zero code if `status == "failed"` to aid CI.
 
 ## Phase 7: Memory Bank Content
 - [ ] Add sample newsletter `.txt` files to `memory_bank/`
