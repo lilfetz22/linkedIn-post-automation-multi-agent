@@ -6,7 +6,6 @@ character count loop, topic pivot logic, and error handling scenarios.
 """
 
 import pytest
-import json
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
@@ -240,8 +239,9 @@ def test_execute_research_max_pivots_exceeded(
         with pytest.raises(DataNotFoundError, match="after 2 topic pivots"):
             orchestrator_with_config._execute_research_with_pivot("Initial Topic")
 
-    # The loop increments pivot_count to 3, but should fail after 2 pivots
-    # So it will try: initial (fail) -> pivot 1 (fail) -> pivot 2 (fail) -> raise error
+    # The loop will try: initial (fail, count→1) -> pivot 1 (fail, count→2) -> pivot 2 (fail, count→3)
+    # After the third increment, the check (3 > 2) triggers the error
+    # So the final pivot_count is 3, even though MAX_TOPIC_PIVOTS is 2
     assert orchestrator_with_config.metrics["topic_pivots"] == 3
 
 

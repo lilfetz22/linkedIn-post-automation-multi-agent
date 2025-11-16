@@ -202,9 +202,9 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Extract revised text from response
 
 ### 5.4 Character Count Validation Loop
-- [x] Implement `_validate_character_count()` method
-  - [x] Use `count_chars()` from `core.persistence`
-  - [x] Return (pass: bool, count: int)
+- [x] Implement character count validation inline within the writing/review loop
+  - [x] Use `count_chars()` from `core.persistence` to check post length
+  - [x] Store and log character count result for each iteration
 - [x] Implement character count loop after review
   - [x] Check if revised post < 3000 characters
   - [x] If pass: save to `60_final_post.txt` and proceed
