@@ -151,14 +151,127 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [x] Tests: stub image generation if offline
 
 ## Phase 5: Orchestrator Implementation (`orchestrator.py`)
-- [ ] Load config & field
-- [ ] Initialize run directory
-- [ ] Execute agents in sequence with retries
-- [ ] Maintain circuit breaker state
-- [ ] Implement character count loop
-- [ ] On abort: create `run_failed.json`
-- [ ] Metrics aggregation summary (optional)
-- [ ] Tests: full mocked pipeline, circuit breaker scenario, corruption abort
+### 5.1 Configuration & Initialization
+- [x] Load configuration from `config.json`
+  - [x] Validate config structure (field present)
+  - [x] Handle missing config file gracefully
+- [x] Initialize run directory using `create_run_dir()`
+  - [x] Store run_id and run_path in orchestrator state
+  - [x] Save `00_config.json` to run directory
+- [x] Initialize circuit breaker instance
+- [x] Set up context dictionary for agents (`run_id`, `run_path`)
+
+### 5.2 Agent Execution Infrastructure
+- [x] Implement `_execute_agent_with_retry()` helper method
+  - [x] Accept agent function, input dict, max attempts
+  - [x] Use `execute_with_retries()` from `core.retry`
+  - [x] Update circuit breaker on success/failure
+  - [x] Return agent response envelope
+- [x] Implement error classification logic
+  - [x] Distinguish retryable vs non-retryable errors
+  - [x] Handle `CircuitBreakerTrippedError`
+  - [x] Log all attempts to `events.jsonl`
+
+### 5.3 Sequential Agent Pipeline
+- [x] Execute Topic Agent (Step 1)
+  - [x] Build input: `{"field": config["field"]}`
+  - [x] Call with retry wrapper
+  - [x] Extract topic from response data
+  - [x] Handle `DataNotFoundError` (no topics available)
+- [x] Execute Research Agent (Step 2)
+  - [x] Build input: `{"topic": topic}`
+  - [x] Call with retry wrapper
+  - [x] Extract research data from response
+  - [x] Handle pivot logic if `DataNotFoundError` (max 2 pivots)
+- [x] Execute Prompt Generator Agent (Step 3)
+  - [x] Build input: `{"topic": topic, "research": research_data}`
+  - [x] Call with retry wrapper
+  - [x] Extract structured prompt from response
+- [x] Execute Strategic Type Agent (Step 4)
+  - [x] Build input: `{"structured_prompt": prompt, "research": research_data}`
+  - [x] Call with retry wrapper
+  - [x] Extract strategy from response
+- [x] Execute Writer Agent (Step 5)
+  - [x] Build input: `{"structured_prompt": prompt, "strategy": strategy}`
+  - [x] Call with retry wrapper
+  - [x] Read draft from artifact path
+  - [x] Store draft text for review
+- [x] Execute Reviewer Agent (Step 6)
+  - [x] Build input: `{"draft_text": draft}`
+  - [x] Call with retry wrapper
+  - [x] Extract revised text from response
+
+### 5.4 Character Count Validation Loop
+- [x] Implement `_validate_character_count()` method
+  - [x] Use `count_chars()` from `core.persistence`
+  - [x] Return (pass: bool, count: int)
+- [x] Implement character count loop after review
+  - [x] Check if revised post < 3000 characters
+  - [x] If pass: save to `60_final_post.txt` and proceed
+  - [x] If fail: build shortening instruction
+    - [x] Include current count and target (2950)
+    - [x] Send back to Writer Agent with instructions
+  - [x] Track loop iteration count (log to events)
+  - [x] Implement max iterations safety (e.g., 5 attempts)
+  - [x] Update draft artifact on each iteration
+  - [x] Update review artifact on each iteration
+
+### 5.5 Image Generation Pipeline
+- [x] Execute Image Prompt Generator Agent (Step 8)
+  - [x] Build input: `{"final_post": final_post_text}`
+  - [x] Call with retry wrapper
+  - [x] Extract image prompt from response
+- [x] Execute Image Generator Agent (Step 9)
+  - [x] Build input: `{"prompt": image_prompt}`
+  - [x] Call with retry wrapper
+  - [x] Verify image artifact exists at `80_image.png`
+
+### 5.6 Run Completion & Error Handling
+- [x] Implement successful completion flow
+  - [x] Mark run as complete
+  - [x] Return summary with artifact paths
+  - [x] Log final metrics (total duration, agent calls, etc.)
+- [x] Implement `_create_run_failed_json()` method
+  - [x] Accept error details, failed step, circuit breaker state
+  - [x] Save to run directory as `run_failed.json`
+  - [x] Include: timestamp, error type, message, stack trace, retries attempted
+- [x] Handle abort scenarios
+  - [x] Circuit breaker tripped
+  - [x] Non-retryable error (ValidationError, CorruptionError)
+  - [x] Max character count iterations exceeded
+  - [x] Topic pivot limit exceeded
+
+### 5.7 Metrics Aggregation (Optional)
+- [x] Track per-agent metrics
+  - [x] Duration for each agent call
+  - [x] Token usage (if available from LLM)
+  - [x] Retry counts per agent
+- [x] Aggregate run-level metrics
+  - [x] Total duration
+  - [x] Total tokens used
+  - [x] Total retries across all agents
+  - [x] Character count loop iterations
+- [x] Save metrics summary to run directory
+
+### 5.8 Testing
+- [x] Create `tests/test_orchestrator.py`
+  - [x] Test configuration loading
+  - [x] Test run directory creation
+  - [x] Test circuit breaker integration
+  - [x] Test character count loop convergence
+  - [x] Test character count loop max iterations
+  - [x] Test topic pivot logic (max 2 pivots)
+  - [x] Test run failure artifact creation
+  - [x] Test successful full pipeline (mocked agents)
+  - [x] Test abort on non-retryable error
+  - [x] Test abort on circuit breaker tripped
+  - [x] Test abort on corruption error
+  - [x] Test metrics aggregation
+- [x] Integration test for full pipeline
+  - [x] Mock all agent responses
+  - [x] Verify artifact creation at each step
+  - [x] Verify proper data flow between agents
+  - [x] Verify event logging for all steps
 
 ## Phase 6: Main Entry Point (`main.py`)
 - [ ] First-run onboarding (prompt user for field selection if config missing)
