@@ -201,7 +201,9 @@ def test_execute_research_with_pivot_on_data_not_found(
         return ok({"sources": ["source1"], "summary": "summary"})
 
     with patch.object(
-        orchestrator_with_config, "_execute_agent_with_retry", side_effect=mock_research_call
+        orchestrator_with_config,
+        "_execute_agent_with_retry",
+        side_effect=mock_research_call,
     ), patch.object(
         orchestrator_with_config,
         "_execute_topic_selection",
@@ -232,7 +234,9 @@ def test_execute_research_max_pivots_exceeded(
         side_effect=DataNotFoundError("No sources"),
     ), patch.object(
         orchestrator_with_config, "_execute_topic_selection", return_value="New Topic"
-    ), patch("orchestrator.log_event"):
+    ), patch(
+        "orchestrator.log_event"
+    ):
         with pytest.raises(DataNotFoundError, match="after 2 topic pivots"):
             orchestrator_with_config._execute_research_with_pivot("Initial Topic")
 
@@ -310,7 +314,9 @@ def test_character_count_loop_retries_on_long_text(orchestrator_with_config):
                 return ok({"revised": short_text})  # Second attempt OK
 
     with patch.object(
-        orchestrator_with_config, "_execute_agent_with_retry", side_effect=mock_agent_call
+        orchestrator_with_config,
+        "_execute_agent_with_retry",
+        side_effect=mock_agent_call,
     ), patch("orchestrator.Path.read_text", side_effect=[long_text, short_text]), patch(
         "orchestrator.atomic_write_text"
     ) as mock_write, patch(
@@ -345,7 +351,9 @@ def test_character_count_loop_max_iterations_exceeded(orchestrator_with_config):
             return ok({"revised": long_text})
 
     with patch.object(
-        orchestrator_with_config, "_execute_agent_with_retry", side_effect=mock_agent_call
+        orchestrator_with_config,
+        "_execute_agent_with_retry",
+        side_effect=mock_agent_call,
     ), patch("orchestrator.Path.read_text", return_value=long_text), patch(
         "orchestrator.log_event"
     ):
@@ -468,16 +476,16 @@ def test_full_pipeline_integration(
 
     # Mock agent responses
     mock_topic.run.return_value = ok({"topic": "Python AsyncIO"})
-    mock_research.run.return_value = ok(
-        {"sources": ["source1"], "summary": "summary"}
-    )
+    mock_research.run.return_value = ok({"sources": ["source1"], "summary": "summary"})
     mock_prompt.run.return_value = ok(
         {"topic_title": "AsyncIO", "pain_point": "complexity"}
     )
     mock_strategy.run.return_value = ok({"strategic_angle": "simplify"})
     mock_writer.run.return_value = ok({"draft_path": "40_draft.md"})
     mock_reviewer.run.return_value = ok({"revised": "A" * 2000})  # Under 3000 chars
-    mock_img_prompt.run.return_value = ok({"prompt": "Image prompt"})
+    mock_img_prompt.run.return_value = ok(
+        {"image_prompt_path": str(run_dir / "70_image_prompt.txt")}
+    )
     mock_img_gen.run.return_value = ok({"image_path": "80_image.png"})
 
     # Execute orchestrator
@@ -497,14 +505,14 @@ def test_orchestrator_aborts_on_corruption_error(orchestrator_with_config):
     orchestrator_with_config.run_id = "test-run"
     orchestrator_with_config.run_path = Path("/tmp/test-run")
 
-    with patch.object(
-        orchestrator_with_config, "_initialize_run"
-    ), patch.object(
+    with patch.object(orchestrator_with_config, "_initialize_run"), patch.object(
         orchestrator_with_config,
         "_execute_topic_selection",
         side_effect=CorruptionError("Artifact corrupted"),
     ), patch.object(
-        orchestrator_with_config, "_handle_run_failure", return_value={"status": "failed"}
+        orchestrator_with_config,
+        "_handle_run_failure",
+        return_value={"status": "failed"},
     ) as mock_handle:
         result = orchestrator_with_config.run()
 

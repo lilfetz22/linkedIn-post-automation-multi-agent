@@ -111,7 +111,9 @@ class Orchestrator:
             topic = self._execute_topic_selection()
             research_data = self._execute_research_with_pivot(topic)
             structured_prompt = self._execute_prompt_generation(topic, research_data)
-            strategy = self._execute_strategic_planning(structured_prompt, research_data)
+            strategy = self._execute_strategic_planning(
+                structured_prompt, research_data
+            )
 
             # Phase 5.4: Character Count Validation Loop
             final_post = self._execute_writing_and_review_loop(
@@ -330,8 +332,11 @@ class Orchestrator:
                 "writer_agent", writer_agent.run, writer_input
             )
 
-            # Read draft content
-            draft_path = self.run_path / "40_draft.md"
+            # Read draft content from returned path (more robust than assuming filename)
+            draft_path_str = writer_response["data"].get("draft_path")
+            draft_path = Path(draft_path_str)
+            if not draft_path.is_absolute():
+                draft_path = self.run_path / draft_path
             draft_text = draft_path.read_text(encoding="utf-8")
 
             # Execute Reviewer Agent
@@ -386,13 +391,17 @@ class Orchestrator:
             "image_prompt_agent", image_prompt_agent.run, input_obj
         )
 
-        # Read prompt from artifact
-        prompt_path = self.run_path / "70_image_prompt.txt"
-        return prompt_path.read_text(encoding="utf-8")
+        # Return the image prompt artifact path for downstream consumption
+        prompt_path_str = response["data"].get("image_prompt_path")
+        if not prompt_path_str:
+            # Fallback to expected filename if agent did not return path (legacy behavior)
+            prompt_path = self.run_path / "70_image_prompt.txt"
+            return str(prompt_path)
+        return prompt_path_str
 
-    def _execute_image_generation(self, image_prompt: str) -> None:
+    def _execute_image_generation(self, image_prompt_path: str) -> None:
         """Execute Image Generator Agent (Phase 5.5 - Step 9)."""
-        input_obj = {"prompt": image_prompt}
+        input_obj = {"image_prompt_path": image_prompt_path}
 
         response = self._execute_agent_with_retry(
             "image_generator_agent", image_generator_agent.run, input_obj
@@ -418,9 +427,7 @@ class Orchestrator:
             "metrics": self.metrics,
         }
 
-    def _handle_run_failure(
-        self, error: Exception, stack_trace: str
-    ) -> Dict[str, Any]:
+    def _handle_run_failure(self, error: Exception, stack_trace: str) -> Dict[str, Any]:
         """Create run_failed.json and return error summary (Phase 5.6)."""
         error_type = type(error).__name__
         error_msg = str(error)
