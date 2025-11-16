@@ -29,7 +29,6 @@ def test_ensure_config_creates_when_missing(tmp_path: Path, monkeypatch):
     assert data["field"] == field
 
 
-
 def test_ensure_config_no_overwrite_if_exists(tmp_path: Path):
     # Pre-write a config
     existing_field = ALLOWED_FIELDS[1]

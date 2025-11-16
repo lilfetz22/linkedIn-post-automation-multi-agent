@@ -123,7 +123,9 @@ def print_summary(result: dict) -> None:
             print(f"  - {image}")
 
 
-def run_pipeline(root: Path, non_interactive_field: Optional[str]) -> Tuple[int, Optional[dict]]:
+def run_pipeline(
+    root: Path, non_interactive_field: Optional[str]
+) -> Tuple[int, Optional[dict]]:
     config = ensure_config(root, non_interactive_field)
     orchestrator = Orchestrator(config)
     result = orchestrator.run()
