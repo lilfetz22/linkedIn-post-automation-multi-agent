@@ -6,7 +6,7 @@ import types
 import pytest
 
 from main import ensure_config, load_config, ALLOWED_FIELDS, validate_field
-
+from core.errors import ValidationError
 
 def test_validate_field_accepts_allowed():
     for f in ALLOWED_FIELDS:
@@ -14,7 +14,7 @@ def test_validate_field_accepts_allowed():
 
 
 def test_validate_field_rejects_invalid():
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         validate_field("Not A Real Field")
 
 
