@@ -276,6 +276,8 @@ def test_character_count_loop_passes_first_iteration(orchestrator_with_config):
                 return ok({"draft_path": "40_draft.md"})
             elif agent_name == "reviewer_agent":
                 return ok({"revised": short_text})
+            else:
+                raise ValueError(f"Unexpected agent name: {agent_name}")
 
         mock_execute.side_effect = mock_agent_call
 
@@ -312,6 +314,8 @@ def test_character_count_loop_retries_on_long_text(orchestrator_with_config):
                 return ok({"revised": long_text})  # First attempt too long
             else:
                 return ok({"revised": short_text})  # Second attempt OK
+        else:
+            raise ValueError(f"Unexpected agent name: {agent_name}")
 
     with patch.object(
         orchestrator_with_config,
@@ -349,6 +353,8 @@ def test_character_count_loop_max_iterations_exceeded(orchestrator_with_config):
             return ok({"draft_path": "40_draft.md"})
         elif agent_name == "reviewer_agent":
             return ok({"revised": long_text})
+        else:
+            raise ValueError(f"Unexpected agent name: {agent_name}")
 
     with patch.object(
         orchestrator_with_config,
