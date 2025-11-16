@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from core.errors import ValidationError
-from main import ensure_config, ALLOWED_FIELDS, validate_field, prompt_select_field, load_config
+from main import ensure_config, ALLOWED_FIELDS, validate_field, prompt_select_field, load_config, parse_args
 
 def test_validate_field_accepts_allowed():
     for f in ALLOWED_FIELDS:
@@ -42,6 +42,73 @@ def test_ensure_config_no_overwrite_if_exists(tmp_path: Path):
     assert data["field"] == existing_field
 
 
+# Tests for parse_args function
+
+
+def test_parse_args_init_config_flag():
+    """Test that --init-config flag is parsed correctly"""
+    args = parse_args(["--init-config"])
+    assert args.init_config is True
+    assert args.field is None
+    assert args.run is False
+
+
+def test_parse_args_field_argument():
+    """Test that --field argument is parsed correctly"""
+    field_value = ALLOWED_FIELDS[0]
+    args = parse_args(["--field", field_value])
+    assert args.field == field_value
+    assert args.init_config is False
+    assert args.run is False
+
+
+def test_parse_args_run_flag():
+    """Test that --run flag is parsed correctly"""
+    args = parse_args(["--run"])
+    assert args.run is True
+    assert args.init_config is False
+    assert args.field is None
+
+
+def test_parse_args_no_flags():
+    """Test default behavior when no flags are provided"""
+    args = parse_args([])
+    assert args.init_config is False
+    assert args.run is False
+    assert args.field is None
+
+
+def test_parse_args_init_config_with_field():
+    """Test --init-config combined with --field"""
+    field_value = ALLOWED_FIELDS[1]
+    args = parse_args(["--init-config", "--field", field_value])
+    assert args.init_config is True
+    assert args.field == field_value
+    assert args.run is False
+
+
+def test_parse_args_run_with_field():
+    """Test --run combined with --field"""
+    field_value = ALLOWED_FIELDS[0]
+    args = parse_args(["--run", "--field", field_value])
+    assert args.run is True
+    assert args.field == field_value
+    assert args.init_config is False
+
+
+def test_parse_args_all_flags():
+    """Test all flags provided together"""
+    field_value = ALLOWED_FIELDS[1]
+    args = parse_args(["--init-config", "--run", "--field", field_value])
+    assert args.init_config is True
+    assert args.run is True
+    assert args.field == field_value
+
+
+def test_parse_args_invalid_flag():
+    """Test that invalid flags raise SystemExit"""
+    with pytest.raises(SystemExit):
+        parse_args(["--invalid-flag"])
 # Tests for prompt_select_field()
 
 
