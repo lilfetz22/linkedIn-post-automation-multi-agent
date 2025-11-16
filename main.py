@@ -37,6 +37,29 @@ def validate_field(value: str) -> str:
 
 
 def prompt_select_field() -> str:
+    """
+    Interactively prompt user to select a field from ALLOWED_FIELDS.
+
+    Displays numbered menu of available fields and validates user input.
+    Continues prompting until valid selection is made.
+
+    Returns:
+        Selected field string from ALLOWED_FIELDS
+
+    Notes:
+        This function implements an infinite retry loop, prompting
+        repeatedly until user provides valid numeric input within
+        the allowed range (1 to len(ALLOWED_FIELDS)).
+
+    Example:
+        >>> field = prompt_select_field()
+        Select your field of expertise:
+          1. Data Science (Optimizations & Time-Series Analysis)
+          2. Generative AI & AI Agents
+        Enter number (1-2): 1
+        >>> print(field)
+        "Data Science (Optimizations & Time-Series Analysis)"
+    """
     print("Select your field of expertise:")
     for idx, val in enumerate(ALLOWED_FIELDS, start=1):
         print(f"  {idx}. {val}")
