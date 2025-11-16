@@ -407,8 +407,16 @@ class Orchestrator:
             "image_generator_agent", image_generator_agent.run, input_obj
         )
 
-        # Verify image artifact exists
-        image_path = self.run_path / "80_image.png"
+        # Verify image artifact exists using returned path
+        image_path_str = response["data"].get("image_path")
+        if not image_path_str:
+            # Fallback to expected filename if agent did not return path (legacy behavior)
+            image_path = self.run_path / "80_image.png"
+        else:
+            image_path = Path(image_path_str)
+            if not image_path.is_absolute():
+                image_path = self.run_path / image_path
+
         if not image_path.exists():
             raise CorruptionError("Image generation completed but artifact not found")
 
