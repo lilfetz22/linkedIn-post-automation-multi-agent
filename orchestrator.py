@@ -19,7 +19,7 @@ import time
 import traceback
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Tuple, Callable
+from typing import Dict, Any, Callable
 
 from core.run_context import create_run_dir, get_artifact_path
 from core.retry import CircuitBreaker, execute_with_retries, CircuitBreakerTrippedError
