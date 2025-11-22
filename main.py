@@ -73,6 +73,20 @@ def prompt_select_field() -> str:
 
 
 def config_path(root: Path) -> Path:
+    """
+    Returns the path to the configuration file (`config.json`) located at the given project root.
+
+    Args:
+        root (Path): The root directory of the project.
+
+    Returns:
+        Path: The full path to the `config.json` file within the specified root directory.
+
+    Example:
+        >>> from pathlib import Path
+        >>> config_path(Path("/my/project"))
+        PosixPath('/my/project/config.json')
+    """
     return root / "config.json"
 
 
