@@ -29,6 +29,24 @@ ALLOWED_FIELDS = [
 
 
 def validate_field(value: str) -> str:
+    """
+    Validate that the provided field value is in ALLOWED_FIELDS.
+
+    Args:
+        value: Field string to validate against ALLOWED_FIELDS list
+
+    Returns:
+        The validated field string (same as input if valid)
+
+    Raises:
+        ValidationError: If value is not in ALLOWED_FIELDS
+
+    Example:
+        >>> validate_field("Data Science (Optimizations & Time-Series Analysis)")
+        "Data Science (Optimizations & Time-Series Analysis)"
+        >>> validate_field("Invalid Field")
+        ValidationError: Invalid field. Choose one of: ...
+    """
     if value not in ALLOWED_FIELDS:
         raise ValidationError(
             "Invalid field. Choose one of: " + ", ".join(ALLOWED_FIELDS)
@@ -91,11 +109,39 @@ def config_path(root: Path) -> Path:
 
 
 def load_config(root: Path) -> Optional[dict]:
+    """
+    Load and validate configuration from config.json.
+
+    Reads config.json from the project root, validates its structure,
+    and ensures the 'field' value is in ALLOWED_FIELDS.
+
+    Args:
+        root: Project root directory path
+
+    Returns:
+        Dictionary with 'field' key if config exists and is valid,
+        None if config.json does not exist
+
+    Raises:
+        ValidationError: If config.json exists but is missing 'field' key
+                        or field value is not in ALLOWED_FIELDS
+        CorruptionError: If config.json contains invalid JSON that cannot be parsed
+
+    Example:
+        >>> config = load_config(Path.cwd())
+        >>> config
+        {"field": "Data Science (Optimizations & Time-Series Analysis)"}
+    """
     path = config_path(root)
     if not path.exists():
         return None
-    with path.open("r", encoding="utf-8") as f:
-        data = json.load(f)
+
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise CorruptionError(f"config.json contains invalid JSON: {e}") from e
+
     if not isinstance(data, dict) or "field" not in data:
         raise ValidationError("config.json missing required 'field'.")
     validate_field(data["field"])
@@ -103,6 +149,32 @@ def load_config(root: Path) -> Optional[dict]:
 
 
 def ensure_config(root: Path, non_interactive_field: Optional[str] = None) -> dict:
+    """
+    Ensure config.json exists and is valid, creating it if necessary.
+
+    If config.json already exists and is valid, returns its contents.
+    Otherwise, prompts user interactively or uses non_interactive_field
+    to create a new configuration file using atomic write pattern.
+
+    Args:
+        root: Project root directory path
+        non_interactive_field: Optional field value to use without prompting.
+                              If None, user will be prompted interactively.
+
+    Returns:
+        Dictionary containing validated configuration with 'field' key
+
+    Raises:
+        ValidationError: If non_interactive_field is provided but invalid,
+                        or if existing config is malformed
+        CorruptionError: If config.json exists but contains invalid JSON,
+                        or if write verification fails
+
+    Example:
+        >>> config = ensure_config(Path.cwd(), "Data Science (Optimizations & Time-Series Analysis)")
+        >>> config
+        {"field": "Data Science (Optimizations & Time-Series Analysis)"}
+    """
     existing = load_config(root)
     if existing is not None:
         return existing
@@ -119,6 +191,30 @@ def ensure_config(root: Path, non_interactive_field: Optional[str] = None) -> di
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
+    """
+    Parse command-line arguments for the multi-agent system.
+
+    Supports three optional flags:
+    - --init-config: Initialize config.json without running pipeline
+    - --field: Specify field value non-interactively
+    - --run: Explicitly execute the pipeline
+
+    Args:
+        argv: List of command-line argument strings (typically sys.argv[1:])
+
+    Returns:
+        argparse.Namespace object with parsed arguments:
+        - init_config (bool): True if --init-config flag provided
+        - field (Optional[str]): Field value if --field provided
+        - run (bool): True if --run flag provided
+
+    Example:
+        >>> args = parse_args(["--init-config", "--field", "Data Science"])
+        >>> args.init_config
+        True
+        >>> args.field
+        "Data Science"
+    """
     parser = argparse.ArgumentParser(
         description="LinkedIn Post Automation Multi-Agent System"
     )
@@ -141,6 +237,37 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def print_summary(result: dict) -> None:
+    """
+    Print formatted summary of pipeline execution to console.
+
+    Displays run status, unique run identifier, run directory path,
+    and paths to generated artifacts (final post and image) if available.
+    Handles missing artifacts gracefully by only displaying what exists.
+
+    Args:
+        result: Dictionary returned by Orchestrator.run() containing:
+               - status: "success" or "error"
+               - run_id: Unique run identifier string
+               - run_path: Path to run directory
+               - artifacts: Optional dict with 'final_post' and 'image' keys
+
+    Output Format:
+        ============================================================
+        RUN SUMMARY
+        ============================================================
+        Status     : success
+        Run ID     : 20250122-abc123
+        Run Path   : runs/20250122-abc123/
+        Artifacts  :
+          - runs/20250122-abc123/60_final_post.txt
+          - runs/20250122-abc123/80_image.png
+
+    Example:
+        >>> result = {"status": "success", "run_id": "20250122-abc123",
+        ...           "run_path": "runs/20250122-abc123/",
+        ...           "artifacts": {"final_post": "60_final_post.txt"}}
+        >>> print_summary(result)
+    """
     status = result.get("status")
     print("\n" + "=" * 60)
     print("RUN SUMMARY")
@@ -163,6 +290,35 @@ def print_summary(result: dict) -> None:
 def run_pipeline(
     root: Path, non_interactive_field: Optional[str]
 ) -> Tuple[int, Optional[dict]]:
+    """
+    Execute the full multi-agent pipeline with configuration initialization.
+
+    Ensures configuration exists (creating if necessary), instantiates
+    the Orchestrator with validated config, runs the complete agent pipeline,
+    and prints execution summary.
+
+    Args:
+        root: Project root directory path
+        non_interactive_field: Optional field value for non-interactive config creation.
+                              If None and config doesn't exist, user will be prompted.
+
+    Returns:
+        Tuple of (exit_code, result_dict) where:
+        - exit_code: 0 for successful execution, 1 for failed execution
+        - result_dict: Dictionary from Orchestrator.run() containing status,
+                      run_id, run_path, and artifacts
+
+    Raises:
+        ValidationError: If field validation fails during config creation
+        CorruptionError: If config.json is corrupted or write verification fails
+
+    Example:
+        >>> exit_code, result = run_pipeline(Path.cwd(), "Data Science (Optimizations & Time-Series Analysis)")
+        >>> exit_code
+        0
+        >>> result["status"]
+        "success"
+    """
     config = ensure_config(root, non_interactive_field)
     orchestrator = Orchestrator(config)
     result = orchestrator.run()
@@ -172,6 +328,43 @@ def run_pipeline(
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    """
+    Main entry point for LinkedIn Post Automation Multi-Agent System.
+
+    Handles CLI workflow with three modes:
+    1. Config initialization only (--init-config without --run)
+    2. Full pipeline execution (default or with --run flag)
+    3. Interactive or non-interactive configuration setup
+
+    The function ensures configuration exists before pipeline execution,
+    handles user interruptions gracefully, and provides comprehensive
+    error handling for validation, corruption, and I/O issues.
+
+    Args:
+        argv: Optional list of command-line arguments. If None, uses sys.argv[1:].
+             Primarily used for testing to inject custom arguments.
+
+    Returns:
+        Exit code integer:
+        - 0: Successful execution (config initialized or pipeline completed)
+        - 1: Error occurred (validation failure, corruption, I/O error, or user interruption)
+
+    Raises:
+        Does not raise exceptions; all errors are caught and return exit code 1.
+
+    CLI Examples:
+        # Initialize config interactively and exit:
+        $ python main.py --init-config
+
+        # Initialize config non-interactively:
+        $ python main.py --init-config --field "Data Science (Optimizations & Time-Series Analysis)"
+
+        # Run pipeline with existing config:
+        $ python main.py
+
+        # Run pipeline with non-interactive config creation:
+        $ python main.py --field "Generative AI & AI Agents"
+    """
     print("LinkedIn Post Automation Multi-Agent System")
     print("=" * 50)
 
@@ -191,6 +384,12 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     except (ValidationError, CorruptionError) as e:
         print(f"Error: {e}")
+        return 1
+    except (OSError, IOError) as e:
+        print(f"File I/O error: {e}")
+        return 1
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user.")
         return 1
 
 
