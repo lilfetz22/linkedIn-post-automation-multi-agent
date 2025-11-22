@@ -180,8 +180,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     try:
         if args.init_config and not args.run:
-            ensure_config(root, args.field)
-            cfg = load_config(root)
+            cfg = ensure_config(root, args.field)
             print("config.json initialized:")
             print(json.dumps(cfg, indent=2))
             return 0
