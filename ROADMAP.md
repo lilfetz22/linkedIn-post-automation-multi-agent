@@ -294,7 +294,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Exit code: `0` on success, `1` on failure
 - [x] Console summary output
   - [x] Print `run_id`, `run_path`, and key artifacts (`60_final_post.txt`, `80_image.png`)
-  - [x] Print status and total duration if available
+  - [x] Print status if available
 - [x] Tests: config creation logic
   - [x] Create when missing with non-interactive field
   - [x] Validate allowed/invalid field handling
