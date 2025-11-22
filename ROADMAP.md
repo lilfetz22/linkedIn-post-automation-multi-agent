@@ -274,11 +274,32 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Verify event logging for all steps
 
 ## Phase 6: Main Entry Point (`main.py`)
-- [ ] First-run onboarding (prompt user for field selection if config missing)
-- [ ] Save `00_config.json` to run directory
-- [ ] Call orchestrator
-- [ ] Print concise status summary to console
-- [ ] Tests: config creation logic
+- [x] CLI structure and flags
+  - [x] `--init-config`: initialize `config.json` only and exit
+  - [x] `--field <value>`: non-interactive field selection for CI/tests
+  - [x] `--run`: execute full pipeline (default when no flags)
+- [x] First-run onboarding
+  - [x] Validate supported fields against enum:
+        "Data Science (Optimizations & Time-Series Analysis)" | "Generative AI & AI Agents"
+  - [x] If `config.json` missing: prompt user to select field (interactive)
+  - [x] Non-interactive path: accept `--field` value and write `config.json`
+  - [x] Atomic write via `core.persistence.atomic_write_json`
+  - [x] Re-parse to verify integrity via `write_and_verify_json`
+- [x] Configuration loading
+  - [x] Load `config.json` from project root
+  - [x] Validate schema and value; clear error on invalid
+- [x] Orchestrator invocation
+  - [x] Instantiate `Orchestrator(config)`
+  - [x] Run pipeline; capture result dict
+  - [x] Exit code: `0` on success, `1` on failure
+- [x] Console summary output
+  - [x] Print `run_id`, `run_path`, and key artifacts (`60_final_post.txt`, `80_image.png`)
+  - [x] Print status if available
+- [x] Tests: config creation logic
+  - [x] Create when missing with non-interactive field
+  - [x] Validate allowed/invalid field handling
+  - [x] Load existing config without overwrite
+  - [x] Use helpers (no orchestrator execution required)
 
 ### Phase 5 Verification Notes (Implemented)
 - Config handling: Orchestrator validates `config['field']` but does not load `config.json`; loading is deferred to Phase 6 (`main.py`). Orchestrator persists `00_config.json` via `core.run_context.get_artifact_path`.

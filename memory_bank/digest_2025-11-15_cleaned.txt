@@ -1,0 +1,252 @@
+
+
+Newsletter from: The Tech Audience Accelerator.
+
+View this post on the web at https://techaudienceaccelerator.substack.com/p/the-best-do-this-prompt
+
+There’s a content format that separates thought leaders from wannabes.
+It doesn’t flex credentials, years of experience, or case studies.  
+Instead, it does something more powerful: it reveals what elite performers do that everyone else misses.
+I call it “The Best Do This” format, and Dr Milan Milanović  just proved how it works. 
+No bragging required. Just observation of what the best do = instant authority.
+Here’s the post that proves it:
+🎁 Here’s what you’ll get today (free):
+The 4 psychological triggers that make the “Best Do This” go viral (and why it works for any tech niche)
+The 6-part anatomy of the perfect “The Best Do This” post (steal this exact structure)
+The 6-step process to build your own “The Best Do This” post in 20 minutes (with timing breakdowns)
+4 advanced variations for different contexts: Career Stage Split, Tool Mastery Ladder, Mindset Evolution, The Reversal
+The 5 classic mistakes that make these posts backfire (and how to avoid seeming elitist)
+💎 Paid subscribers also unlock:
+The copy-paste “The Best Do This” prompt that turns observations into viral authority building posts in 5 minutes flat
+🔪 The Brutal TL;DR
+The mistake: Trying to build authority by flexing credentials, experiences, etc.
+The play: Instead of proving you’re the best, reveal what the best actually do
+The psychology: Naming patterns gives you authority without bragging 
+The result: High-engagement authority content anyone can create through simple observations
+Let me show you exactly how this works.
+🧠 The Psychology
+Trigger 1: The Self-Categorization Effect
+The moment you present a hierarchy, readers automatically place themselves on it.
+“Junior engineers add features. Senior engineers remove complexity.”
+Your brain can’t NOT categorize yourself. 
+Are you the junior adding features? The senior removing complexity? Somewhere in between?
+This is automatic. The comparison creates a mental ruler, and you immediately measure yourself against it.
+Why it drives engagement: People comment to signal their level. 
+“I’ve been doing this for years” = “I’m senior.” 
+“Working on this now” = “I’m transitioning.” 
+“Never thought of it this way” = “I’m junior but learning.” 
+Every comment is a status broadcast.
+Trigger 2: The Aspirational In-Group
+The senior behavior isn’t just different—it’s better.
+Prevent problems > Fix problems
+Remove complexity > Add features
+Optimize for readability > Optimize for speed
+The post doesn’t say “here are two equal approaches”. It says “here’s what the best do”.
+This creates aspiration. Even if you identify as junior, you now know the path to senior. The gap becomes your roadmap.
+Why it works: This the contrary of gatekeeping—it’s inviting. “You can do this too. Here’s what to focus on”. People save it as a development guide and share it to signal they understand the hierarchy.
+Trigger 3: The Recognition Shortcut
+If you’re already senior, this post gives you language for what you’ve been doing intuitively.
+“Oh, THAT’S why I always delete code. I never articulated it, but yes—removing complexity IS the senior move.”
+The post names something you felt but couldn’t explain. That’s validation. That’s dopamine.  That’s “finally, someone gets it.”
+Why it drives engagement: Senior people comment with their own examples. “Just refactored three classes into one”. They’re confirming membership in the in-group through shared behavior.
+Trigger 4: The Simplicity Advantage
+This format has zero barriers to entry.
+No credentials required. No case studies needed. No data analysis. Just observation: “I’ve noticed juniors do X, seniors do Y.”
+Anyone can create this. Which means anyone does. Which means the format spreads.
+Why it works: Low execution difficulty = high adoption = pattern recognition = viral growth. When readers see this format work for others, they replicate it. The simplicity is the distribution mechanism.
+🧱 Anatomy of the Perfect “The Best Do” 
+Part 1: The Authority Hook
+“The best engineers I know delete more code than they write”
+Why it works:
+Opens with authority signal (”the best engineers I know”)
+States the counterintuitive claim immediately
+Creates curiosity gap (why would they delete more?)
+No preamble, no setup, straight to the insight
+Part 2: The Comparison Structure
+“Junior engineers add features. Senior engineers remove complexity”
+Why it works:
+Parallel structure makes it quotable
+Clear binary: junior = add, senior = remove
+Immediately forces self-categorization
+Simple enough to remember and repeat
+Sets up the hierarchy that drives all engagement
+Part 3: The Liability Explanation
+“Every line of code you write is a liability. It needs to be maintained. It can break. It adds cognitive load to anyone who reads it later”
+Why it works:
+Explains WHY the senior approach is better
+Lists three specific costs (maintenance, breaking, cognitive load)
+Educational without being preachy
+Shifts perspective: code isn’t an asset, it’s debt
+Gives readers language to defend the senior approach
+Part 4: The Evidence Stack
+“The best pull requests I’ve seen in the last year? Half of them deleted more than they added. Someone refactored three classes into one. Someone replaced 200 lines of custom logic with a library function. Someone removed an entire abstraction layer that wasn’t pulling its weight”
+Why it works:
+Three concrete examples prove the claim
+“Half of them deleted more” = social proof
+Examples are specific enough to visualize
+Escalating complexity: refactor → replace → remove
+Shows the pattern isn’t one-off—it’s systematic
+Part 5: The Skill Elevation
+“Deletion is a skill. You have to know what’s safe to remove. You have to understand the system well enough to see what’s redundant, over-engineered, or just wrong”
+Why it works:
+Names deletion as learnable skill (not just wisdom)
+Lists three requirements (safety, understanding, judgment)
+Makes the senior behavior feel achievable
+“Over-engineered or just wrong” = permission to critique
+Transforms subtractive action into valuable expertise
+Part 6: The Actionable Close
+“Next time you open a file, ask: What can I remove? The best code is the code you don’t write”
+Why it works:
+“Next time” = immediate application
+Single question = easy to remember
+Memorable final line reinforces the philosophy
+No call-to-action needed—the question drives behavior
+Readers can implement this in their next PR
+The Secret Sauce:
+The post works because it teaches by observation, not instruction. 
+It doesn’t say “you should delete code”. It says “the best engineers already do this”. The reader wants to be in the “best” group, so they adopt the behavior.
+🪜 Building Your Own “Best Do This” Post
+Step 1: Identify what the best actually do
+(5 minutes)
+Think about your field. What do the best actually do that others miss or avoid?
+The pattern:
+The best [role] I know [do surprising thing].
+
+Junior [role] [visible action]. Senior [role] [invisible strategy].
+Examples:
+❌ “Junior ML engineers don’t care about performance. Senior ML engineers do.” (Too vague, no specific behavior)
+✅ “Junior ML engineers chase model accuracy. Senior ML engineers optimize inference time“.
+❌ “Junior data scientists build messy pipelines. Senior data scientists build clean ones“. (Vague qualities, not observable actions)
+✅ “Junior data scientists add more models. Senior data scientists simplify the pipeline“.
+❌ “New founders listen to users. Senior founders ignore them.” (Oversimplified, misses the nuance)
+✅ “New founders ship what users ask for. Experienced founders ship what users actually need.“
+Look for behaviors that are:
+Counterintuitive - Goes against common advice
+Consistent - Multiple elite performers do this
+Concrete - You can see them doing it
+Questions to ask:
+What do top performers in my field do that seems backwards?
+What do they avoid that everyone else chases?
+What do they prioritize that others overlook?
+Test: Can someone reading this immediately categorize their own behavior? If yes, you’ve found your split.
+Step 2: Write your opening authority line 
+(3 minutes)
+Turn your observation into a strong opening statement.
+The pattern: 
+The best [role] I know [do surprising thing]
+Examples:
+❌ “Good ML engineers are smart about models” (Vague, no specific behavior)
+✅ “The best ML engineers I know spend more time optimizing inference than training accuracy”
+❌ “Great data scientists know what they’re doing” (Generic, meaningless)
+✅ “The best data scientists I know kill more models than they deploy”
+❌ “Successful founders make good decisions” (Too broad, obvious)
+✅ “The best founders I know say no to 90% of feature requests”
+The key: Make it specific and counterintuitive. It should feel surprising yet obvious once stated.
+Step 3: Explain the why 
+(5 minutes)
+List 2-3 reasons the senior approach is superior.
+The pattern:
+[Senior behavior] because [reason 1]. Because [reason 2]. Because [reason 3].
+Examples:
+❌ “Optimizing inference time is just better” (No explanation)
+✅ “Inference time matters because models run in production 24/7. Because users leave if response time > 2 seconds. Because compute costs scale with latency.”
+❌ “Simplifying pipelines helps” (Too vague)
+✅ “Simpler pipelines reduce maintenance burden. Reduce debugging time when things break. Make it easier for new team members to understand the system.”
+❌ “Shipping what users need works better” (Obvious, no depth)
+✅ “Users ask for features that solve symptoms. But the root problem stays. Shipping what they need solves the actual problem and prevents future requests.”
+Pro tip: Frame the junior approach as having hidden costs the senior approach avoids.
+Step 4: Stack your evidence 
+(5 minutes)
+Lead with a question, then provide 2-3 concrete examples of the senior behavior in action.
+The pattern:
+The best [work products] I’ve seen? [Qualifier]. [Example 1]. [Example 2]. [Example 3].
+Examples:
+❌ “ML engineers optimize inference all the time” (Generic, no specifics)
+✅ “Someone reduced inference from 200ms to 50ms by quantizing their model. Someone else switched from BERT to DistilBERT and cut latency in half. Another person batched requests and dropped server costs 60%.”
+❌ “Data scientists simplify things” (No concrete proof)
+✅ “Someone replaced three XGBoost models with one neural network. Someone else removed 47 feature engineering steps by using embeddings. Another person deleted the entire ensemble and kept just the base model—accuracy dropped 0.3% but deploy time went from 2 weeks to 2 days.”
+❌ “Founders ship what users need” (Vague claim)
+✅ “Someone killed their most-requested feature and retention went up. Someone else ignored 50 feature requests to fix one core workflow—NPS jumped 15 points. Another founder removed a feature 200 users asked for because the data showed they stopped using it after one try.”
+Tip: If you can’t find real examples, you might not have the right split. Real patterns have real evidence.
+Step 5: Close with a question (2 minutes)
+End with an actionable question readers can ask themselves.
+The pattern:
+Next time you [common action], ask: [your question]?
+Examples:
+❌ “Think about your models” (Too vague)
+✅ “Next time you tune hyperparameters, ask: What’s the inference cost of this 0.5% accuracy gain?”
+❌ “Consider your pipeline design” (No specific action)
+✅ “Next time you add a preprocessing step, ask: What breaks if I remove this instead?”
+❌ “Reflect on user feedback” (Generic advice)
+✅ “Next time a user requests a feature, ask: What problem are they actually trying to solve?”
+The question should be:
+Immediately actionable
+Easy to remember
+Applicable to daily work
+Step 6: Add your memorable closing line 
+(1 minute)
+Reinforce the philosophy with a quotable one-liner.
+The pattern:
+The best [output] is the [output] you don’t [action].
+Examples:
+❌ “Less is more” (Cliché, not specific)
+✅ “The best model is the model you don’t deploy.”
+❌ “Simplicity wins” (Generic platitude)
+✅ “The best pipeline is the pipeline you don’t build.”
+❌ “Quality over quantity” (Overused, vague)
+✅ “The best feature is the feature you don’t ship.”
+The key: Make it echo your core insight and feel quotable. It should stick in their mind.
+🔄 Advanced Variations
+Variation 1: The Career Stage Split
+Instead of best vs. rest, use three stages for more nuance:
+New ML engineers optimize for accuracy
+
+Mid-level ML engineers balance accuracy and speed
+
+Senior ML engineers optimize for production costs
+When to use: When your field has clear progression stages or when binary comparison feels too simple.
+Variation 2: The Tool Mastery Ladder
+Compare skill levels through tool usage:
+Junior engineers Google errors
+
+Mid engineers read documentation
+
+Senior engineers prevent the errors
+When to use: In technical fields where tool sophistication signals expertise.
+Variation 3: The Mindset Evolution
+Show the psychological shift, not just the behavior:
+Early in my career, I used to measure productivity by lines written. 
+Now I measure it by lines deleted
+When to use: When you want to make it personal and show your own evolution. Less hierarchical, more vulnerable.
+Variation 4: The Reversal
+Flip the expected hierarchy:
+You’d think the best engineers write the most code. Actually, the best engineers write the least
+When to use: When the senior behavior looks like laziness or simplicity from the outside.
+🚫 Common Mistakes
+Mistake 1: Making it gatekeeping
+The post should invite, not exclude.
+❌ “If you’re not deleting code, you’re not a real engineer”
+✅ “The best engineers delete code. Here’s how to develop that skill”
+The difference: One judges, the other teaches. Your tone should be “here’s the path” not “you’re not there yet.”
+Fix: Always include the WHY and HOW. Explain what makes the behavior senior, and give people tools to get there.
+Mistake 2: Being Too Abstract
+Vague comparisons don’t create engagement.
+❌ “Junior engineers think tactically. Senior engineers think strategically.”
+✅ “Junior engineers add features. Senior engineers remove complexity.”
+Fix: Use concrete, observable behaviors. If someone can’t categorize themselves immediately, it’s too abstract.
+Mistake 3: Forgetting the Evidence
+Claims without proof are just opinions.
+❌ “The best engineers delete code because it’s better”
+✅ “Someone refactored three classes into one. Someone replaced 200 lines with a library function.”
+Fix: Always include 2-3 specific examples. Real behaviors make the pattern undeniable.
+Mistake 4: No Actionable Close
+If they can’t apply it tomorrow, engagement drops.
+❌ “Think about this next time you code”
+✅ “Next time you open a file, ask: What can I remove?”
+Fix: Give them one specific question or action. Make it so simple they can’t NOT do it.
+Mistake 5: Picking False Hierarchies
+Not every comparison is best vs. others.
+❌ “The best engineers use VS Code. Everyone else use Vim.”
+✅ “Junior engineers optimize for writing code. Senior engineers optimize for reading code.” 
+Fix: The senior behavior should be objectively more sophisticated, not just a preference. If both approaches are equally valid, it’s not a seniority signal.
+📋 The Actual Prompt...
