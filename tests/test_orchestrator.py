@@ -364,9 +364,7 @@ def test_character_count_loop_max_iterations_exceeded(orchestrator_with_config):
         "orchestrator.log_event"
     ):
         with pytest.raises(ValidationError, match="exceeded 5 iterations"):
-            orchestrator_with_config._execute_writing_and_review_loop(
-                {"topic": "test"}
-            )
+            orchestrator_with_config._execute_writing_and_review_loop({"topic": "test"})
 
     assert orchestrator_with_config.metrics["char_loop_iterations"] == 5
 
