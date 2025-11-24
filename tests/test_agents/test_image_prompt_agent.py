@@ -61,15 +61,18 @@ def mock_cost_tracker():
 
 @patch("agents.image_prompt_agent.get_text_client")
 def test_image_prompt_agent_success(
-    mock_get_client, temp_run_dir, sample_final_post, 
-    sample_valid_prompt, mock_cost_tracker
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_valid_prompt,
+    mock_cost_tracker,
 ):
     """Test successful image prompt generation with LLM."""
     # Mock LLM client
     mock_client = MagicMock()
     mock_client.generate_text.return_value = sample_valid_prompt
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-001",
@@ -84,22 +87,22 @@ def test_image_prompt_agent_success(
     assert response["status"] == "ok"
     assert "image_prompt_path" in response["data"]
     assert "prompt_preview" in response["data"]
-    
+
     # Verify artifact persistence
     artifact_path = temp_run_dir / "70_image_prompt.txt"
     assert artifact_path.exists()
-    
+
     prompt_text = artifact_path.read_text()
     assert len(prompt_text) > 0
     assert "zero text" in prompt_text.lower() or "no text" in prompt_text.lower()
-    
+
     # Verify LLM was called with correct parameters
     mock_client.generate_text.assert_called_once()
     call_kwargs = mock_client.generate_text.call_args.kwargs
     assert call_kwargs["temperature"] == 0.6
     assert call_kwargs["use_search_grounding"] is False
     assert "Visual Strategist" in call_kwargs["system_instruction"]
-    
+
     # Verify post content was in prompt
     assert sample_final_post in call_kwargs["prompt"]
 
@@ -132,15 +135,18 @@ def test_image_prompt_agent_empty_final_post(temp_run_dir):
 
 @patch("agents.image_prompt_agent.get_text_client")
 def test_image_prompt_agent_validates_no_text_constraint(
-    mock_get_client, temp_run_dir, sample_final_post, 
-    sample_invalid_prompt, mock_cost_tracker
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_invalid_prompt,
+    mock_cost_tracker,
 ):
     """Test that agent validates no-text constraint is present."""
     # Mock LLM to return invalid prompt (missing no-text constraint)
     mock_client = MagicMock()
     mock_client.generate_text.return_value = sample_invalid_prompt
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-004",
@@ -165,7 +171,7 @@ def test_image_prompt_agent_llm_failure(
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = Exception("API timeout")
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-005",
@@ -190,7 +196,7 @@ def test_validate_no_text_constraint_accepts_valid():
         "Must contain no words on the visual",
         "The image should be text-free and word-free",
     ]
-    
+
     for prompt in valid_prompts:
         assert _validate_no_text_constraint(prompt) is True
 
@@ -202,24 +208,27 @@ def test_validate_no_text_constraint_rejects_invalid():
         "Modern minimal style with gradients",
         "Professional tone and clean composition",
     ]
-    
+
     for prompt in invalid_prompts:
         assert _validate_no_text_constraint(prompt) is False
 
 
 @patch("agents.image_prompt_agent.get_text_client")
 def test_image_prompt_agent_prompt_preview(
-    mock_get_client, temp_run_dir, sample_final_post, 
-    sample_valid_prompt, mock_cost_tracker
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_valid_prompt,
+    mock_cost_tracker,
 ):
     """Test that prompt_preview is truncated correctly."""
     # Create a long prompt
     long_prompt = sample_valid_prompt + " " + ("A" * 200)
-    
+
     mock_client = MagicMock()
     mock_client.generate_text.return_value = long_prompt
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-006",
@@ -231,7 +240,7 @@ def test_image_prompt_agent_prompt_preview(
 
     assert response["status"] == "ok"
     preview = response["data"]["prompt_preview"]
-    
+
     # Should be truncated to 100 chars + "..."
     assert len(preview) <= 103  # 100 chars + "..."
     if len(long_prompt) > 100:
@@ -249,11 +258,11 @@ representing data pipelines, set against a dark background with cool blue and
 green accent lighting. The mood is efficient and futuristic, with sharp focus 
 on the central data flow. Modern minimal aesthetic with subtle gradients. 
 The image must contain zero text, words, or letters."""
-    
+
     mock_client = MagicMock()
     mock_client.generate_text.return_value = realistic_prompt
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-007",
@@ -264,25 +273,35 @@ The image must contain zero text, words, or letters."""
     response = run(input_obj, context)
 
     assert response["status"] == "ok"
-    
+
     artifact_path = temp_run_dir / "70_image_prompt.txt"
     prompt_text = artifact_path.read_text().lower()
-    
+
     # Should include visual style elements
-    visual_elements = ["lighting", "mood", "setting", "background", "aesthetic", "style"]
+    visual_elements = [
+        "lighting",
+        "mood",
+        "setting",
+        "background",
+        "aesthetic",
+        "style",
+    ]
     assert any(element in prompt_text for element in visual_elements)
 
 
 @patch("agents.image_prompt_agent.get_text_client")
 def test_image_prompt_agent_cost_tracking_integration(
-    mock_get_client, temp_run_dir, sample_final_post, 
-    sample_valid_prompt, mock_cost_tracker
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_valid_prompt,
+    mock_cost_tracker,
 ):
     """Test that cost tracking is properly integrated."""
     mock_client = MagicMock()
     mock_client.generate_text.return_value = sample_valid_prompt
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {"final_post": sample_final_post}
     context = {
         "run_id": "test-run-008",
@@ -293,10 +312,10 @@ def test_image_prompt_agent_cost_tracking_integration(
     response = run(input_obj, context)
 
     assert response["status"] == "ok"
-    
+
     # Verify budget check was called
     mock_cost_tracker.check_budget.assert_called_once_with("gemini-2.5-pro")
-    
+
     # Verify cost was recorded
     mock_cost_tracker.record_call.assert_called_once()
     call_kwargs = mock_cost_tracker.record_call.call_args.kwargs
