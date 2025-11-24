@@ -282,7 +282,7 @@ def test_character_count_loop_passes_first_iteration(orchestrator_with_config):
         mock_execute.side_effect = mock_agent_call
 
         result = orchestrator_with_config._execute_writing_and_review_loop(
-            {"topic": "test"}, {"strategy": "test"}
+            {"topic": "test"}
         )
 
     assert result == short_text
@@ -327,7 +327,7 @@ def test_character_count_loop_retries_on_long_text(orchestrator_with_config):
         "orchestrator.log_event"
     ):
         result = orchestrator_with_config._execute_writing_and_review_loop(
-            {"topic": "test"}, {"strategy": "test"}
+            {"topic": "test"}
         )
 
     assert result == short_text
@@ -365,7 +365,7 @@ def test_character_count_loop_max_iterations_exceeded(orchestrator_with_config):
     ):
         with pytest.raises(ValidationError, match="exceeded 5 iterations"):
             orchestrator_with_config._execute_writing_and_review_loop(
-                {"topic": "test"}, {"strategy": "test"}
+                {"topic": "test"}
             )
 
     assert orchestrator_with_config.metrics["char_loop_iterations"] == 5
@@ -445,7 +445,6 @@ def test_circuit_breaker_trips_after_failures(mock_retry, orchestrator_with_conf
 @patch("orchestrator.topic_agent")
 @patch("orchestrator.research_agent")
 @patch("orchestrator.prompt_generator_agent")
-@patch("orchestrator.strategic_type_agent")
 @patch("orchestrator.writer_agent")
 @patch("orchestrator.reviewer_agent")
 @patch("orchestrator.image_prompt_agent")
@@ -463,14 +462,13 @@ def test_full_pipeline_integration(
     mock_img_prompt,
     mock_reviewer,
     mock_writer,
-    mock_strategy,
     mock_prompt,
     mock_research,
     mock_topic,
     valid_config,
     tmp_path,
 ):
-    """Test complete pipeline with all agents mocked."""
+    """Test complete pipeline with all agents mocked (7-step pipeline after Phase 7.4)."""
     # Setup run directory
     run_dir = tmp_path / "test-run"
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -480,13 +478,13 @@ def test_full_pipeline_integration(
 
     mock_create_dir.return_value = ("test-run", run_dir)
 
-    # Mock agent responses
+    # Mock agent responses (Strategic Type Agent removed in Phase 7.4)
     mock_topic.run.return_value = ok({"topic": "Python AsyncIO"})
     mock_research.run.return_value = ok({"sources": ["source1"], "summary": "summary"})
     mock_prompt.run.return_value = ok(
         {"topic_title": "AsyncIO", "pain_point": "complexity"}
     )
-    mock_strategy.run.return_value = ok({"strategic_angle": "simplify"})
+    # Note: mock_strategy removed - strategic planning handled by Prompt Generator
     mock_writer.run.return_value = ok({"draft_path": "40_draft.md"})
     mock_reviewer.run.return_value = ok({"revised": "A" * 2000})  # Under 3000 chars
     mock_img_prompt.run.return_value = ok(

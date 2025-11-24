@@ -1,6 +1,20 @@
-"""Strategic Type Agent (stub).
+"""Strategic Type Agent (DEPRECATED as of Phase 7.4).
 
-Uses structured prompt + research summary + (future) RAG memory bank to propose post structure.
+⚠️ DEPRECATED: This agent has been removed from the pipeline.
+Strategic planning is now handled directly by the Prompt Generator Agent
+using the Strategic Content Architect persona from system_prompts.md.
+
+This file is retained for backward compatibility and historical reference only.
+Do NOT use this agent in new code.
+
+Previous functionality:
+- Used structured prompt + research summary + RAG memory bank to propose post structure
+- Queried memory_bank/ for strategic patterns from past newsletters
+- Output strategic_angle, hook_type, cta_type to guide Writer Agent
+
+Replaced by:
+- Prompt Generator Agent with Strategic Content Architect persona
+- Strategic planning embedded directly in structured prompts
 """
 
 from pathlib import Path

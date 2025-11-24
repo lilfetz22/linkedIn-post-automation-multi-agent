@@ -37,7 +37,6 @@ from agents import (
     topic_agent,
     research_agent,
     prompt_generator_agent,
-    strategic_type_agent,
     writer_agent,
     reviewer_agent,
     image_prompt_agent,
@@ -107,18 +106,17 @@ class Orchestrator:
             # Phase 5.1: Configuration & Initialization
             self._initialize_run()
 
-            # Phase 5.3: Sequential Agent Pipeline
+            # Phase 5.3: Sequential Agent Pipeline (7 steps)
+            # Step 1: Topic Selection
             topic = self._execute_topic_selection()
+            # Step 2: Research with pivot fallback
             research_data = self._execute_research_with_pivot(topic)
+            # Step 3: Prompt Generation (Strategic Content Architect)
             structured_prompt = self._execute_prompt_generation(topic, research_data)
-            strategy = self._execute_strategic_planning(
-                structured_prompt, research_data
-            )
 
             # Phase 5.4: Character Count Validation Loop
-            final_post = self._execute_writing_and_review_loop(
-                structured_prompt, strategy
-            )
+            # Step 4-5: Writing and Review with character limit enforcement
+            final_post = self._execute_writing_and_review_loop(structured_prompt)
 
             # Phase 5.5: Image Generation Pipeline
             image_prompt = self._execute_image_prompt_generation(final_post)
@@ -293,20 +291,8 @@ class Orchestrator:
 
         return response["data"]
 
-    def _execute_strategic_planning(
-        self, structured_prompt: Dict[str, Any], research_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Execute Strategic Type Agent (Phase 5.3 - Step 4)."""
-        input_obj = {"structured_prompt": structured_prompt, "research": research_data}
-
-        response = self._execute_agent_with_retry(
-            "strategic_type_agent", strategic_type_agent.run, input_obj
-        )
-
-        return response["data"]
-
     def _execute_writing_and_review_loop(
-        self, structured_prompt: Dict[str, Any], strategy: Dict[str, Any]
+        self, structured_prompt: Dict[str, Any]
     ) -> str:
         """
         Execute Writer and Reviewer with character count validation loop
@@ -322,7 +308,6 @@ class Orchestrator:
             # Execute Writer Agent
             writer_input = {
                 "structured_prompt": structured_prompt,
-                "strategy": strategy,
             }
 
             if shortening_instruction:

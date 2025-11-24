@@ -29,20 +29,10 @@ def sample_structured_prompt():
     }
 
 
-@pytest.fixture
-def sample_strategy():
-    """Sample strategy for testing."""
-    return {
-        "structure": "Hook -> Pain -> Insight -> Example -> Impact -> CTA",
-        "strategic_angle": "Translate technical nuance into actionable insights",
-    }
-
-
-def test_writer_agent_success(temp_run_dir, sample_structured_prompt, sample_strategy):
+def test_writer_agent_success(temp_run_dir, sample_structured_prompt):
     """Test successful draft writing."""
     input_obj = {
         "structured_prompt": sample_structured_prompt,
-        "strategy": sample_strategy,
     }
     context = {"run_id": "test-run-001", "run_path": temp_run_dir}
 
@@ -61,9 +51,9 @@ def test_writer_agent_success(temp_run_dir, sample_structured_prompt, sample_str
     assert len(draft_text) > 0
 
 
-def test_writer_agent_missing_structured_prompt(temp_run_dir, sample_strategy):
+def test_writer_agent_missing_structured_prompt(temp_run_dir):
     """Test error handling when structured_prompt is missing."""
-    input_obj = {"strategy": sample_strategy}
+    input_obj = {}
     context = {"run_id": "test-run-002", "run_path": temp_run_dir}
 
     response = run(input_obj, context)
@@ -74,26 +64,10 @@ def test_writer_agent_missing_structured_prompt(temp_run_dir, sample_strategy):
     assert response["error"]["retryable"] is False
 
 
-def test_writer_agent_missing_strategy(temp_run_dir, sample_structured_prompt):
-    """Test error handling when strategy is missing."""
-    input_obj = {"structured_prompt": sample_structured_prompt}
-    context = {"run_id": "test-run-003", "run_path": temp_run_dir}
-
-    response = run(input_obj, context)
-
-    validate_envelope(response)
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "ValidationError"
-    assert response["error"]["retryable"] is False
-
-
-def test_writer_agent_draft_structure(
-    temp_run_dir, sample_structured_prompt, sample_strategy
-):
+def test_writer_agent_draft_structure(temp_run_dir, sample_structured_prompt):
     """Test that draft includes expected structural elements."""
     input_obj = {
         "structured_prompt": sample_structured_prompt,
-        "strategy": sample_strategy,
     }
     context = {"run_id": "test-run-004", "run_path": temp_run_dir}
 
@@ -110,13 +84,10 @@ def test_writer_agent_draft_structure(
     assert "Solution" in draft_text or "solution" in draft_text.lower()
 
 
-def test_writer_agent_includes_cta(
-    temp_run_dir, sample_structured_prompt, sample_strategy
-):
+def test_writer_agent_includes_cta(temp_run_dir, sample_structured_prompt):
     """Test that draft includes a call-to-action."""
     input_obj = {
         "structured_prompt": sample_structured_prompt,
-        "strategy": sample_strategy,
     }
     context = {"run_id": "test-run-005", "run_path": temp_run_dir}
 
@@ -131,13 +102,10 @@ def test_writer_agent_includes_cta(
     assert "CTA:" in draft_text or "comment" in draft_text.lower()
 
 
-def test_writer_agent_includes_signature(
-    temp_run_dir, sample_structured_prompt, sample_strategy
-):
+def test_writer_agent_includes_signature(temp_run_dir, sample_structured_prompt):
     """Test that draft includes The Witty Expert signature."""
     input_obj = {
         "structured_prompt": sample_structured_prompt,
-        "strategy": sample_strategy,
     }
     context = {"run_id": "test-run-006", "run_path": temp_run_dir}
 
