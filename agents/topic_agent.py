@@ -25,19 +25,21 @@ STEP_CODE = "10_topic"
 def _generate_topics_with_llm(field: str, recent_topics: List[str]) -> str:
     """
     Use LLM to generate a new topic when database is empty.
-    
+
     Args:
         field: The field to generate topics for
         recent_topics: List of recently posted topics to avoid
-        
+
     Returns:
         A new topic string
-        
+
     Raises:
         ModelError: If LLM call fails
     """
-    recent_text = "\n".join(f"- {topic}" for topic in recent_topics) if recent_topics else "None"
-    
+    recent_text = (
+        "\n".join(f"- {topic}" for topic in recent_topics) if recent_topics else "None"
+    )
+
     prompt = f"""Generate 10 topic candidates for {field}. 
 
 Prefer net-new, specific topics (emerging trends, overlooked fundamentals, concrete pain points).
@@ -64,9 +66,10 @@ Example format:
     result = client.generate_text(
         prompt=prompt,
         temperature=0.8,  # Higher temperature for creative topic generation
-        max_output_tokens=2000
+        max_output_tokens=2000,
+        use_search_grounding=True  # Enable Google Search for current trends
     )
-    
+
     # Parse JSON response
     text = result["text"].strip()
     # Remove markdown code blocks if present
@@ -77,23 +80,23 @@ Example format:
     if text.endswith("```"):
         text = text[:-3]
     text = text.strip()
-    
+
     topics = json.loads(text)
-    
+
     # Prioritize net_new topics, fall back to reused_with_new_angle
     for topic_obj in topics:
         if topic_obj.get("novelty") == "net_new":
             return topic_obj["topic"]
-    
+
     # If no net_new, accept first reused_with_new_angle
     for topic_obj in topics:
         if topic_obj.get("novelty") == "reused_with_new_angle":
             return topic_obj["topic"]
-    
+
     # Fallback: return first topic regardless
     if topics:
         return topics[0]["topic"]
-    
+
     raise ModelError("LLM failed to generate any valid topics")
 
 
@@ -111,7 +114,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
     attempt = 1
     metrics_dict = {}
-    
+
     try:
         if not field:
             raise ValidationError("Missing 'field' in topic agent input")
@@ -122,26 +125,26 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             if db_path
             else select_new_topic(field=field)
         )
-        
+
         # If database is empty, use LLM fallback
         if not topic_data:
             recent = get_recent_topics(limit=10, db_path=db_path) if db_path else []
-            
+
             try:
                 topic = _generate_topics_with_llm(field, recent)
                 topic_data = {"topic": topic}
-                
+
                 # Track cost if tracker provided
                 if cost_tracker:
                     # Estimate cost (this is a fallback, actual usage tracked in client)
                     cost_metrics = CostMetrics(
                         model="gemini-2.5-pro",
                         input_tokens=500,  # Estimate
-                        output_tokens=1000  # Estimate
+                        output_tokens=1000,  # Estimate
                     )
                     cost_tracker.record_call("topic_agent_llm_fallback", cost_metrics)
                     metrics_dict["cost_usd"] = cost_metrics.cost_usd
-                    
+
             except (ModelError, json.JSONDecodeError) as llm_err:
                 # LLM fallback failed
                 raise DataNotFoundError(
@@ -155,7 +158,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         validate_envelope(response)
         log_event(run_id, "topic_selection", attempt, "ok")
         return response
-        
+
     except (ValidationError, DataNotFoundError) as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)

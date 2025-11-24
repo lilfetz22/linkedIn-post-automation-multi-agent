@@ -57,16 +57,16 @@ pool = redis.ConnectionPool(host='localhost', port=6379, max_connections=50)
 r = redis.Redis(connection_pool=pool)
 ```
 """
-    
+
     mock_llm_response = {
         "text": mock_prompt,
         "token_usage": {"prompt_tokens": 200, "completion_tokens": 400},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.prompt_generator_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         # Validate envelope structure
@@ -130,16 +130,16 @@ def test_prompt_generator_rejects_cliche_analogies(temp_run_dir, sample_research
 **Key Metrics/Facts:** Blockchain is like a distributed ledger that everyone can see.
 
 **The Simple Solution/Code Snippet:** Use proof of stake."""
-    
+
     mock_llm_response = {
         "text": mock_prompt_with_cliche,
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.prompt_generator_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         # Should reject due to cliché
@@ -156,14 +156,14 @@ def test_prompt_generator_validates_required_sections(temp_run_dir, sample_resea
 **Audience's Core Pain Point:** Problems
 **Key Metrics/Facts:** Data
 **The Simple Solution/Code Snippet:** Code here"""
-    
+
     # Should not raise
     _validate_prompt_structure(valid_prompt)
-    
+
     # Missing section should raise
     invalid_prompt = """**Topic:** Test
 **Target Audience:** Engineers"""
-    
+
     with pytest.raises(ValidationError, match="missing required sections"):
         _validate_prompt_structure(invalid_prompt)
 
@@ -174,10 +174,12 @@ def test_prompt_generator_llm_failure(temp_run_dir, sample_research):
     context = {"run_id": "test-run-005", "run_path": temp_run_dir}
 
     from core.errors import ModelError
-    
+
     with patch("agents.prompt_generator_agent.get_text_client") as mock_client:
-        mock_client.return_value.generate_text.side_effect = ModelError("LLM unavailable")
-        
+        mock_client.return_value.generate_text.side_effect = ModelError(
+            "LLM unavailable"
+        )
+
         response = run(input_obj, context)
 
         validate_envelope(response)

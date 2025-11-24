@@ -41,16 +41,16 @@ def load_system_prompt(section_name: str) -> str:
     section_markers = {
         "strategic_content_architect": (
             "The Strategic Content Architect- User Prompt Engineer",
-            "---\n\n### System Instructions: The \"Witty Expert\" Persona"
+            '---\n\n### System Instructions: The "Witty Expert" Persona',
         ),
         "witty_expert": (
-            "### System Instructions: The \"Witty Expert\" Persona",
-            "### System Instructions: Social Media Visual Strategist"
+            '### System Instructions: The "Witty Expert" Persona',
+            "### System Instructions: Social Media Visual Strategist",
         ),
         "visual_strategist": (
             "### System Instructions: Social Media Visual Strategist",
-            "***"
-        )
+            "***",
+        ),
     }
 
     if section_name not in section_markers:

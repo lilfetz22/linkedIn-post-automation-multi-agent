@@ -27,20 +27,28 @@ def test_research_agent_success(temp_run_dir):
     # Mock LLM response
     mock_research = {
         "sources": [
-            {"title": "Asyncio Performance Guide", "url": "https://example.com/1", "key_point": "Event loop optimization"},
-            {"title": "Python Concurrency Patterns", "url": "https://example.com/2", "key_point": "Task scheduling strategies"}
+            {
+                "title": "Asyncio Performance Guide",
+                "url": "https://example.com/1",
+                "key_point": "Event loop optimization",
+            },
+            {
+                "title": "Python Concurrency Patterns",
+                "url": "https://example.com/2",
+                "key_point": "Task scheduling strategies",
+            },
         ],
-        "summary": "Python asyncio optimization focuses on event loop efficiency and task scheduling."
+        "summary": "Python asyncio optimization focuses on event loop efficiency and task scheduling.",
     }
     mock_llm_response = {
         "text": json.dumps(mock_research),
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.research_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         # Validate envelope structure
@@ -83,19 +91,23 @@ def test_research_agent_sources_structure(temp_run_dir):
     # Mock LLM response
     mock_research = {
         "sources": [
-            {"title": "ML Pipeline Best Practices", "url": "https://ml.example.com/1", "key_point": "Automation strategies"}
+            {
+                "title": "ML Pipeline Best Practices",
+                "url": "https://ml.example.com/1",
+                "key_point": "Automation strategies",
+            }
         ],
-        "summary": "Machine learning pipelines require careful orchestration."
+        "summary": "Machine learning pipelines require careful orchestration.",
     }
     mock_llm_response = {
         "text": json.dumps(mock_research),
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 150},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.research_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         assert response["status"] == "ok"
@@ -118,19 +130,23 @@ def test_research_agent_summary_contains_topic(temp_run_dir):
     # Mock LLM response
     mock_research = {
         "sources": [
-            {"title": "Forecasting Methods", "url": "https://ts.example.com/1", "key_point": "ARIMA vs Prophet"}
+            {
+                "title": "Forecasting Methods",
+                "url": "https://ts.example.com/1",
+                "key_point": "ARIMA vs Prophet",
+            }
         ],
-        "summary": f"Research on {topic} shows multiple approaches for prediction accuracy."
+        "summary": f"Research on {topic} shows multiple approaches for prediction accuracy.",
     }
     mock_llm_response = {
         "text": json.dumps(mock_research),
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 150},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.research_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         assert response["status"] == "ok"
@@ -144,8 +160,10 @@ def test_research_agent_llm_failure(temp_run_dir):
     context = {"run_id": "test-run-005", "run_path": temp_run_dir}
 
     with patch("agents.research_agent.get_text_client") as mock_client:
-        mock_client.return_value.generate_text.side_effect = ModelError("LLM unavailable")
-        
+        mock_client.return_value.generate_text.side_effect = ModelError(
+            "LLM unavailable"
+        )
+
         response = run(input_obj, context)
 
         validate_envelope(response)
@@ -160,19 +178,16 @@ def test_research_agent_empty_sources(temp_run_dir):
     context = {"run_id": "test-run-006", "run_path": temp_run_dir}
 
     # Mock LLM response with empty sources
-    mock_research = {
-        "sources": [],
-        "summary": "No sources available"
-    }
+    mock_research = {"sources": [], "summary": "No sources available"}
     mock_llm_response = {
         "text": json.dumps(mock_research),
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.research_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         validate_envelope(response)

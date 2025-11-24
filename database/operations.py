@@ -64,7 +64,7 @@ def select_new_topic(
 
     with get_connection(db_path) as conn:
         cur = conn.cursor()
-        
+
         # First try: unused topics
         if recent:
             placeholders = ",".join(["?"] * len(recent))
@@ -79,7 +79,7 @@ def select_new_topic(
             params = (field,)
         cur.execute(query, params)
         row = cur.fetchone()
-        
+
         # Fallback: allow used topics if no unused ones available
         if not row:
             if recent:
@@ -95,13 +95,15 @@ def select_new_topic(
                 params = (field,)
             cur.execute(query, params)
             row = cur.fetchone()
-        
+
         if not row:
             return None
-        
+
         # Mark topic as used
         topic_id, topic_name = row
-        cur.execute("UPDATE potential_topics SET used = TRUE WHERE id = ?;", (topic_id,))
+        cur.execute(
+            "UPDATE potential_topics SET used = TRUE WHERE id = ?;", (topic_id,)
+        )
         conn.commit()
-        
+
         return {"topic": topic_name}

@@ -106,8 +106,10 @@ def test_topic_agent_no_available_topics(temp_run_dir, tmp_path):
 
     # Mock LLM to fail as well
     with patch("agents.topic_agent.get_text_client") as mock_client:
-        mock_client.return_value.generate_text.side_effect = ModelError("LLM unavailable")
-        
+        mock_client.return_value.generate_text.side_effect = ModelError(
+            "LLM unavailable"
+        )
+
         response = run(input_obj, context)
 
         validate_envelope(response)
@@ -144,31 +146,34 @@ def test_topic_agent_llm_fallback_success(temp_run_dir, tmp_path):
 
     # Mock LLM to return valid topics
     mock_llm_response = {
-        "text": json.dumps([
-            {
-                "topic": "LLM-generated topic about data optimization",
-                "novelty": "net_new",
-                "rationale": "Addresses emerging need for faster pipelines"
-            }
-        ]),
+        "text": json.dumps(
+            [
+                {
+                    "topic": "LLM-generated topic about data optimization",
+                    "novelty": "net_new",
+                    "rationale": "Addresses emerging need for faster pipelines",
+                }
+            ]
+        ),
         "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
-        "model": "gemini-2.5-pro"
+        "model": "gemini-2.5-pro",
     }
-    
+
     with patch("agents.topic_agent.get_text_client") as mock_client:
         mock_client.return_value.generate_text.return_value = mock_llm_response
-        
+
         response = run(input_obj, context)
 
         validate_envelope(response)
         assert response["status"] == "ok"
         assert "topic" in response["data"]
         assert "LLM-generated" in response["data"]["topic"]
-        
+
         # Verify artifact was created
         artifact_path = temp_run_dir / "10_topic.json"
         assert artifact_path.exists()
 
     # Force garbage collection
     import gc
+
     gc.collect()
