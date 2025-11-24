@@ -91,3 +91,19 @@ def load_system_prompt(section_name: str) -> str:
 def clear_cache():
     """Clear the prompt cache. Useful for testing."""
     _PROMPT_CACHE.clear()
+
+
+# Convenience functions for specific personas
+def load_strategic_content_architect_persona() -> str:
+    """Load Strategic Content Architect system instruction."""
+    return load_system_prompt("strategic_content_architect")
+
+
+def load_witty_expert_persona() -> str:
+    """Load The Witty Expert system instruction."""
+    return load_system_prompt("witty_expert")
+
+
+def load_visual_strategist_persona() -> str:
+    """Load Social Media Visual Strategist system instruction."""
+    return load_system_prompt("visual_strategist")
