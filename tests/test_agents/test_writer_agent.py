@@ -67,18 +67,22 @@ def mock_cost_tracker():
 @patch("agents.writer_agent.load_system_prompt")
 @patch("agents.writer_agent.get_text_client")
 def test_writer_agent_success(
-    mock_get_client, mock_load_prompt,
-    temp_run_dir, sample_structured_prompt, mock_short_draft, mock_cost_tracker
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_short_draft,
+    mock_cost_tracker,
 ):
     """Test successful draft writing with LLM."""
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
-    
+
     # Mock LLM client
     mock_client = MagicMock()
     mock_client.generate_text.return_value = mock_short_draft
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {
         "structured_prompt": sample_structured_prompt,
     }
@@ -104,7 +108,7 @@ def test_writer_agent_success(
     # Check content is present (ignore encoding issues with em dashes)
     assert "Redis Optimization" in draft_text
     assert "race car" in draft_text
-    
+
     # Verify LLM was called
     mock_client.generate_text.assert_called_once()
     call_kwargs = mock_client.generate_text.call_args.kwargs
@@ -128,18 +132,23 @@ def test_writer_agent_missing_structured_prompt(temp_run_dir):
 @patch("agents.writer_agent.load_system_prompt")
 @patch("agents.writer_agent.get_text_client")
 def test_writer_agent_character_count_loop(
-    mock_get_client, mock_load_prompt,
-    temp_run_dir, sample_structured_prompt, mock_long_draft, mock_short_draft, mock_cost_tracker
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_long_draft,
+    mock_short_draft,
+    mock_cost_tracker,
 ):
     """Test internal character count shortening loop."""
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
-    
+
     # Mock LLM client to return long draft first, then short draft
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = [mock_long_draft, mock_short_draft]
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {
         "structured_prompt": sample_structured_prompt,
     }
@@ -153,10 +162,10 @@ def test_writer_agent_character_count_loop(
 
     # Should succeed after shortening
     assert response["status"] == "ok"
-    
+
     # Verify LLM was called twice (once for initial, once for shortening)
     assert mock_client.generate_text.call_count == 2
-    
+
     # Verify second call included shortening context
     second_call_prompt = mock_client.generate_text.call_args_list[1].kwargs["prompt"]
     assert "IMPORTANT: Character Count Issue" in second_call_prompt
@@ -166,18 +175,22 @@ def test_writer_agent_character_count_loop(
 @patch("agents.writer_agent.load_system_prompt")
 @patch("agents.writer_agent.get_text_client")
 def test_writer_agent_max_shortening_attempts_exceeded(
-    mock_get_client, mock_load_prompt,
-    temp_run_dir, sample_structured_prompt, mock_long_draft, mock_cost_tracker
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_long_draft,
+    mock_cost_tracker,
 ):
     """Test failure after max shortening attempts."""
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
-    
+
     # Mock LLM client to always return long draft
     mock_client = MagicMock()
     mock_client.generate_text.return_value = mock_long_draft
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {
         "structured_prompt": sample_structured_prompt,
     }
@@ -194,7 +207,7 @@ def test_writer_agent_max_shortening_attempts_exceeded(
     assert response["error"]["type"] == "ValidationError"
     assert "shortening attempts" in response["error"]["message"].lower()
     assert response["error"]["retryable"] is False
-    
+
     # Verify LLM was called 4 times (1 initial + 3 shortening)
     assert mock_client.generate_text.call_count == 4
 
@@ -202,18 +215,21 @@ def test_writer_agent_max_shortening_attempts_exceeded(
 @patch("agents.writer_agent.load_system_prompt")
 @patch("agents.writer_agent.get_text_client")
 def test_writer_agent_llm_failure(
-    mock_get_client, mock_load_prompt,
-    temp_run_dir, sample_structured_prompt, mock_cost_tracker
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_cost_tracker,
 ):
     """Test error handling when LLM call fails."""
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
-    
+
     # Mock LLM client to raise exception
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = Exception("API timeout")
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {
         "structured_prompt": sample_structured_prompt,
     }
@@ -240,18 +256,22 @@ def test_count_chars_excludes_newlines():
 @patch("agents.writer_agent.load_system_prompt")
 @patch("agents.writer_agent.get_text_client")
 def test_writer_agent_formats_prompt_correctly(
-    mock_get_client, mock_load_prompt,
-    temp_run_dir, sample_structured_prompt, mock_short_draft, mock_cost_tracker
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_short_draft,
+    mock_cost_tracker,
 ):
     """Test that structured prompt is formatted correctly for LLM."""
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
-    
+
     # Mock LLM client
     mock_client = MagicMock()
     mock_client.generate_text.return_value = mock_short_draft
     mock_get_client.return_value = mock_client
-    
+
     input_obj = {
         "structured_prompt": sample_structured_prompt,
     }
@@ -264,7 +284,7 @@ def test_writer_agent_formats_prompt_correctly(
     response = run(input_obj, context)
 
     assert response["status"] == "ok"
-    
+
     # Verify prompt contains key elements
     call_prompt = mock_client.generate_text.call_args.kwargs["prompt"]
     assert "Redis Optimization Strategies" in call_prompt
