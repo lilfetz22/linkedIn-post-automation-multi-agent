@@ -63,18 +63,17 @@ def mock_cost_tracker():
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_success(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_short_draft, mock_cost_tracker
+    mock_grammar, mock_get_client, temp_run_dir, sample_short_draft, mock_cost_tracker
 ):
     """Test successful review with LLM and grammar checking."""
     # Mock LLM client
     mock_client = MagicMock()
     mock_client.generate_text.return_value = sample_short_draft
     mock_get_client.return_value = mock_client
-    
+
     # Mock grammar checking (no changes)
     mock_grammar.return_value = (sample_short_draft, 0)
-    
+
     input_obj = {"draft_text": sample_short_draft}
     context = {
         "run_id": "test-run-001",
@@ -90,11 +89,11 @@ def test_reviewer_agent_success(
     assert "revised" in response["data"]
     assert "changes" in response["data"]
     assert response["data"]["char_count"] < 3000
-    
+
     # Verify artifact persistence
     artifact_path = temp_run_dir / "50_review.json"
     assert artifact_path.exists()
-    
+
     # Verify LLM was called
     mock_client.generate_text.assert_called_once()
     call_kwargs = mock_client.generate_text.call_args.kwargs
@@ -118,8 +117,11 @@ def test_reviewer_agent_missing_draft_text(temp_run_dir):
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_hashtag_removal(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_draft_with_hashtags, mock_cost_tracker
+    mock_grammar,
+    mock_get_client,
+    temp_run_dir,
+    sample_draft_with_hashtags,
+    mock_cost_tracker,
 ):
     """Test automatic hashtag removal when post is too long."""
     # Create a version that's ~2990 chars + hashtags (total ~3020)
@@ -127,15 +129,15 @@ def test_reviewer_agent_hashtag_removal(
     base_text = "A" * 2990
     long_with_hashtags = base_text + "\n\n#redis #optimization"
     text_without_hashtags = base_text
-    
+
     # Mock LLM to return the long draft
     mock_client = MagicMock()
     mock_client.generate_text.return_value = long_with_hashtags
     mock_get_client.return_value = mock_client
-    
+
     # Mock grammar checking (no changes)
     mock_grammar.return_value = (long_with_hashtags, 0)
-    
+
     input_obj = {"draft_text": long_with_hashtags}
     context = {
         "run_id": "test-run-003",
@@ -155,21 +157,25 @@ def test_reviewer_agent_hashtag_removal(
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_shortening_loop(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_long_draft, sample_short_draft, mock_cost_tracker
+    mock_grammar,
+    mock_get_client,
+    temp_run_dir,
+    sample_long_draft,
+    sample_short_draft,
+    mock_cost_tracker,
 ):
     """Test shortening loop when post is too long."""
     # Mock LLM to return long draft first, then short draft
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = [sample_long_draft, sample_short_draft]
     mock_get_client.return_value = mock_client
-    
+
     # Mock grammar checking (no changes)
     mock_grammar.side_effect = [
         (sample_long_draft, 0),
         (sample_short_draft, 0),
     ]
-    
+
     input_obj = {"draft_text": sample_long_draft}
     context = {
         "run_id": "test-run-004",
@@ -183,7 +189,7 @@ def test_reviewer_agent_shortening_loop(
     assert response["status"] == "ok"
     assert response["data"]["iterations"] >= 2
     assert mock_client.generate_text.call_count >= 2
-    
+
     # Verify second call included shortening context
     second_call_prompt = mock_client.generate_text.call_args_list[1].kwargs["prompt"]
     assert "too long" in second_call_prompt.lower()
@@ -193,18 +199,17 @@ def test_reviewer_agent_shortening_loop(
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_max_shortening_attempts_exceeded(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_long_draft, mock_cost_tracker
+    mock_grammar, mock_get_client, temp_run_dir, sample_long_draft, mock_cost_tracker
 ):
     """Test failure after max shortening attempts."""
     # Mock LLM to always return long draft
     mock_client = MagicMock()
     mock_client.generate_text.return_value = sample_long_draft
     mock_get_client.return_value = mock_client
-    
+
     # Mock grammar checking (no changes)
     mock_grammar.return_value = (sample_long_draft, 0)
-    
+
     input_obj = {"draft_text": sample_long_draft}
     context = {
         "run_id": "test-run-005",
@@ -219,7 +224,7 @@ def test_reviewer_agent_max_shortening_attempts_exceeded(
     assert response["error"]["type"] == "ValidationError"
     assert "shortening attempts" in response["error"]["message"].lower()
     assert response["error"]["retryable"] is False
-    
+
     # Verify LLM was called 4 times (1 initial + 3 shortening)
     assert mock_client.generate_text.call_count == 4
 
@@ -227,18 +232,17 @@ def test_reviewer_agent_max_shortening_attempts_exceeded(
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_llm_failure(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_short_draft, mock_cost_tracker
+    mock_grammar, mock_get_client, temp_run_dir, sample_short_draft, mock_cost_tracker
 ):
     """Test error handling when LLM call fails."""
     # Mock LLM client to raise exception
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = Exception("API timeout")
     mock_get_client.return_value = mock_client
-    
+
     # Mock grammar checking
     mock_grammar.return_value = (sample_short_draft, 0)
-    
+
     input_obj = {"draft_text": sample_short_draft}
     context = {
         "run_id": "test-run-006",
@@ -259,16 +263,16 @@ def test_reviewer_agent_grammar_corrections(mock_grammar, temp_run_dir):
     """Test that grammar corrections are applied."""
     original = "This is a tets post with errrors."
     corrected = "This is a test post with errors."
-    
+
     # Mock grammar tool
     mock_grammar.return_value = (corrected, 2)
-    
+
     # We still need to mock LLM
     with patch("agents.reviewer_agent.get_text_client") as mock_get_client:
         mock_client = MagicMock()
         mock_client.generate_text.return_value = original
         mock_get_client.return_value = mock_client
-        
+
         input_obj = {"draft_text": original}
         context = {"run_id": "test-run-007", "run_path": temp_run_dir}
 
@@ -292,9 +296,9 @@ def test_remove_hashtags():
 — Tech Audience Accelerator
 
 #redis #optimization #performance"""
-    
+
     result = _remove_hashtags(text_with_hashtags)
-    
+
     assert "#redis" not in result
     assert "Tech Audience Accelerator" in result
     assert result.strip().endswith("Tech Audience Accelerator")
@@ -305,9 +309,9 @@ def test_remove_hashtags_no_hashtags():
     text_no_hashtags = """Great content here.
 
 — Tech Audience Accelerator"""
-    
+
     result = _remove_hashtags(text_no_hashtags)
-    
+
     # Should return unchanged
     assert result == text_no_hashtags
 
@@ -315,8 +319,7 @@ def test_remove_hashtags_no_hashtags():
 @patch("agents.reviewer_agent.get_text_client")
 @patch("agents.reviewer_agent._apply_grammar_corrections")
 def test_reviewer_agent_output_structure(
-    mock_grammar, mock_get_client,
-    temp_run_dir, sample_short_draft, mock_cost_tracker
+    mock_grammar, mock_get_client, temp_run_dir, sample_short_draft, mock_cost_tracker
 ):
     """Test that output data structure is correct."""
     # Mock LLM and grammar
@@ -324,7 +327,7 @@ def test_reviewer_agent_output_structure(
     mock_client.generate_text.return_value = sample_short_draft
     mock_get_client.return_value = mock_client
     mock_grammar.return_value = (sample_short_draft, 0)
-    
+
     input_obj = {"draft_text": sample_short_draft}
     context = {
         "run_id": "test-run-008",
@@ -336,7 +339,7 @@ def test_reviewer_agent_output_structure(
 
     assert response["status"] == "ok"
     data = response["data"]
-    
+
     # Verify required fields
     assert "original" in data
     assert "llm_revised" in data
@@ -345,7 +348,7 @@ def test_reviewer_agent_output_structure(
     assert "changes" in data
     assert "char_count" in data
     assert "iterations" in data
-    
+
     # Verify changes structure
     changes = data["changes"]
     assert "llm_changes" in changes

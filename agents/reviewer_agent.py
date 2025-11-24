@@ -30,64 +30,67 @@ def count_chars(text: str) -> int:
 
 def _remove_hashtags(text: str) -> str:
     """Remove hashtag lines from end of post.
-    
+
     Removes lines that start with # after the final content paragraph.
     """
-    lines = text.split('\n')
-    
+    lines = text.split("\n")
+
     # Find last non-empty, non-hashtag line
     last_content_idx = -1
     for i in range(len(lines) - 1, -1, -1):
         line = lines[i].strip()
-        if line and not line.startswith('#'):
+        if line and not line.startswith("#"):
             last_content_idx = i
             break
-    
+
     # Keep everything up to and including last content line
     if last_content_idx >= 0:
-        return '\n'.join(lines[:last_content_idx + 1])
-    
+        return "\n".join(lines[: last_content_idx + 1])
+
     return text
 
 
 def _apply_grammar_corrections(text: str) -> tuple[str, int]:
     """Apply local grammar and spell checking using language-tool-python.
-    
+
     Args:
         text: Text to check
-        
+
     Returns:
         Tuple of (corrected_text, num_corrections)
     """
     try:
         import language_tool_python
-        tool = language_tool_python.LanguageTool('en-US')
-        
+
+        tool = language_tool_python.LanguageTool("en-US")
+
         # Get matches
         matches = tool.check(text)
-        
+
         # Apply corrections
         corrected = language_tool_python.utils.correct(text, matches)
-        
+
         tool.close()
-        
+
         return corrected, len(matches)
-        
+
     except Exception as e:
         # Fallback: return original text if grammar tool fails
         return text, 0
 
 
-def _llm_coherence_review(draft_text: str, shortening_context: str = None) -> tuple[str, Dict[str, Any]]:
+def _llm_coherence_review(
+    draft_text: str, shortening_context: str = None
+) -> tuple[str, Dict[str, Any]]:
     """Perform LLM-based coherence and consistency review.
-    
+
     Args:
         draft_text: Original draft to review
         shortening_context: Optional instruction to shorten
-        
+
     Returns:
         Tuple of (revised_text, token_usage dict)
-        
+
     Raises:
         ModelError: If LLM call fails
     """
@@ -132,11 +135,11 @@ Return ONLY the revised post, no explanations."""
 - Fix any persona inconsistencies (e.g., cliché analogies, academic tone)
 - Preserve the core message and structure
 - Return ONLY the revised post, no explanations"""
-    
+
     # Call LLM (no search grounding for review work)
     client = get_text_client()
     start_time = time.time()
-    
+
     try:
         revised = client.generate_text(
             prompt=prompt,
@@ -144,22 +147,22 @@ Return ONLY the revised post, no explanations."""
             temperature=REVIEW_TEMPERATURE,
             use_search_grounding=False,
         )
-        
+
         duration_ms = int((time.time() - start_time) * 1000)
         token_usage = {}  # TODO: Extract from client
-        
+
         return revised.strip(), token_usage
-        
+
     except Exception as e:
         raise ModelError(f"LLM review failed: {str(e)}")
 
 
 def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     """Review draft with LLM coherence check + local grammar checking + character validation.
-    
+
     Input contract:
         - draft_text (required): Draft text to review
-    
+
     Output contract:
         - original: Original draft text
         - llm_revised: LLM-revised version
@@ -168,7 +171,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         - changes: Summary of changes made
         - char_count: Final character count
         - iterations: Number of shortening iterations
-    
+
     Internal logic:
         - LLM coherence review
         - Local grammar checking with language-tool-python
@@ -180,29 +183,28 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     run_path: Path = context["run_path"]
     cost_tracker = context.get("cost_tracker")
     draft_text = input_obj.get("draft_text")
-    
+
     attempt = 1
     shortening_attempts = 0
     shortening_instruction = None
-    
+
     try:
         if not draft_text:
             raise ValidationError("Missing 'draft_text' for reviewer")
-        
+
         original_text = draft_text
-        
+
         # Shortening loop
         while shortening_attempts <= MAX_SHORTENING_ATTEMPTS:
             # Check budget before API call
             if cost_tracker:
                 cost_tracker.check_budget("gemini-2.5-pro")
-            
+
             # Step 1: LLM Coherence Review
             llm_revised, token_usage = _llm_coherence_review(
-                draft_text, 
-                shortening_instruction
+                draft_text, shortening_instruction
             )
-            
+
             # Record cost
             if cost_tracker:
                 cost_tracker.record_call(
@@ -210,10 +212,10 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     prompt_tokens=0,  # TODO: Extract from client
                     completion_tokens=0,
                 )
-            
+
             # Step 2: Local Grammar Checking
             grammar_checked, num_corrections = _apply_grammar_corrections(llm_revised)
-            
+
             # Log iteration
             char_count = count_chars(grammar_checked)
             log_event(
@@ -229,17 +231,19 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     "shortening_attempt": shortening_attempts,
                 },
             )
-            
+
             # Step 3: Character Count Validation
             if char_count < MAX_CHAR_COUNT:
                 # Success! Prepare response
                 changes = {
-                    "llm_changes": "coherence_review" if llm_revised != draft_text else "none",
+                    "llm_changes": (
+                        "coherence_review" if llm_revised != draft_text else "none"
+                    ),
                     "grammar_corrections": num_corrections,
                     "hashtags_removed": False,
                     "shortening_attempts": shortening_attempts,
                 }
-                
+
                 data = {
                     "original": original_text,
                     "llm_revised": llm_revised,
@@ -249,20 +253,20 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     "char_count": char_count,
                     "iterations": shortening_attempts + 1,
                 }
-                
+
                 # Persist review artifact
                 artifact_path = get_artifact_path(run_path, STEP_CODE)
                 write_and_verify_json(artifact_path, data)
-                
+
                 response = ok(data)
                 validate_envelope(response)
                 return response
-            
+
             # Too long - try hashtag removal first
             if shortening_attempts == 0:
                 text_without_hashtags = _remove_hashtags(grammar_checked)
                 char_count_no_hashtags = count_chars(text_without_hashtags)
-                
+
                 if char_count_no_hashtags < MAX_CHAR_COUNT:
                     # Hashtag removal fixed it!
                     changes = {
@@ -271,7 +275,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                         "hashtags_removed": True,
                         "shortening_attempts": 0,
                     }
-                    
+
                     data = {
                         "original": original_text,
                         "llm_revised": llm_revised,
@@ -281,34 +285,34 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                         "char_count": char_count_no_hashtags,
                         "iterations": 1,
                     }
-                    
+
                     artifact_path = get_artifact_path(run_path, STEP_CODE)
                     write_and_verify_json(artifact_path, data)
-                    
+
                     response = ok(data)
                     validate_envelope(response)
                     return response
-                
+
                 # Hashtag removal wasn't enough, need to shorten
                 grammar_checked = text_without_hashtags
-            
+
             # Still too long - retry with shortening instruction
             shortening_attempts += 1
             if shortening_attempts > MAX_SHORTENING_ATTEMPTS:
                 raise ValidationError(
                     f"Post still {char_count} chars after {MAX_SHORTENING_ATTEMPTS} shortening attempts (limit: {MAX_CHAR_COUNT})"
                 )
-            
+
             # Prepare for next iteration
             draft_text = grammar_checked
             shortening_instruction = f"Revise to under 3000 characters with minor adjustments. Current: {char_count} characters."
             attempt += 1
-        
+
         # Should never reach here due to loop logic
         raise ValidationError(
             "Internal error: exceeded shortening loop without proper exit"
         )
-        
+
     except ValidationError as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
