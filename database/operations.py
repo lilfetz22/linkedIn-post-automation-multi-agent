@@ -55,26 +55,53 @@ def select_new_topic(
 ) -> Optional[dict]:
     """Select a topic from potential_topics for the given field avoiding recent topics.
 
+    First tries unused topics (used = FALSE), then falls back to used topics.
     Deterministic: pick the smallest id among candidates not in the recent set.
+    Marks the selected topic as used.
     Returns {"topic": str} or None if none available.
     """
     recent = set(get_recent_topics(limit=recent_limit, db_path=db_path))
 
     with get_connection(db_path) as conn:
         cur = conn.cursor()
+        
+        # First try: unused topics
         if recent:
             placeholders = ",".join(["?"] * len(recent))
             query = (
                 f"SELECT id, topic_name FROM potential_topics "
-                f"WHERE field = ? AND topic_name NOT IN ({placeholders}) "
+                f"WHERE field = ? AND used = FALSE AND topic_name NOT IN ({placeholders}) "
                 f"ORDER BY id ASC LIMIT 1;"
             )
             params = (field, *recent)
         else:
-            query = "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
+            query = "SELECT id, topic_name FROM potential_topics WHERE field = ? AND used = FALSE ORDER BY id ASC LIMIT 1;"
             params = (field,)
         cur.execute(query, params)
         row = cur.fetchone()
+        
+        # Fallback: allow used topics if no unused ones available
+        if not row:
+            if recent:
+                placeholders = ",".join(["?"] * len(recent))
+                query = (
+                    f"SELECT id, topic_name FROM potential_topics "
+                    f"WHERE field = ? AND topic_name NOT IN ({placeholders}) "
+                    f"ORDER BY id ASC LIMIT 1;"
+                )
+                params = (field, *recent)
+            else:
+                query = "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
+                params = (field,)
+            cur.execute(query, params)
+            row = cur.fetchone()
+        
         if not row:
             return None
-        return {"topic": row[1]}
+        
+        # Mark topic as used
+        topic_id, topic_name = row
+        cur.execute("UPDATE potential_topics SET used = TRUE WHERE id = ?;", (topic_id,))
+        conn.commit()
+        
+        return {"topic": topic_name}
