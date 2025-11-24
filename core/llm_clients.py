@@ -93,7 +93,7 @@ class GeminiTextClient:
             if use_search_grounding:
                 # Build grounding tool
                 grounding_tool = types.Tool(google_search=types.GoogleSearch())
-                
+
                 # Build config with grounding
                 config = types.GenerateContentConfig(
                     temperature=temperature,
@@ -101,25 +101,27 @@ class GeminiTextClient:
                     tools=[grounding_tool],
                     system_instruction=system_instruction,
                 )
-                
+
                 # Generate with grounding
                 response = _grounding_client.models.generate_content(
                     model=self.model_name,
                     contents=prompt,
                     config=config,
                 )
-                
+
                 # Extract token usage and grounding metadata
                 token_usage = {}
                 grounding_metadata = {}
-                
+
                 if hasattr(response, "usage_metadata"):
                     usage = response.usage_metadata
                     token_usage = {
                         "prompt_tokens": getattr(usage, "prompt_token_count", 0),
-                        "completion_tokens": getattr(usage, "candidates_token_count", 0),
+                        "completion_tokens": getattr(
+                            usage, "candidates_token_count", 0
+                        ),
                     }
-                
+
                 # Extract grounding metadata if available
                 if hasattr(response, "candidates") and response.candidates:
                     candidate = response.candidates[0]
@@ -128,14 +130,14 @@ class GeminiTextClient:
                         grounding_metadata["search_queries"] = getattr(
                             candidate.grounding_metadata, "search_entry_point", None
                         )
-                
+
                 return {
                     "text": response.text,
                     "token_usage": token_usage,
                     "model": self.model_name,
                     "grounding_metadata": grounding_metadata,
                 }
-            
+
             else:
                 # Use standard generation without grounding
                 # Build generation config
@@ -164,7 +166,9 @@ class GeminiTextClient:
                     usage = response.usage_metadata
                     token_usage = {
                         "prompt_tokens": getattr(usage, "prompt_token_count", 0),
-                        "completion_tokens": getattr(usage, "candidates_token_count", 0),
+                        "completion_tokens": getattr(
+                            usage, "candidates_token_count", 0
+                        ),
                     }
 
                 return {
