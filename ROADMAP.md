@@ -345,7 +345,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [ ] Add per-run cost accumulator (track actual spend)
 - [ ] Implement safety limits
   - [ ] Add `MAX_API_CALLS_PER_RUN = 25` constant to Orchestrator
-  - [ ] Add `MAX_COST_PER_RUN_USD = 1.00` constant (configurable)
+  - [ ] Add `MAX_COST_PER_RUN_USD = 3.00` constant (configurable)
   - [ ] Raise `ValidationError` if limits exceeded mid-run
   - [ ] Add `--dry-run` flag to `main.py` (stop before first LLM call)
 
