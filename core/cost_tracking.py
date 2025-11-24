@@ -77,7 +77,9 @@ class CostTracker:
             )
 
         # Estimate cost for this call
-        estimated_cost = CostMetrics(model=model, input_tokens=1000, output_tokens=500).cost_usd
+        estimated_cost = CostMetrics(
+            model=model, input_tokens=1000, output_tokens=500
+        ).cost_usd
         new_total_cost = self.total_cost_usd + estimated_cost
 
         if new_total_cost > self.max_cost_usd:
@@ -121,7 +123,7 @@ class CostTracker:
             prompt_tokens = metrics_or_prompt_tokens if metrics_or_prompt_tokens else 0
             completion_tokens = completion_tokens if completion_tokens else 0
             agent = agent_name
-            
+
             # Create cost metrics
             metrics = CostMetrics(
                 model=model,
