@@ -19,7 +19,7 @@ STEP_CODE = "80_image"
 
 def _write_placeholder_png(path: Path) -> None:
     """Write a minimal valid 1x1 PNG as fallback.
-    
+
     Args:
         path: Path where to write the placeholder PNG
     """
@@ -42,26 +42,26 @@ def _generate_image_with_gemini(
     prompt: str, output_path: Path, cost_tracker=None
 ) -> tuple[str, dict]:
     """Generate image using Gemini image model.
-    
+
     Args:
         prompt: Image generation prompt
         output_path: Where to save the generated PNG
         cost_tracker: Optional cost tracker for budget management
-        
+
     Returns:
         Tuple of (image_path, generation_info)
-        
+
     Raises:
         ModelError: If image generation fails
     """
     # Check budget before API call (if tracker provided)
     if cost_tracker:
         cost_tracker.check_budget("gemini-2.5-flash-image")
-    
+
     # Get image client
     client = get_image_client()
     start_time = time.time()
-    
+
     try:
         # Generate image
         result = client.generate_image(
@@ -69,9 +69,9 @@ def _generate_image_with_gemini(
             output_path=output_path,
             aspect_ratio="1:1",  # Square images for LinkedIn
         )
-        
+
         duration_ms = int((time.time() - start_time) * 1000)
-        
+
         # Record cost (if tracker provided)
         if cost_tracker:
             cost_tracker.record_call(
@@ -79,29 +79,29 @@ def _generate_image_with_gemini(
                 prompt_tokens=0,  # Image models don't expose token counts
                 completion_tokens=0,
             )
-        
+
         generation_info = {
             "model": result["model"],
             "duration_ms": duration_ms,
             "fallback_used": False,
         }
-        
+
         return result["image_path"], generation_info
-        
+
     except Exception as e:
         raise ModelError(f"Gemini image generation failed: {str(e)}") from e
 
 
 def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     """Generate image from prompt using Gemini with fallback to placeholder.
-    
+
     Input contract:
         - image_prompt_path (required): Path to text file containing image prompt
-    
+
     Output contract:
         - image_path: Path to generated PNG file
         - generation_info: Dict with model, duration, fallback status
-    
+
     Internal logic:
         - Read prompt from image_prompt_path
         - Attempt Gemini image generation (gemini-2.5-flash-image)
@@ -114,33 +114,31 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     cost_tracker = context.get("cost_tracker")
     image_prompt_path = input_obj.get("image_prompt_path")
     attempt = 1
-    
+
     try:
         # Validate input
         if not image_prompt_path:
             raise ValidationError("Missing 'image_prompt_path' for image generation")
-        
+
         prompt_path = Path(image_prompt_path)
         if not prompt_path.exists():
-            raise ValidationError(
-                f"Image prompt file not found: {image_prompt_path}"
-            )
-        
+            raise ValidationError(f"Image prompt file not found: {image_prompt_path}")
+
         # Read prompt from file
         prompt_text = prompt_path.read_text(encoding="utf-8").strip()
         if not prompt_text:
             raise ValidationError("Image prompt file is empty")
-        
+
         # Determine output path
         artifact_path = get_artifact_path(run_path, STEP_CODE, extension="png")
-        
+
         # Attempt real image generation with Gemini
         generation_info = None
         try:
             image_path, generation_info = _generate_image_with_gemini(
                 prompt_text, artifact_path, cost_tracker
             )
-            
+
             log_event(
                 run_id,
                 "image_generation",
@@ -150,7 +148,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 model=generation_info.get("model"),
                 token_usage={"fallback": False},
             )
-            
+
         except ModelError as e:
             # Fallback to placeholder PNG
             _write_placeholder_png(artifact_path)
@@ -160,7 +158,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 "fallback_used": True,
                 "fallback_reason": str(e),
             }
-            
+
             log_event(
                 run_id,
                 "image_generation",
@@ -172,22 +170,24 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     "reason": "gemini_generation_failed",
                 },
             )
-        
+
         # Validate generated file
         if not artifact_path.exists():
             raise ModelError("Image file was not created")
-        
+
         if artifact_path.stat().st_size == 0:
             raise ModelError("Generated image file is empty")
-        
+
         # Success response
-        response = ok({
-            "image_path": image_path,
-            "generation_info": generation_info,
-        })
+        response = ok(
+            {
+                "image_path": image_path,
+                "generation_info": generation_info,
+            }
+        )
         validate_envelope(response)
         return response
-        
+
     except ValidationError as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
