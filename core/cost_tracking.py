@@ -60,17 +60,75 @@ class CostTracker:
     costs_by_agent: Dict[str, float] = field(default_factory=dict)
     calls_by_agent: Dict[str, int] = field(default_factory=dict)
 
-    def record_call(self, agent_name: str, metrics: CostMetrics):
+    def check_budget(self, model: str):
         """
-        Record an API call and update cost tracking.
+        Check if we can make another API call within budget limits.
 
         Args:
-            agent_name: Name of the agent making the call
-            metrics: Cost metrics from the call
+            model: Model name for the upcoming call
 
         Raises:
             ValidationError: If budget limits would be exceeded
         """
+        if self.api_call_count >= self.max_api_calls:
+            raise ValidationError(
+                f"Maximum API calls ({self.max_api_calls}) exceeded. "
+                f"Current count: {self.api_call_count}"
+            )
+
+        # Estimate cost for this call
+        estimated_cost = CostMetrics(model=model, input_tokens=1000, output_tokens=500).cost_usd
+        new_total_cost = self.total_cost_usd + estimated_cost
+
+        if new_total_cost > self.max_cost_usd:
+            raise ValidationError(
+                f"Maximum cost (${self.max_cost_usd:.2f}) may be exceeded. "
+                f"Current: ${self.total_cost_usd:.4f}, "
+                f"Estimated new total: ${new_total_cost:.4f}"
+            )
+
+    def record_call(
+        self,
+        agent_name_or_model: str,
+        metrics_or_prompt_tokens: "CostMetrics | int" = 0,
+        completion_tokens: Optional[int] = None,
+        agent_name: Optional[str] = None,
+    ):
+        """
+        Record an API call and update cost tracking.
+
+        Supports two calling patterns:
+        1. Old pattern: record_call(agent_name: str, metrics: CostMetrics)
+        2. New pattern: record_call(model: str, prompt_tokens: int, completion_tokens: int, agent_name: str)
+
+        Args:
+            agent_name_or_model: Agent name (old) or model name (new)
+            metrics_or_prompt_tokens: CostMetrics object (old) or prompt tokens count (new)
+            completion_tokens: Number of output tokens (new pattern only)
+            agent_name: Agent name (new pattern only)
+
+        Raises:
+            ValidationError: If budget limits would be exceeded
+        """
+        # Determine which calling pattern is being used
+        if isinstance(metrics_or_prompt_tokens, CostMetrics):
+            # Old pattern: record_call(agent_name, metrics)
+            agent = agent_name_or_model
+            metrics = metrics_or_prompt_tokens
+        else:
+            # New pattern: record_call(model, prompt_tokens, completion_tokens, agent_name)
+            model = agent_name_or_model
+            prompt_tokens = metrics_or_prompt_tokens if metrics_or_prompt_tokens else 0
+            completion_tokens = completion_tokens if completion_tokens else 0
+            agent = agent_name
+            
+            # Create cost metrics
+            metrics = CostMetrics(
+                model=model,
+                input_tokens=prompt_tokens,
+                output_tokens=completion_tokens,
+            )
+
         # Check limits BEFORE recording
         if self.api_call_count >= self.max_api_calls:
             raise ValidationError(
@@ -91,11 +149,12 @@ class CostTracker:
         self.total_cost_usd = new_total_cost
         self.api_call_count += 1
 
-        # Update per-agent tracking
-        self.costs_by_agent[agent_name] = (
-            self.costs_by_agent.get(agent_name, 0.0) + metrics.cost_usd
-        )
-        self.calls_by_agent[agent_name] = self.calls_by_agent.get(agent_name, 0) + 1
+        # Update per-agent tracking (if agent name provided)
+        if agent:
+            self.costs_by_agent[agent] = (
+                self.costs_by_agent.get(agent, 0.0) + metrics.cost_usd
+            )
+            self.calls_by_agent[agent] = self.calls_by_agent.get(agent, 0) + 1
 
     def get_summary(self) -> Dict[str, any]:
         """

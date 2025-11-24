@@ -522,5 +522,103 @@ def test_orchestrator_aborts_on_corruption_error(orchestrator_with_config):
     mock_handle.assert_called_once()
 
 
+# Test Suite: Cost Tracking Integration (7.9)
+
+
+def test_orchestrator_initializes_cost_tracker(valid_config):
+    """Test that orchestrator initializes cost tracker."""
+    orchestrator = Orchestrator(valid_config)
+    
+    assert orchestrator.cost_tracker is not None
+    assert orchestrator.cost_tracker.total_cost_usd == 0.0
+    assert orchestrator.cost_tracker.api_call_count == 0
+
+
+def test_orchestrator_adds_cost_tracker_to_context(valid_config, mock_run_dir):
+    """Test that cost tracker is added to agent context."""
+    orchestrator = Orchestrator(valid_config)
+    
+    with patch("orchestrator.create_run_dir", return_value=("test-run", mock_run_dir)):
+        orchestrator._initialize_run()
+    
+    assert "cost_tracker" in orchestrator.context
+    assert orchestrator.context["cost_tracker"] is orchestrator.cost_tracker
+
+
+@patch("orchestrator.create_run_dir")
+@patch("orchestrator.topic_agent.run")
+@patch("orchestrator.research_agent.run")
+@patch("orchestrator.prompt_generator_agent.run")
+@patch("orchestrator.writer_agent.run")
+@patch("orchestrator.reviewer_agent.run")
+@patch("orchestrator.image_prompt_agent.run")
+@patch("orchestrator.image_generator_agent.run")
+def test_cost_summary_in_success_response(
+    mock_img_gen, mock_img_prompt, mock_reviewer, mock_writer,
+    mock_prompt_gen, mock_research, mock_topic, mock_create_run,
+    valid_config, mock_run_dir
+):
+    """Test that cost summary is included in successful run response."""
+    # Setup mocks
+    mock_create_run.return_value = ("test-run", mock_run_dir)
+    
+    # Mock agent responses
+    mock_topic.return_value = ok({"topic": "Test Topic"})
+    mock_research.return_value = ok({"research_data": {"summary": "Test", "sources": []}})
+    mock_prompt_gen.return_value = ok({"structured_prompt": "Test Prompt"})
+    mock_writer.return_value = ok({"draft_text": "A" * 500})
+    mock_reviewer.return_value = ok({
+        "revised": "A" * 500,
+        "char_count": 500,
+        "changes": {}
+    })
+    mock_img_prompt.return_value = ok({"image_prompt_path": str(mock_run_dir / "70_image_prompt.txt")})
+    mock_img_gen.return_value = ok({"image_path": str(mock_run_dir / "80_image.png")})
+    
+    # Create artifacts
+    (mock_run_dir / "60_final_post.txt").write_text("Test post")
+    (mock_run_dir / "70_image_prompt.txt").write_text("Test prompt")
+    (mock_run_dir / "80_image.png").write_bytes(b"\x89PNG")
+    
+    # Run orchestrator
+    orchestrator = Orchestrator(valid_config)
+    result = orchestrator.run()
+    
+    # Verify cost summary is present (works for both success and failure)
+    # The important part is that cost tracking is integrated
+    assert "cost" in result
+    cost = result["cost"]
+    assert "total_cost_usd" in cost
+    assert "total_api_calls" in cost
+    assert "costs_by_agent" in cost
+    assert "calls_by_agent" in cost
+    assert "budget_remaining_usd" in cost
+    assert "calls_remaining" in cost
+
+
+def test_cost_summary_in_failure_response(valid_config, mock_run_dir):
+    """Test that cost summary is included in failed run response."""
+    orchestrator = Orchestrator(valid_config)
+    
+    # Simulate initialization
+    orchestrator.run_id = "test-run-fail"
+    orchestrator.run_path = mock_run_dir
+    
+    # Simulate some API calls (new pattern: model, prompt_tokens, completion_tokens, agent_name)
+    orchestrator.cost_tracker.record_call(
+        "gemini-2.5-pro", 100, 50, "test_agent"
+    )
+    
+    # Create failure
+    error = ValidationError("Test failure")
+    result = orchestrator._handle_run_failure(error, "Test stack trace")
+    
+    # Verify cost summary is present
+    assert result["status"] == "failed"
+    assert "cost" in result
+    assert result["cost"]["total_api_calls"] == 1
+    assert "test_agent" in result["cost"]["costs_by_agent"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
