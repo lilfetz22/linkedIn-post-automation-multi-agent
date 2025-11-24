@@ -327,17 +327,247 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - Print relative paths to: `60_final_post.txt`, `70_image_prompt.txt`, `80_image.png`.
   - Exit with non-zero code if `status == "failed"` to aid CI.
 
-## Phase 7: Memory Bank Content
-- [ ] Add sample newsletter `.txt` files to `memory_bank/`
+## Phase 7: LLM Integration & Agent Intelligence (CRITICAL)
+**Purpose:** Transform stub agents into fully functional LLM-powered agents. This is the core value-add of the system—without this phase, the pipeline only generates mock content.
+
+### 7.0 Prerequisites & Safety Infrastructure
+- [ ] Load system prompts from `system_prompts.md` into memory
+  - [ ] Parse "Strategic Content Architect - User Prompt Engineer" section
+  - [ ] Parse "The Witty Expert Persona" section
+  - [ ] Parse "Social Media Visual Strategist" section
+  - [ ] Create utility function `load_system_prompt(section_name)` in `core/`
+- [ ] Implement cost tracking infrastructure
+  - [ ] Add `CostTracker` class to `core/` with per-model pricing
+    - [ ] Gemini 2.5 Pro text pricing (input/output tokens)
+    - [ ] Gemini 2.5 Flash Image pricing
+  - [ ] Add `estimate_run_cost()` method to Orchestrator
+  - [ ] Add API call counter to orchestrator metrics
+  - [ ] Add per-run cost accumulator (track actual spend)
+- [ ] Implement safety limits
+  - [ ] Add `MAX_API_CALLS_PER_RUN = 25` constant to Orchestrator
+  - [ ] Add `MAX_COST_PER_RUN_USD = 1.00` constant (configurable)
+  - [ ] Raise `ValidationError` if limits exceeded mid-run
+  - [ ] Add `--dry-run` flag to `main.py` (stop before first LLM call)
+
+### 7.1 Topic Agent Enhancement
+- [ ] Add LLM fallback for empty topic database
+  - [ ] Check if `potential_topics` has any unused topics (`used = FALSE`)
+  - [ ] If yes: use existing database selection logic (no LLM call)
+  - [ ] If no: call LLM to generate new topics
+    - [ ] Build prompt: "Generate 10 topic candidates for [field]. Prefer net-new, specific topics (emerging trends, overlooked fundamentals, concrete pain points). You MAY reuse a previously covered macro-topic ONLY if proposing a distinctly new avenue (fresh sub-problem, perspective, data source, or audience pain point). Otherwise produce topics not yet posted." 
+    - [ ] Parse LLM response into structured list (flag each as `net_new` or `reused_with_new_angle`)
+    - [ ] Insert topics into `potential_topics` with `used = FALSE` (for reused angles, include distinguishing detail in name or future metadata column)
+    - [ ] Select first acceptable topic (prioritize `net_new`; allow `reused_with_new_angle` if clearly distinct)
+- [ ] Update database schema to include `used` column
+  - [ ] Migration script: `ALTER TABLE potential_topics ADD COLUMN used BOOLEAN DEFAULT FALSE`
+  - [ ] Update `select_new_topic()` to mark selected topic as `used = TRUE`
+- [ ] Tests
+  - [ ] Test database selection path (no LLM call)
+  - [ ] Test LLM fallback path with empty database (mock LLM)
+  - [ ] Test topic insertion and `used` flag toggling
+
+### 7.2 Research Agent Enhancement
+- [ ] Integrate web search capability
+  - [ ] Evaluate search tools: Tavily API, SerpAPI, or Google Custom Search
+  - [ ] Add chosen search API key to `.env`
+  - [ ] Implement `search_web(query, num_results=5)` in `core/search.py`
+- [ ] Replace stub logic with LLM-powered research
+  - [ ] Execute web search for selected topic
+  - [ ] Extract top 5-10 source URLs and snippets
+  - [ ] Build LLM prompt: "Synthesize these search results into a research summary: [sources]. Focus on key metrics, pain points, and recent developments."
+  - [ ] Call `get_text_client().generate_text()` with research prompt
+  - [ ] Parse LLM response into structured research summary
+  - [ ] Persist full sources + summary to `20_research.json`
+- [ ] Fallback handling
+  - [ ] If search returns 0 results: raise `DataNotFoundError` (triggers topic pivot)
+  - [ ] If LLM synthesis fails: use concatenated snippets as summary
+- [ ] Tests
+  - [ ] Test web search integration (mock API)
+  - [ ] Test LLM synthesis with sample search results
+  - [ ] Test fallback path for empty search results
+
+### 7.3 Prompt Generator Agent Enhancement
+- [ ] Load system prompt from `system_prompts.md`
+  - [ ] Extract "Strategic Content Architect - User Prompt Engineer" section
+  - [ ] Store as `PROMPT_ARCHITECT_SYSTEM_PROMPT` constant
+- [ ] Replace stub logic with LLM call
+  - [ ] Build user message: topic + research summary
+  - [ ] Call `get_text_client().generate_text()` with:
+    - [ ] `system_instruction=PROMPT_ARCHITECT_SYSTEM_PROMPT`
+    - [ ] `prompt="[topic]\n[research_summary]"`
+    - [ ] `temperature=0.7`
+  - [ ] Parse LLM response to extract structured prompt fields
+  - [ ] Validate required fields present (topic, audience, pain point, etc.)
+- [ ] Persona fidelity validation
+  - [ ] Check for template structure presence
+  - [ ] Detect cliché analogies (maintain blacklist: "distributed ledger", "like a library", etc.)
+  - [ ] Raise `ValidationError` if clichés detected
+- [ ] Tests
+  - [ ] Test LLM call with mock client
+  - [ ] Test structured output parsing
+  - [ ] Test cliché detection logic
+  - [ ] Test persona compliance assertions
+
+### 7.4 Remove Strategic Type Agent from Pipeline
+- [ ] Update `orchestrator.py`
+  - [ ] Remove `_execute_strategic_planning()` method call from pipeline
+  - [ ] Remove import of `strategic_type_agent`
+  - [ ] Update Writer Agent input to receive only `structured_prompt` (no `strategy`)
+  - [ ] Update pipeline flow comments to reflect 7-step process (not 8)
+- [ ] Keep `agents/strategic_type_agent.py` file (do not delete)
+  - [ ] Add comment at top: "DEPRECATED: Removed from pipeline. May be refactored in future."
+- [ ] Update tests
+  - [ ] Remove Strategic Type Agent tests from integration tests
+  - [ ] Update orchestrator tests to skip strategic planning step
+- [ ] Update documentation
+  - [ ] Update ROADMAP agent list
+  - [ ] Update README pipeline diagram (when created)
+
+### 7.5 Writer Agent Enhancement
+- [ ] Load system prompt from `system_prompts.md`
+  - [ ] Extract "The Witty Expert Persona" section
+  - [ ] Store as `WITTY_EXPERT_SYSTEM_PROMPT` constant
+- [ ] Replace stub logic with LLM call
+  - [ ] Build user message from `structured_prompt` dict
+  - [ ] Call `get_text_client().generate_text()` with:
+    - [ ] `system_instruction=WITTY_EXPERT_SYSTEM_PROMPT`
+    - [ ] `prompt=formatted_structured_prompt`
+    - [ ] `temperature=0.8` (higher for creative writing)
+- [ ] Implement character count loop **within Writer Agent**
+  - [ ] After LLM generates draft, check `count_chars(draft) < 3000`
+  - [ ] If pass: return draft in envelope
+  - [ ] If fail: build shortening prompt
+    - [ ] "This post is {char_count} characters (limit: 3000). Shorten it to under 3000 characters without impacting overall content."
+    - [ ] Retry LLM call with original system prompt + draft + shortening instruction
+    - [ ] Max 3 shortening attempts within agent (raise `ValidationError` if exceeded)
+- [ ] Update input/output contract
+  - [ ] Remove `strategy` from input
+  - [ ] Add optional `shortening_instruction` input (for orchestrator-level loop)
+  - [ ] Ensure draft passes character validation before returning
+- [ ] Tests
+  - [ ] Test LLM call with structured prompt
+  - [ ] Test character count validation pass/fail
+  - [ ] Test internal shortening retry loop
+  - [ ] Test max shortening attempts exceeded
+
+### 7.6 Reviewer Agent Enhancement
+- [ ] Load review guidelines (optional: extract from persona docs)
+- [ ] Implement single-pass LLM review with local grammar checking
+  - [ ] **LLM Pass: Contextual & Coherence Review**
+    - [ ] Build prompt: "Review this LinkedIn post for logical flow, coherence, and persona consistency (Witty Expert). Return the revised version: [draft]"
+    - [ ] Call `get_text_client().generate_text()` with review prompt
+    - [ ] Parse LLM response to extract revised post
+  - [ ] **Local Grammar & Spelling Check**
+    - [ ] Use `language-tool-python` to check LLM-revised post for grammar/spelling errors
+    - [ ] Apply corrections automatically
+    - [ ] Store grammar-checked version
+- [ ] Character count validation loop
+  - [ ] Check if grammar-checked post passes `count_chars(post) < 3000`
+  - [ ] If pass: persist to `50_review.json` and return
+  - [ ] If fail: execute hashtag removal logic
+    - [ ] Programmatically remove all hashtags from end of post (lines starting with `#` after final paragraph)
+    - [ ] Re-check `count_chars(post_without_hashtags) < 3000`
+    - [ ] If now pass: persist and return
+    - [ ] If still fail: build shortening instruction
+      - [ ] "This post is {char_count} characters (limit: 3000). Revise with minor adjustments to shorten it. Do NOT include hashtags at the end."
+      - [ ] Send back to LLM review with shortening instruction
+      - [ ] Max 3 shortening attempts (raise `ValidationError` if exceeded)
+- [ ] Update artifact structure
+  - [ ] Persist review outputs to `50_review.json` (include: LLM-revised, grammar-checked, final version, char count, iteration count)
+  - [ ] Include diff summary between original → LLM-revised → grammar-checked → shortened (if applicable)
+- [ ] Tests
+  - [ ] Test LLM review pass with mock client
+  - [ ] Test local grammar tool integration
+  - [ ] Test character count validation pass/fail
+  - [ ] Test hashtag removal logic
+  - [ ] Test shortening iteration loop
+  - [ ] Test max shortening attempts exceeded
+
+### 7.7 Image Prompt Generator Agent Enhancement
+- [ ] Load system prompt from `system_prompts.md`
+  - [ ] Extract "Social Media Visual Strategist" section
+  - [ ] Store as `VISUAL_STRATEGIST_SYSTEM_PROMPT` constant
+- [ ] Replace stub logic with LLM call
+  - [ ] Build user message: final reviewed post text
+  - [ ] Call `get_text_client().generate_text()` with:
+    - [ ] `system_instruction=VISUAL_STRATEGIST_SYSTEM_PROMPT`
+    - [ ] `prompt=final_post_text`
+    - [ ] `temperature=0.7`
+  - [ ] Parse LLM response to extract image prompt
+  - [ ] Validate prompt contains no text/words/letters instruction
+- [ ] Tests
+  - [ ] Test LLM call with final post
+  - [ ] Test prompt validation (no-text constraint)
+  - [ ] Test presence of visual keywords (subject, environment, lighting, mood)
+
+### 7.8 Image Generator Agent Enhancement
+- [ ] Replace stub PNG with real Gemini image generation
+  - [ ] Read image prompt from `70_image_prompt.txt`
+  - [ ] Call `get_image_client().generate_image()` with:
+    - [ ] `prompt=image_prompt_text`
+    - [ ] `output_path=80_image.png`
+    - [ ] `aspect_ratio="1:1"` (LinkedIn optimal)
+  - [ ] Verify generated image file size > 1KB (not empty)
+- [ ] Fallback handling
+  - [ ] If image generation fails: create simple gradient placeholder PNG
+  - [ ] Log warning but don't abort run
+- [ ] Tests
+  - [ ] Test real image generation (mock client)
+  - [ ] Test fallback placeholder generation
+  - [ ] Test file integrity validation
+
+### 7.9 Cost Tracking & Reporting
+- [ ] Instrument all LLM calls with cost tracking
+  - [ ] After each `generate_text()` call: extract token usage
+  - [ ] Calculate cost: `(prompt_tokens * input_price + completion_tokens * output_price)`
+  - [ ] Accumulate in orchestrator metrics: `total_cost_usd`
+- [ ] Add cost reporting to run summary
+  - [ ] Print estimated cost before run starts
+  - [ ] Print actual cost in final summary
+  - [ ] Include cost breakdown by agent in `metrics` dict
+- [ ] Add cost alerts
+  - [ ] Warn if single run exceeds $0.50
+  - [ ] Abort if single run exceeds `MAX_COST_PER_RUN_USD`
+- [ ] Tests
+  - [ ] Test cost calculation with known token counts
+  - [ ] Test cost accumulation across multiple agents
+  - [ ] Test max cost abort logic
+
+### 7.10 Integration Testing
+- [ ] Create `tests/test_integration/test_llm_pipeline.py`
+  - [ ] Test full pipeline with mocked LLM responses
+  - [ ] Verify all agents make expected LLM calls
+  - [ ] Verify system prompts loaded correctly
+  - [ ] Verify cost tracking across full run
+- [ ] Create manual smoke test script
+  - [ ] `python -m scripts.smoke_test --field "Data Science" --max-cost 0.10`
+  - [ ] Run real pipeline with budget cap
+  - [ ] Verify artifacts created and valid
+  - [ ] Print cost summary
+
+### 7.11 Documentation
+- [ ] Update README with LLM integration details
+  - [ ] Document which agents call which models
+  - [ ] Document cost estimation methodology
+  - [ ] Document safety limits and flags
+- [ ] Add `.env.example` with required API keys
+  - [ ] `GOOGLE_API_KEY=your_key_here`
+  - [ ] `SEARCH_API_KEY=your_key_here` (if using Tavily/SerpAPI)
+- [ ] Document system prompt maintenance
+  - [ ] How to update personas in `system_prompts.md`
+  - [ ] How to test prompt changes
+
+## Phase 8: Memory Bank Content
+- [x] Add sample newsletter `.txt` files to `memory_bank/`
 - [ ] Document ingestion assumptions in README
 - [ ] Test RAG retrieval relevance
 
-## Phase 8: Configuration & Environment
+## Phase 9: Configuration & Environment
 - [ ] Implement `.env` loading using `python-dotenv`
 - [ ] Validate presence of `GOOGLE_API_KEY`; raise clear error if missing
 - [ ] Update README with environment setup steps
 
-## Phase 9: Testing Infrastructure
+## Phase 10: Testing Infrastructure
 ### 9.1 Test Utilities
 - [ ] Create `tests/conftest.py` (fixtures: temp run dir, mock LLM client, mock RAG store)
 - [ ] Fixture for deterministic token usage metrics
@@ -364,7 +594,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [ ] Add pytest coverage configuration
 - [ ] Require >85% coverage (adjust threshold once stable)
 
-## Phase 10: Dependency Management
+## Phase 11: Dependency Management
 - [ ] Populate `requirements.txt` (initial)
   - [ ] `google-generativeai`
   - [ ] `python-dotenv`
@@ -373,16 +603,19 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [ ] `pytest-cov`
   - [ ] `tqdm` (optional for progress)
   - [ ] `pydantic` (optional for envelope validation)
+  - [ ] Search API library (Tavily, SerpAPI, or similar)
+  - [ ] `language-tool-python` (optional fallback grammar checker)
 - [ ] Freeze versions (pin where critical)
 - [ ] Test fresh install in clean venv
 
-## Phase 11: Documentation Enhancements
+## Phase 12: Documentation Enhancements
 - [ ] Expand `README.md` with sections: Overview, Architecture Diagram (text-based), Setup, Usage, Testing, Error Taxonomy, Personas, Roadmap reference
 - [ ] Add `docs/` directory (optional) for deeper explanations
 - [ ] Add `ROADMAP.md` (this file) – DONE
 - [ ] Provide example run artifact tree in README
+- [ ] Document LLM integration and cost management
 
-## Phase 12: Quality & Validation
+## Phase 13: Quality & Validation
 - [ ] Run linting (consider adding `ruff` or `flake8`)
 - [ ] Add CI workflow (GitHub Actions) for tests + coverage
 - [ ] Add semantic-release workflow (Python flavor or conventional-changelog approach)
@@ -410,23 +643,25 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 | Milestone | Phases Included | Completion Target |
 |-----------|-----------------|-------------------|
 | M1 | 0–3 | Core skeleton + DB ready |
-| M2 | 4–6 | All agents + orchestrator functional |
-| M3 | 7–9 | RAG + tests with high coverage |
-| M4 | 10–12 | Stable release + CI/CD + docs |
-| M5 | 13–15 | Resilience edge cases + enhancements |
+| M2 | 4–6 | All agents + orchestrator functional (stubs) |
+| M3 | 7 | **LLM Integration (CRITICAL)** - Real agent intelligence |
+| M4 | 8–10 | Memory bank + config + tests with high coverage |
+| M5 | 11–13 | Stable release + CI/CD + docs |
+| M6 | 14–16 | Resilience edge cases + enhancements |
 
 ## Execution Order (Condensed Checklist)
 1. Skeleton & infra (Phases 1–2)
 2. DB & RAG (Phases 3 & 2.7)
-3. Agents (Phase 4)
-4. Orchestrator + main (Phases 5–6)
-5. Memory bank content (Phase 7)
-6. Env & config (Phase 8)
-7. Tests & coverage (Phase 9)
-8. Dependencies (Phase 10)
-9. Docs & CI (Phases 11–12)
-10. Fallback tests (Phase 13)
-11. Optional perf & backlog (14–15)
+3. Agents (Phase 4) - Stub implementations
+4. Orchestrator + main (Phases 5–6) - Stub pipeline functional
+5. **LLM Integration (Phase 7)** - 🚨 CRITICAL: Transform stubs into real agents
+6. Memory bank content (Phase 8)
+7. Env & config (Phase 9)
+8. Tests & coverage (Phase 10)
+9. Dependencies (Phase 11)
+10. Docs & CI (Phases 12–13)
+11. Fallback tests (Phase 14)
+12. Optional perf & backlog (15–16)
 
 ## Agent Contract (Reference)
 Each agent must:
