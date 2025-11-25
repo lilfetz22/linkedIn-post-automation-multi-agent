@@ -57,7 +57,6 @@ def test_image_generator_agent_success_with_gemini(
     """Test successful image generation with Gemini."""
     # Mock image client
     mock_client = MagicMock()
-    output_path = temp_run_dir / "80_image.png"
 
     # Simulate successful image generation
     def mock_generate_image(prompt, output_path, aspect_ratio):
