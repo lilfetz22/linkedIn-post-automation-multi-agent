@@ -95,7 +95,7 @@ def _generate_draft_with_llm(
         ModelError: If LLM call fails
     """
     # Load Witty Expert persona from system_prompts.md
-    system_prompt = load_system_prompt("The Witty Expert Persona")
+    system_prompt = load_system_prompt("witty_expert")
 
     # Format structured prompt as user message
     user_message = _format_structured_prompt_as_user_message(structured)
