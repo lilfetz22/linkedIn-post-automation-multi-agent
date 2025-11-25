@@ -78,6 +78,7 @@ def _generate_image_with_gemini(
                 model="gemini-2.5-flash-image",
                 prompt_tokens=0,  # Image models don't expose token counts
                 completion_tokens=0,
+                agent_name="image_generator_agent"
             )
 
         generation_info = {
