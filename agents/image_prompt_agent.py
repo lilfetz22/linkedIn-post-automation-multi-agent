@@ -79,24 +79,25 @@ Provide only the image prompt, ready for an AI image generator."""
     start_time = time.time()
 
     try:
-        prompt = client.generate_text(
+        response = client.generate_text(
             prompt=user_prompt,
             system_instruction=system_instruction,
             temperature=PROMPT_TEMPERATURE,
             use_search_grounding=False,
         )
+        prompt_text = response["text"]
 
         duration_ms = int((time.time() - start_time) * 1000)
         token_usage = {"duration_ms": duration_ms}  # TODO: Extract from client
 
         # Validate no-text constraint
-        if not _validate_no_text_constraint(prompt):
+        if not _validate_no_text_constraint(prompt_text):
             raise ValidationError(
                 "Generated image prompt missing 'no text' constraint. "
                 "Image must explicitly specify zero text/words/letters."
             )
 
-        return prompt.strip(), token_usage
+        return prompt_text.strip(), token_usage
 
     except ValidationError:
         raise
@@ -144,7 +145,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 model="gemini-2.5-pro",
                 prompt_tokens=token_usage.get("prompt_tokens", 0),
                 completion_tokens=token_usage.get("completion_tokens", 0),
-                agent_name="image_prompt_agent"
+                agent_name="image_prompt_agent",
             )
 
         # Persist prompt

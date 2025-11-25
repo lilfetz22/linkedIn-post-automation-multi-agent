@@ -126,12 +126,13 @@ Please regenerate the post with the SAME core message and structure, but shorten
     start_time = time.time()
 
     try:
-        draft = client.generate_text(
+        response = client.generate_text(
             prompt=user_message,
             system_instruction=system_prompt,
             temperature=TEMPERATURE,
             use_search_grounding=False,
         )
+        draft_text = response["text"]
 
         duration_ms = int((time.time() - start_time) * 1000)
 
@@ -139,7 +140,7 @@ Please regenerate the post with the SAME core message and structure, but shorten
         # For now, return empty dict - will be populated by cost tracker
         token_usage = {}
 
-        return draft.strip(), token_usage
+        return draft_text.strip(), token_usage
 
     except Exception as e:
         raise ModelError(f"LLM generation failed: {str(e)}")
@@ -178,7 +179,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         # Internal character count loop
         while shortening_attempts <= MAX_SHORTENING_ATTEMPTS:
             # Generate draft (includes internal budget check)
-            draft, token_usage = _generate_draft_with_llm(structured, previous_draft, cost_tracker)
+            draft, token_usage = _generate_draft_with_llm(
+                structured, previous_draft, cost_tracker
+            )
 
             # Record cost (if cost tracker provided)
             if cost_tracker:
@@ -186,7 +189,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     model="gemini-2.5-pro",
                     prompt_tokens=token_usage.get("prompt_tokens", 0),
                     completion_tokens=token_usage.get("completion_tokens", 0),
-                    agent_name="writer_agent"
+                    agent_name="writer_agent",
                 )
 
             # Log generation attempt

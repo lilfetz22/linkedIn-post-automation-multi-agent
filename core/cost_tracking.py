@@ -163,6 +163,13 @@ class CostTracker:
             completion_tokens = completion_tokens if completion_tokens else 0
             agent = agent_name
 
+            # Validate that agent_name is provided when using new pattern
+            if not agent:
+                raise ValidationError(
+                    "agent_name must be provided when using new calling pattern: "
+                    "record_call(model, prompt_tokens, completion_tokens, agent_name)"
+                )
+
             # Create cost metrics
             metrics = CostMetrics(
                 model=model,
