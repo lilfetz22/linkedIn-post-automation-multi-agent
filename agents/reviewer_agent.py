@@ -148,17 +148,18 @@ Return ONLY the revised post, no explanations."""
     start_time = time.time()
 
     try:
-        revised = client.generate_text(
+        response = client.generate_text(
             prompt=prompt,
             system_instruction="You are a meticulous editor reviewing LinkedIn posts for coherence and persona consistency. Make precise improvements while preserving the author's voice.",
             temperature=REVIEW_TEMPERATURE,
             use_search_grounding=False,
         )
+        revised_text = response["text"]
 
         duration_ms = int((time.time() - start_time) * 1000)
         token_usage = {}  # TODO: Extract from client
 
-        return revised.strip(), token_usage
+        return revised_text.strip(), token_usage
 
     except Exception as e:
         raise ModelError(f"LLM review failed: {str(e)}")
