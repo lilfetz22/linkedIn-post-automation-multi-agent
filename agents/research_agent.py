@@ -20,7 +20,7 @@ from core.cost_tracking import CostMetrics
 STEP_CODE = "20_research"
 
 
-def _conduct_llm_research(topic: str) -> Dict[str, Any]:
+def _conduct_llm_research(topic: str, cost_tracker=None) -> Dict[str, Any]:
     """
     Use LLM to generate research synthesis for a topic.
 
@@ -29,6 +29,7 @@ def _conduct_llm_research(topic: str) -> Dict[str, Any]:
 
     Args:
         topic: The topic to research
+        cost_tracker: Optional cost tracker for budget management
 
     Returns:
         Dict with "sources" (list) and "summary" (str)
@@ -58,6 +59,10 @@ Requirements:
 - Highlight audience pain points and practical implications
 
 Return ONLY the JSON, no additional text."""
+
+    # Check budget before API call
+    if cost_tracker:
+        cost_tracker.check_budget("gemini-2.5-pro", prompt)
 
     client = get_text_client()
     result = client.generate_text(
@@ -117,7 +122,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             raise ValidationError("Missing 'topic' in research agent input")
 
         # Conduct LLM-powered research
-        research_result = _conduct_llm_research(topic)
+        research_result = _conduct_llm_research(topic, cost_tracker)
 
         # Track cost if tracker provided
         if cost_tracker and "token_usage" in research_result:

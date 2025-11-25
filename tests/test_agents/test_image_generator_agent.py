@@ -253,8 +253,10 @@ def test_image_generator_agent_cost_tracking_integration(
 
     assert response["status"] == "ok"
 
-    # Verify budget check was called
-    mock_cost_tracker.check_budget.assert_called_once_with("gemini-2.5-flash-image")
+    # Verify budget check was called (first positional arg is model)
+    assert mock_cost_tracker.check_budget.call_count == 1
+    gen_args, gen_kwargs = mock_cost_tracker.check_budget.call_args
+    assert gen_args[0] == "gemini-2.5-flash-image"
 
     # Verify cost was recorded
     mock_cost_tracker.record_call.assert_called_once()

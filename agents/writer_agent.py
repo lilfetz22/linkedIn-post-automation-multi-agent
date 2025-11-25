@@ -80,7 +80,7 @@ Generate the complete LinkedIn post now."""
 
 
 def _generate_draft_with_llm(
-    structured: Dict[str, Any], shortening_context: str = None
+    structured: Dict[str, Any], shortening_context: str = None, cost_tracker=None
 ) -> tuple[str, Dict[str, Any]]:
     """Generate LinkedIn post draft using Gemini LLM.
 
@@ -112,6 +112,14 @@ The previous draft was too long. Here it is:
 ---
 
 Please regenerate the post with the SAME core message and structure, but shorten it to under 3000 characters (excluding line breaks). Remove unnecessary elaboration, tighten phrasing, but preserve the hook, analogy, metrics, and sign-off."""
+
+    # Budget check with full prompt prior to LLM call
+    if cost_tracker:
+        try:
+            cost_tracker.check_budget("gemini-2.5-pro", user_message)
+        except Exception:
+            # Surface upstream; do not proceed with generation if budget exceeded
+            raise
 
     # Call LLM (no search grounding for creative writing)
     client = get_text_client()
@@ -169,12 +177,8 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
         # Internal character count loop
         while shortening_attempts <= MAX_SHORTENING_ATTEMPTS:
-            # Check budget before API call (if cost tracker provided)
-            if cost_tracker:
-                cost_tracker.check_budget("gemini-2.5-pro")
-
-            # Generate draft
-            draft, token_usage = _generate_draft_with_llm(structured, previous_draft)
+            # Generate draft (includes internal budget check)
+            draft, token_usage = _generate_draft_with_llm(structured, previous_draft, cost_tracker)
 
             # Record cost (if cost tracker provided)
             if cost_tracker:

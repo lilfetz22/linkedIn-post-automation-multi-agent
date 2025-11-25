@@ -54,9 +54,9 @@ def _generate_image_with_gemini(
     Raises:
         ModelError: If image generation fails
     """
-    # Check budget before API call (if tracker provided)
+    # Check budget before API call (if tracker provided) using prompt text
     if cost_tracker:
-        cost_tracker.check_budget("gemini-2.5-flash-image")
+        cost_tracker.check_budget("gemini-2.5-flash-image", prompt)
 
     # Get image client
     client = get_image_client()

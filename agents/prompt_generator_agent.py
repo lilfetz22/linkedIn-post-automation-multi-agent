@@ -55,13 +55,14 @@ def _validate_prompt_structure(prompt_text: str) -> None:
         )
 
 
-def _generate_structured_prompt(topic: str, research: Dict[str, Any]) -> Dict[str, Any]:
+def _generate_structured_prompt(topic: str, research: Dict[str, Any], cost_tracker=None) -> Dict[str, Any]:
     """
     Use LLM with Strategic Content Architect persona to generate structured prompt.
 
     Args:
         topic: The topic to generate a prompt for
         research: Research data with 'sources' and 'summary'
+        cost_tracker: Optional cost tracker for budget management
 
     Returns:
         Dict with:
@@ -94,6 +95,10 @@ def _generate_structured_prompt(topic: str, research: Dict[str, Any]) -> Dict[st
 {sources_text}
 
 Please transform this into the structured prompt format as defined in your instructions."""
+
+    # Check budget before API call
+    if cost_tracker:
+        cost_tracker.check_budget("gemini-2.5-pro", user_message)
 
     # Call LLM
     client = get_text_client()
@@ -136,7 +141,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             raise ValidationError("Missing 'topic' or 'research' input")
 
         # Generate structured prompt with LLM
-        result = _generate_structured_prompt(topic, research)
+        result = _generate_structured_prompt(topic, research, cost_tracker)
 
         # Track cost if tracker provided
         if cost_tracker and "token_usage" in result:

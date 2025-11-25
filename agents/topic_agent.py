@@ -22,13 +22,14 @@ from database.operations import select_new_topic, get_recent_topics
 STEP_CODE = "10_topic"
 
 
-def _generate_topics_with_llm(field: str, recent_topics: List[str]) -> str:
+def _generate_topics_with_llm(field: str, recent_topics: List[str], cost_tracker=None) -> str:
     """
     Use LLM to generate a new topic when database is empty.
 
     Args:
         field: The field to generate topics for
         recent_topics: List of recently posted topics to avoid
+        cost_tracker: Optional cost tracker for budget management
 
     Returns:
         A new topic string
@@ -61,6 +62,10 @@ Example format:
     {{"topic": "Example Topic 1", "novelty": "net_new", "rationale": "Addresses emerging need..."}},
     {{"topic": "Example Topic 2", "novelty": "reused_with_new_angle", "rationale": "New perspective on X..."}}
 ]"""
+
+    # Check budget before API call
+    if cost_tracker:
+        cost_tracker.check_budget("gemini-2.5-pro", prompt)
 
     client = get_text_client()
     result = client.generate_text(
@@ -131,7 +136,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             recent = get_recent_topics(limit=10, db_path=db_path) if db_path else []
 
             try:
-                topic = _generate_topics_with_llm(field, recent)
+                topic = _generate_topics_with_llm(field, recent, cost_tracker)
                 topic_data = {"topic": topic}
 
                 # Track cost if tracker provided

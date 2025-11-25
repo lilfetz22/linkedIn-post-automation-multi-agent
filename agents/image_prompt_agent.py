@@ -70,9 +70,9 @@ Generate an AI image prompt that perfectly complements this narrative. Remember:
 
 Provide only the image prompt, ready for an AI image generator."""
 
-    # Check budget before API call
+    # Check budget before API call using full user prompt
     if cost_tracker:
-        cost_tracker.check_budget("gemini-2.5-pro")
+        cost_tracker.check_budget("gemini-2.5-pro", user_prompt)
 
     # Call LLM (no search grounding for creative visual work)
     client = get_text_client()

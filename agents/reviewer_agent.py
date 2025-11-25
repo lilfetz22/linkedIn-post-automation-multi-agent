@@ -80,7 +80,7 @@ def _apply_grammar_corrections(text: str) -> tuple[str, int]:
 
 
 def _llm_coherence_review(
-    draft_text: str, shortening_context: str = None
+    draft_text: str, shortening_context: str = None, cost_tracker=None
 ) -> tuple[str, Dict[str, Any]]:
     """Perform LLM-based coherence and consistency review.
 
@@ -135,6 +135,13 @@ Return ONLY the revised post, no explanations."""
 - Fix any persona inconsistencies (e.g., cliché analogies, academic tone)
 - Preserve the core message and structure
 - Return ONLY the revised post, no explanations"""
+
+    # Budget check with constructed prompt
+    if cost_tracker:
+        try:
+            cost_tracker.check_budget("gemini-2.5-pro", prompt)
+        except Exception:
+            raise
 
     # Call LLM (no search grounding for review work)
     client = get_text_client()
@@ -196,13 +203,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
         # Shortening loop
         while shortening_attempts <= MAX_SHORTENING_ATTEMPTS:
-            # Check budget before API call
-            if cost_tracker:
-                cost_tracker.check_budget("gemini-2.5-pro")
-
-            # Step 1: LLM Coherence Review
+            # Step 1: LLM Coherence Review (includes internal budget check)
             llm_revised, token_usage = _llm_coherence_review(
-                draft_text, shortening_instruction
+                draft_text, shortening_instruction, cost_tracker
             )
 
             # Record cost

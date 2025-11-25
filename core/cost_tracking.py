@@ -7,14 +7,27 @@ Enforces per-run budget limits to prevent unexpected expenses.
 
 from dataclasses import dataclass, field
 from typing import Dict, Optional
+import os
+
+try:
+    # Lazy import so unit tests can run without network; will fail gracefully
+    from google import genai as genai_new  # type: ignore
+
+    _COST_CLIENT = (
+        genai_new.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        if os.getenv("GOOGLE_API_KEY")
+        else None
+    )
+except Exception:  # pragma: no cover - defensive fallback
+    _COST_CLIENT = None
 from core.errors import ValidationError
 
 
-# Gemini pricing (as of 2025, verify at https://ai.google.dev/pricing)
+# Gemini pricing (as of 11/25/2025, verify at https://ai.google.dev/pricing)
 # Prices are per 1M tokens
 GEMINI_PRO_INPUT_PRICE = 0.00125  # $1.25 per 1M input tokens
-GEMINI_PRO_OUTPUT_PRICE = 0.00500  # $5.00 per 1M output tokens
-GEMINI_FLASH_IMAGE_PRICE = 0.000250  # $0.25 per image (estimate)
+GEMINI_PRO_OUTPUT_PRICE = 0.01000  # $10.00 per 1M output tokens
+GEMINI_FLASH_IMAGE_PRICE = 0.000300  # $0.30 per image (estimate)
 
 
 @dataclass
@@ -60,34 +73,60 @@ class CostTracker:
     costs_by_agent: Dict[str, float] = field(default_factory=dict)
     calls_by_agent: Dict[str, int] = field(default_factory=dict)
 
-    def check_budget(self, model: str):
-        """
-        Check if we can make another API call within budget limits.
+    def check_budget(
+        self, model: str, prompt: str, estimated_output_tokens: int = 1000
+    ):
+        """Proactively validate budget before an API call using real token counts.
 
         Args:
             model: Model name for the upcoming call
+            prompt: Prompt text whose tokens will be counted
+            estimated_output_tokens: Conservative estimate of completion tokens (default 1000)
 
         Raises:
-            ValidationError: If budget limits would be exceeded
+            ValidationError: If API call or cost budget would be exceeded
         """
+        # API call count enforcement
         if self.api_call_count >= self.max_api_calls:
             raise ValidationError(
-                f"Maximum API calls ({self.max_api_calls}) exceeded. "
-                f"Current count: {self.api_call_count}"
+                f"Maximum API calls ({self.max_api_calls}) exceeded. Current count: {self.api_call_count}"
             )
 
-        # Estimate cost for this call
-        estimated_cost = CostMetrics(
-            model=model, input_tokens=1000, output_tokens=500
-        ).cost_usd
-        new_total_cost = self.total_cost_usd + estimated_cost
+        # Count input tokens using Gemini if available; fallback to heuristic
+        input_tokens = 0
+        if _COST_CLIENT is not None:
+            try:  # pragma: no branch
+                token_info = _COST_CLIENT.models.count_tokens(
+                    model=model, contents=prompt
+                )
+                # Some client versions return dict-like, others object with total_tokens
+                input_tokens = getattr(token_info, "total_tokens", None) or token_info.get("total_tokens", 0)  # type: ignore
+            except Exception:
+                # Fallback heuristic: rough average 4 chars per token
+                input_tokens = max(1, len(prompt) // 4)
+        else:
+            input_tokens = max(1, len(prompt) // 4)
 
-        if new_total_cost > self.max_cost_usd:
+        # Compute projected cost
+        projected_cost_metrics = CostMetrics(
+            model=model,
+            input_tokens=input_tokens,
+            output_tokens=estimated_output_tokens,
+        )
+        projected_total = self.total_cost_usd + projected_cost_metrics.cost_usd
+        if projected_total > self.max_cost_usd:
             raise ValidationError(
-                f"Maximum cost (${self.max_cost_usd:.2f}) may be exceeded. "
-                f"Current: ${self.total_cost_usd:.4f}, "
-                f"Estimated new total: ${new_total_cost:.4f}"
+                f"Maximum cost (${self.max_cost_usd:.2f}) would be exceeded. Current: ${self.total_cost_usd:.4f}, "
+                f"Projected new total: ${projected_total:.4f} (input_tokens={input_tokens}, output_tokens={estimated_output_tokens})"
             )
+
+        # Store a lightweight preview (not recorded yet) for possible future use
+        self._last_budget_preview = {
+            "model": model,
+            "input_tokens": input_tokens,
+            "estimated_output_tokens": estimated_output_tokens,
+            "projected_cost_usd": projected_cost_metrics.cost_usd,
+        }
 
     def record_call(
         self,
