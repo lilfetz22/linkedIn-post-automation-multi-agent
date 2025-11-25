@@ -212,8 +212,8 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             if cost_tracker:
                 cost_tracker.record_call(
                     model="gemini-2.5-pro",
-                    prompt_tokens=0,  # TODO: Extract from client
-                    completion_tokens=0,
+                    prompt_tokens=token_usage.get("prompt_tokens", 0),
+                    completion_tokens=token_usage.get("completion_tokens", 0),
                 )
 
             # Step 2: Local Grammar Checking
