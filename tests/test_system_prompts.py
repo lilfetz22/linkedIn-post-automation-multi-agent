@@ -3,8 +3,6 @@ Tests for system prompt loader utility.
 """
 
 import pytest
-from pathlib import Path
-
 from core.system_prompts import load_system_prompt, clear_cache
 
 
