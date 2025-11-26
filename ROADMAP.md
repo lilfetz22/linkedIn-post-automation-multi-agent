@@ -546,16 +546,13 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Print cost summary
 
 ### 7.11 Documentation
-- [ ] Update README with LLM integration details
-  - [ ] Document which agents call which models
-  - [ ] Document cost estimation methodology
-  - [ ] Document safety limits and flags
-- [ ] Add `.env.example` with required API keys
-  - [ ] `GOOGLE_API_KEY=your_key_here`
-  - [ ] `SEARCH_API_KEY=your_key_here` (if using Tavily/SerpAPI)
-- [ ] Document system prompt maintenance
-  - [ ] How to update personas in `system_prompts.md`
-  - [ ] How to test prompt changes
+- [x] Update README with LLM integration details
+  - [x] Document which agents call which models
+  - [x] Document cost estimation methodology
+  - [x] Document safety limits and flags
+- [x] Document system prompt maintenance
+  - [x] How to update personas in `system_prompts.md`
+  - [x] How to test prompt changes
 
 ## Phase 8: Memory Bank Content
 - [x] Add sample newsletter `.txt` files to `memory_bank/`
