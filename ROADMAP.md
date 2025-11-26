@@ -534,16 +534,16 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [ ] Test max cost abort logic
 
 ### 7.10 Integration Testing
-- [ ] Create `tests/test_integration/test_llm_pipeline.py`
-  - [ ] Test full pipeline with mocked LLM responses
-  - [ ] Verify all agents make expected LLM calls
-  - [ ] Verify system prompts loaded correctly
-  - [ ] Verify cost tracking across full run
-- [ ] Create manual smoke test script
-  - [ ] `python -m scripts.smoke_test --field "Data Science" --max-cost 0.10`
-  - [ ] Run real pipeline with budget cap
-  - [ ] Verify artifacts created and valid
-  - [ ] Print cost summary
+- [x] Create `tests/test_integration/test_llm_pipeline.py`
+  - [x] Test full pipeline with mocked LLM responses
+  - [x] Verify all agents make expected LLM calls
+  - [x] Verify system prompts loaded correctly
+  - [x] Verify cost tracking across full run
+- [x] Create manual smoke test script
+  - [x] `python -m scripts.smoke_test --field "Data Science" --max-cost 0.10`
+  - [x] Run real pipeline with budget cap
+  - [x] Verify artifacts created and valid
+  - [x] Print cost summary
 
 ### 7.11 Documentation
 - [ ] Update README with LLM integration details

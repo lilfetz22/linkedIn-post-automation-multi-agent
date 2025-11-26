@@ -186,9 +186,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             # Record cost (if cost tracker provided)
             if cost_tracker:
                 cost_tracker.record_call(
-                    model="gemini-2.5-pro",
-                    prompt_tokens=token_usage.get("prompt_tokens", 0),
-                    completion_tokens=token_usage.get("completion_tokens", 0),
+                    "gemini-2.5-pro",  # model (positional arg)
+                    token_usage.get("prompt_tokens", 0),  # prompt_tokens
+                    token_usage.get("completion_tokens", 0),  # completion_tokens
                     agent_name="writer_agent",
                 )
 
