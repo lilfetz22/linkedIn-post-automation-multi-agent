@@ -751,10 +751,7 @@ class TestLLMPipelineIntegration:
                         mock_grammar.return_value = ("Test response", 0)
 
                         orchestrator = Orchestrator(mock_config)
-                        try:
-                            orchestrator.run()
-                        except Exception:
-                            pass
+                        orchestrator.run()
 
                         # Verify topic was used in research
                         # (calls captured in call_args_list)
