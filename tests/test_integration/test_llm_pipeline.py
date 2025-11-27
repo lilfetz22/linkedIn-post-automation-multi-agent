@@ -561,6 +561,12 @@ class TestLLMPipelineIntegration:
                         orchestrator = Orchestrator(mock_config)
                         try:
                             result = orchestrator.run()
+                            # Assert that result follows the standardized agent envelope
+                            assert isinstance(result, dict), "Result should be a dict"
+                            assert "status" in result, "Result should have a 'status' key"
+                            assert "data" in result, "Result should have a 'data' key"
+                            assert "error" in result, "Result should have an 'error' key"
+                            assert "metrics" in result, "Result should have a 'metrics' key"
                         except Exception:
                             pass  # We expect some failures due to minimal mocking
 
