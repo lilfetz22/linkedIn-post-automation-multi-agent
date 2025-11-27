@@ -11,6 +11,8 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 import google.generativeai as genai
+from google import genai as genai_new
+from google.genai import types
 from dotenv import load_dotenv
 
 from core.errors import ModelError
@@ -27,6 +29,9 @@ if not GOOGLE_API_KEY:
     )
 
 genai.configure(api_key=GOOGLE_API_KEY)
+
+# Initialize new genai client for grounding
+_grounding_client = genai_new.Client(api_key=GOOGLE_API_KEY)
 
 # Model names
 TEXT_MODEL = "gemini-2.5-pro"
@@ -52,6 +57,7 @@ class GeminiTextClient:
         temperature: float = 0.7,
         max_output_tokens: Optional[int] = None,
         system_instruction: Optional[str] = None,
+        use_search_grounding: bool = False,
     ) -> Dict[str, Any]:
         """
         Generate text from prompt with token usage tracking.
@@ -61,12 +67,14 @@ class GeminiTextClient:
             temperature: Sampling temperature (0.0-1.0, default: 0.7)
             max_output_tokens: Maximum tokens to generate (optional)
             system_instruction: System prompt for persona/instructions (optional)
+            use_search_grounding: Enable Google Search grounding for current information (default: False)
 
         Returns:
             Dict with keys:
             - text: Generated text content
             - token_usage: Dict with "prompt_tokens" and "completion_tokens"
             - model: Model name used
+            - grounding_metadata: Search grounding info (if enabled)
 
         Raises:
             ModelError: If API call fails
@@ -81,40 +89,93 @@ class GeminiTextClient:
             >>> print(f"Tokens: {result['token_usage']}")
         """
         try:
-            # Build generation config
-            generation_config = {
-                "temperature": temperature,
-            }
-            if max_output_tokens:
-                generation_config["max_output_tokens"] = max_output_tokens
+            # Use new client with grounding if requested
+            if use_search_grounding:
+                # Build grounding tool
+                grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
-            # Create model with system instruction if provided
-            if system_instruction:
-                model = genai.GenerativeModel(
-                    self.model_name, system_instruction=system_instruction
+                # Build config with grounding
+                config = types.GenerateContentConfig(
+                    temperature=temperature,
+                    max_output_tokens=max_output_tokens,
+                    tools=[grounding_tool],
+                    system_instruction=system_instruction,
                 )
-            else:
-                model = self.model
 
-            # Generate content
-            response = model.generate_content(
-                prompt, generation_config=generation_config
-            )
+                # Generate with grounding
+                response = _grounding_client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=config,
+                )
 
-            # Extract token usage (if available)
-            token_usage = {}
-            if hasattr(response, "usage_metadata"):
-                usage = response.usage_metadata
-                token_usage = {
-                    "prompt_tokens": getattr(usage, "prompt_token_count", 0),
-                    "completion_tokens": getattr(usage, "candidates_token_count", 0),
+                # Extract token usage and grounding metadata
+                token_usage = {}
+                grounding_metadata = {}
+
+                if hasattr(response, "usage_metadata"):
+                    usage = response.usage_metadata
+                    token_usage = {
+                        "prompt_tokens": getattr(usage, "prompt_token_count", 0),
+                        "completion_tokens": getattr(
+                            usage, "candidates_token_count", 0
+                        ),
+                    }
+
+                # Extract grounding metadata if available
+                if hasattr(response, "candidates") and response.candidates:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, "grounding_metadata"):
+                        grounding_metadata["grounded"] = True
+                        grounding_metadata["search_queries"] = getattr(
+                            candidate.grounding_metadata, "search_entry_point", None
+                        )
+
+                return {
+                    "text": response.text,
+                    "token_usage": token_usage,
+                    "model": self.model_name,
+                    "grounding_metadata": grounding_metadata,
                 }
 
-            return {
-                "text": response.text,
-                "token_usage": token_usage,
-                "model": self.model_name,
-            }
+            else:
+                # Use standard generation without grounding
+                # Build generation config
+                generation_config = {
+                    "temperature": temperature,
+                }
+                if max_output_tokens:
+                    generation_config["max_output_tokens"] = max_output_tokens
+
+                # Create model with system instruction if provided
+                if system_instruction:
+                    model = genai.GenerativeModel(
+                        self.model_name, system_instruction=system_instruction
+                    )
+                else:
+                    model = self.model
+
+                # Generate content
+                response = model.generate_content(
+                    prompt, generation_config=generation_config
+                )
+
+                # Extract token usage (if available)
+                token_usage = {}
+                if hasattr(response, "usage_metadata"):
+                    usage = response.usage_metadata
+                    token_usage = {
+                        "prompt_tokens": getattr(usage, "prompt_token_count", 0),
+                        "completion_tokens": getattr(
+                            usage, "candidates_token_count", 0
+                        ),
+                    }
+
+                return {
+                    "text": response.text,
+                    "token_usage": token_usage,
+                    "model": self.model_name,
+                }
 
         except Exception as e:
             raise ModelError(f"Text generation failed: {str(e)}") from e

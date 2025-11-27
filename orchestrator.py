@@ -31,13 +31,13 @@ from core.errors import (
     CorruptionError,
 )
 from core.logging import log_event
+from core.cost_tracking import CostTracker
 
 # Import all agents
 from agents import (
     topic_agent,
     research_agent,
     prompt_generator_agent,
-    strategic_type_agent,
     writer_agent,
     reviewer_agent,
     image_prompt_agent,
@@ -80,6 +80,7 @@ class Orchestrator:
         self.run_id = None
         self.run_path = None
         self.circuit_breaker = CircuitBreaker()
+        self.cost_tracker = CostTracker()  # Initialize cost tracking
         self.context = {}
         self.metrics = {
             "start_time": None,
@@ -107,18 +108,17 @@ class Orchestrator:
             # Phase 5.1: Configuration & Initialization
             self._initialize_run()
 
-            # Phase 5.3: Sequential Agent Pipeline
+            # Phase 5.3: Sequential Agent Pipeline (7 steps)
+            # Step 1: Topic Selection
             topic = self._execute_topic_selection()
+            # Step 2: Research with pivot fallback
             research_data = self._execute_research_with_pivot(topic)
+            # Step 3: Prompt Generation (Strategic Content Architect)
             structured_prompt = self._execute_prompt_generation(topic, research_data)
-            strategy = self._execute_strategic_planning(
-                structured_prompt, research_data
-            )
 
             # Phase 5.4: Character Count Validation Loop
-            final_post = self._execute_writing_and_review_loop(
-                structured_prompt, strategy
-            )
+            # Step 4-5: Writing and Review with character limit enforcement
+            final_post = self._execute_writing_and_review_loop(structured_prompt)
 
             # Phase 5.5: Image Generation Pipeline
             image_prompt = self._execute_image_prompt_generation(final_post)
@@ -147,7 +147,11 @@ class Orchestrator:
         self.run_id, self.run_path = create_run_dir()
 
         # Set up shared context for all agents
-        self.context = {"run_id": self.run_id, "run_path": self.run_path}
+        self.context = {
+            "run_id": self.run_id,
+            "run_path": self.run_path,
+            "cost_tracker": self.cost_tracker,  # Add cost tracker to context
+        }
 
         # Save config to run directory
         config_path = get_artifact_path(self.run_path, "00_config")
@@ -293,20 +297,8 @@ class Orchestrator:
 
         return response["data"]
 
-    def _execute_strategic_planning(
-        self, structured_prompt: Dict[str, Any], research_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Execute Strategic Type Agent (Phase 5.3 - Step 4)."""
-        input_obj = {"structured_prompt": structured_prompt, "research": research_data}
-
-        response = self._execute_agent_with_retry(
-            "strategic_type_agent", strategic_type_agent.run, input_obj
-        )
-
-        return response["data"]
-
     def _execute_writing_and_review_loop(
-        self, structured_prompt: Dict[str, Any], strategy: Dict[str, Any]
+        self, structured_prompt: Dict[str, Any]
     ) -> str:
         """
         Execute Writer and Reviewer with character count validation loop
@@ -322,7 +314,6 @@ class Orchestrator:
             # Execute Writer Agent
             writer_input = {
                 "structured_prompt": structured_prompt,
-                "strategy": strategy,
             }
 
             if shortening_instruction:
@@ -424,6 +415,9 @@ class Orchestrator:
         """Mark run as complete and return summary (Phase 5.6)."""
         log_event(self.run_id, "run_complete", 1, "ok")
 
+        # Add cost summary to metrics
+        cost_summary = self.cost_tracker.get_summary()
+
         return {
             "status": "success",
             "run_id": self.run_id,
@@ -433,6 +427,7 @@ class Orchestrator:
                 "image": str(self.run_path / "80_image.png"),
             },
             "metrics": self.metrics,
+            "cost": cost_summary,
         }
 
     def _handle_run_failure(self, error: Exception, stack_trace: str) -> Dict[str, Any]:
@@ -448,6 +443,8 @@ class Orchestrator:
                 break
 
         # Create failure artifact
+        cost_summary = self.cost_tracker.get_summary()
+        
         failure_data = {
             "timestamp": datetime.now().isoformat(),
             "run_id": self.run_id,
@@ -459,6 +456,7 @@ class Orchestrator:
                 "is_tripped": self.circuit_breaker.is_tripped(),
             },
             "metrics": self.metrics,
+            "cost": cost_summary,
             "stack_trace": stack_trace,
         }
 
@@ -474,6 +472,7 @@ class Orchestrator:
             "run_path": str(self.run_path) if self.run_path else None,
             "error": {"type": error_type, "message": error_msg},
             "failure_artifact": str(failure_path) if self.run_path else None,
+            "cost": cost_summary,
         }
 
 
@@ -489,6 +488,20 @@ def main():
         print("ORCHESTRATOR RESULT")
         print(f"{'='*60}")
         print(json.dumps(result, indent=2))
+        
+        # Display cost summary
+        if "cost" in result:
+            print(f"\n{'='*60}")
+            print("COST SUMMARY")
+            print(f"{'='*60}")
+            cost = result["cost"]
+            print(f"Total Cost: ${cost['total_cost_usd']:.4f}")
+            print(f"Total API Calls: {cost['total_api_calls']}")
+            print(f"Budget Remaining: ${cost['budget_remaining_usd']:.4f}")
+            print(f"\nCosts by Agent:")
+            for agent, agent_cost in cost['costs_by_agent'].items():
+                calls = cost['calls_by_agent'].get(agent, 0)
+                print(f"  {agent}: ${agent_cost:.4f} ({calls} calls)")
 
     except Exception as e:
         print(f"\nOrchestrator failed: {e}")

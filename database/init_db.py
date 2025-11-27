@@ -39,7 +39,8 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
             CREATE TABLE IF NOT EXISTS potential_topics (
                 id INTEGER PRIMARY KEY,
                 topic_name TEXT NOT NULL UNIQUE,
-                field TEXT NOT NULL
+                field TEXT NOT NULL,
+                used BOOLEAN DEFAULT FALSE
             );
             """
         )
@@ -56,6 +57,16 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
             ON potential_topics(field, topic_name);
             """
         )
+
+        # Migration: Add 'used' column to existing tables
+        # Check if column exists
+        cur.execute("PRAGMA table_info(potential_topics)")
+        columns = [row[1] for row in cur.fetchall()]
+        if "used" not in columns:
+            cur.execute(
+                "ALTER TABLE potential_topics ADD COLUMN used BOOLEAN DEFAULT FALSE"
+            )
+
         conn.commit()
 
 

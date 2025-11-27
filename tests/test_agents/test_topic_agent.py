@@ -4,9 +4,11 @@ import tempfile
 from pathlib import Path
 import pytest
 import json
+from unittest.mock import patch, MagicMock
 
 from agents.topic_agent import run
 from core.envelope import validate_envelope
+from core.errors import ModelError
 from database.init_db import (
     init_db,
     seed_potential_topics,
@@ -94,7 +96,7 @@ def test_topic_agent_missing_field(temp_run_dir):
 
 
 def test_topic_agent_no_available_topics(temp_run_dir, tmp_path):
-    """Test error when no topics are available for selection."""
+    """Test error when no topics are available and LLM fallback also fails."""
     db_path = str(tmp_path / "empty_db.db")
     init_db(db_path)
     # Don't seed any topics
@@ -102,13 +104,19 @@ def test_topic_agent_no_available_topics(temp_run_dir, tmp_path):
     input_obj = {"field": DEFAULT_FIELD_DS, "db_path": db_path}
     context = {"run_id": "test-run-004", "run_path": temp_run_dir}
 
-    response = run(input_obj, context)
+    # Mock LLM to fail as well
+    with patch("agents.topic_agent.get_text_client") as mock_client:
+        mock_client.return_value.generate_text.side_effect = ModelError(
+            "LLM unavailable"
+        )
 
-    validate_envelope(response)
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "DataNotFoundError"
-    assert "no selectable topics" in response["error"]["message"].lower()
-    assert response["error"]["retryable"] is False
+        response = run(input_obj, context)
+
+        validate_envelope(response)
+        assert response["status"] == "error"
+        assert response["error"]["type"] == "DataNotFoundError"
+        assert "llm fallback failed" in response["error"]["message"].lower()
+        assert response["error"]["retryable"] is False
 
     # Force garbage collection to release handles
     import gc
@@ -125,3 +133,47 @@ def test_topic_agent_deterministic_selection(temp_db, temp_run_dir):
 
     # Should always select the first topic for the field
     assert response1["data"]["topic"] == "Test topic 1"
+
+
+def test_topic_agent_llm_fallback_success(temp_run_dir, tmp_path):
+    """Test successful LLM fallback when database is empty."""
+    db_path = str(tmp_path / "empty_db.db")
+    init_db(db_path)
+    # Don't seed any topics
+
+    input_obj = {"field": DEFAULT_FIELD_DS, "db_path": db_path}
+    context = {"run_id": "test-run-006", "run_path": temp_run_dir}
+
+    # Mock LLM to return valid topics
+    mock_llm_response = {
+        "text": json.dumps(
+            [
+                {
+                    "topic": "LLM-generated topic about data optimization",
+                    "novelty": "net_new",
+                    "rationale": "Addresses emerging need for faster pipelines",
+                }
+            ]
+        ),
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+        "model": "gemini-2.5-pro",
+    }
+
+    with patch("agents.topic_agent.get_text_client") as mock_client:
+        mock_client.return_value.generate_text.return_value = mock_llm_response
+
+        response = run(input_obj, context)
+
+        validate_envelope(response)
+        assert response["status"] == "ok"
+        assert "topic" in response["data"]
+        assert "LLM-generated" in response["data"]["topic"]
+
+        # Verify artifact was created
+        artifact_path = temp_run_dir / "10_topic.json"
+        assert artifact_path.exists()
+
+    # Force garbage collection
+    import gc
+
+    gc.collect()

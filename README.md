@@ -24,6 +24,24 @@ This application orchestrates a series of specialized AI agents to create engagi
 - **Core Logic & Text Agents**: `Gemini 2.5 Pro`
 - **AI Image Generator**: `gemini-2.5-flash-image-preview`
 
+#### LLM Integration by Agent
+
+Each agent leverages different LLM capabilities depending on its role:
+
+| Agent | Model | Purpose | Temperature | Est. Tokens/Call |
+|-------|-------|---------|-------------|------------------|
+| **Topic Agent** | Gemini 2.5 Pro | Generate new topics when database exhausted | 0.7 | ~200 input, ~500 output |
+| **Research Agent** | Gemini 2.5 Pro | Synthesize web search results into structured research | 0.5 | ~1000 input, ~800 output |
+| **Prompt Generator** | Gemini 2.5 Pro | Transform raw topics into Strategic Content Architect prompts | 0.7 | ~800 input, ~600 output |
+| **Writer Agent** | Gemini 2.5 Pro | Draft engaging posts using The Witty Expert persona | 0.8 | ~1000 input, ~1500 output |
+| **Reviewer Agent** | Gemini 2.5 Pro | Perform contextual review and coherence checking | 0.3 | ~1500 input, ~1500 output |
+| **Image Prompt Generator** | Gemini 2.5 Pro | Create descriptive visual prompts from post content | 0.7 | ~1500 input, ~300 output |
+| **Image Generator** | Gemini 2.5 Flash Image | Generate AI images from text prompts | N/A | Fixed cost per image |
+
+**Total Estimated Cost per Run**: $0.08 - $0.15 USD (varies by content complexity and iteration count)
+
+**Note**: Strategic Type Agent was deprecated and removed from the pipeline. Writer Agent now receives structured prompts directly.
+
 ### Agent System
 
 The application uses nine specialized agents orchestrated in a sequential workflow:
@@ -234,6 +252,89 @@ All agents return standardized responses:
 }
 ```
 
+## Cost Management & Budget Controls
+
+The system includes comprehensive cost tracking and safety limits to prevent unexpected API expenses.
+
+### Cost Estimation Methodology
+
+**Token Counting**: Before each LLM call, the system counts input tokens using Gemini's native token counter (fallback to heuristic: ~4 chars per token if offline).
+
+**Cost Calculation**:
+- **Gemini 2.5 Pro**: $1.25 per 1M input tokens + $10.00 per 1M output tokens
+- **Gemini 2.5 Flash Image**: $0.30 per image (estimated)
+
+**Per-Call Tracking**: Each agent call records:
+```json
+{
+  "model": "gemini-2.5-pro",
+  "input_tokens": 1234,
+  "output_tokens": 567,
+  "cost_usd": 0.0072
+}
+```
+
+**Aggregation**: Orchestrator accumulates costs across all agents and persists breakdown in run metrics.
+
+### Safety Limits & Flags
+
+The system enforces two types of budget limits:
+
+1. **API Call Limit**: Maximum 25 API calls per run (default)
+   - Prevents infinite retry loops
+   - Configurable via `CostTracker(max_api_calls=N)`
+
+2. **Cost Limit**: Maximum $3.00 USD per run (default)
+   - Proactive budget checking before each call
+   - Configurable via `CostTracker(max_cost_usd=N)`
+
+**Budget Enforcement**: If a call would exceed limits, raises `ValidationError` and aborts immediately.
+
+**Dry-Run Mode** (Planned):
+```bash
+python main.py --dry-run
+```
+This will execute all logic up to the first LLM call, allowing you to:
+- Verify configuration
+- Test run directory setup
+- Estimate costs without spending money
+
+### Monitoring Costs
+
+**Real-time**: Check `events.jsonl` for per-agent token usage:
+```json
+{"step": "writer", "token_usage": {"input": 1234, "output": 567}, "cost_usd": 0.0072}
+```
+
+**Post-run**: Review `runs/{run_id}/metrics.json` for complete breakdown:
+```json
+{
+  "total_cost_usd": 0.12,
+  "costs_by_agent": {
+    "topic": 0.005,
+    "research": 0.015,
+    "writer": 0.045,
+    "reviewer": 0.035,
+    "image": 0.020
+  }
+}
+```
+
+**Cost Alerts**:
+- Warning logged if single run exceeds $0.50
+- Abort if single run exceeds configured `max_cost_usd`
+
+### Optimizing Costs
+
+**Reduce API Calls**:
+- Use database-seeded topics (no LLM call for Topic Agent)
+- Minimize character count loop iterations (better Writer prompts)
+
+**Optimize Token Usage**:
+- Keep research summaries concise
+- Use lower temperatures where appropriate (Reviewer: 0.3)
+- Pre-validate inputs to avoid failed calls
+
 ## Configuration
 
 ### Field Selection
@@ -323,6 +424,107 @@ Detailed agent personas and behavioral guidelines are maintained in `system_prom
 - Understanding agent behavior
 - Debugging output quality
 - Extending or modifying agents
+
+### Maintaining System Prompts
+
+The system prompts in `system_prompts.md` are the **core intellectual property** of this system. They define agent personas and behavior patterns that directly impact output quality.
+
+#### How to Update Personas
+
+**File Structure**: `system_prompts.md` contains three main sections:
+1. **Strategic Content Architect - User Prompt Engineer**: Transforms raw topics into structured prompts
+2. **The Witty Expert Persona**: Drafts engaging, memorable LinkedIn posts
+3. **Social Media Visual Strategist**: Creates image prompts from post content
+
+**Editing Guidelines**:
+
+1. **Preserve Template Structures**: Each persona includes exact templates (marked with `**Topic:**`, `**Target Audience:**`, etc.). These must remain intact—agents parse these fields programmatically.
+
+2. **Maintain Persona Voice**: When revising instructions:
+   - Strategic Content Architect: Focus on *inferring* audience insights, not just summarizing
+   - Witty Expert: Balance intellectual depth with conversational accessibility
+   - Visual Strategist: Emphasize emotional hooks and zero-text constraints
+
+3. **Update Analogy Guidelines**: The "fresh analogy" requirement is critical. When adding examples:
+   - Add new cliché phrases to avoid (e.g., "like a library", "distributed ledger")
+   - Provide 2-3 new fresh analogy examples
+   - Explain *why* the analogy works (unexpected + accurate)
+
+4. **Atomic Changes**: Update one persona at a time. Test before moving to the next.
+
+**Example Edit** (adding a new cliché to avoid):
+```markdown
+**Do not use stale or common analogies.**
+❌ Avoid: "distributed ledger", "like a library", "like a recipe", "like a Swiss Army knife"
+✅ Use: Unexpected, specific comparisons that reveal insight
+```
+
+#### How to Test Prompt Changes
+
+**Testing Workflow**:
+
+1. **Before Making Changes**:
+   ```bash
+   # Run a baseline test to capture current behavior
+   python -m scripts.smoke_test --field "Data Science" --max-cost 0.15
+   # Save artifacts from runs/{run_id}/ for comparison
+   ```
+
+2. **After Making Changes**:
+   ```bash
+   # Run with same topic to isolate prompt impact
+   python -m scripts.smoke_test --field "Data Science" --max-cost 0.15
+   ```
+
+3. **Compare Outputs**:
+   - **Prompt Generator**: Check `25_structured_prompt.json` for template compliance
+   - **Writer**: Review `40_draft.md` for persona fidelity (wit, analogies, structure)
+   - **Image Prompt**: Verify `70_image_prompt.txt` specifies no text/words
+
+**Automated Persona Fidelity Tests**:
+
+The test suite includes persona compliance checks in `tests/test_agents/`:
+
+```bash
+# Run persona-specific tests
+pytest tests/test_agents/test_prompt_generator_agent.py::test_persona_fidelity -v
+pytest tests/test_agents/test_writer_agent.py::test_witty_expert_persona -v
+```
+
+**What Tests Check**:
+- **Template sections present** (Topic, Audience, Pain Point, etc.)
+- **Cliché detection** (fails if blacklisted phrases appear)
+- **Structure validation** (hook → problem → solution → impact format)
+- **Analogy freshness** (heuristic: checks for unexpected word combinations)
+
+**Manual Review Checklist**:
+- [ ] Template fields are all present and populated
+- [ ] Analogies are fresh (not in cliché blacklist)
+- [ ] Tone matches persona (witty but not silly, deep but not stuffy)
+- [ ] Post structure follows LinkedIn framework (hook → problem → solution)
+- [ ] Character count stays under 3000 (with reasonable iteration count)
+- [ ] Image prompt contains visual keywords but no text instructions
+
+**Regression Testing**:
+```bash
+# Run full integration test with mocked LLMs
+pytest tests/test_integration/test_llm_pipeline.py -v
+
+# Verify all agents still produce valid envelopes
+pytest tests/test_agents/ -v
+```
+
+**Rollback Strategy**: If prompt changes degrade output quality:
+1. Use `git log system_prompts.md` to identify recent changes
+2. Revert with `git checkout <commit-hash> -- system_prompts.md`
+3. Re-run tests to confirm restoration
+
+**Best Practices**:
+- Keep a changelog of prompt modifications in git commit messages
+- Test with multiple topics to ensure consistency
+- Monitor `events.jsonl` for increased retry rates (indicates prompt issues)
+- Compare costs before/after (poorly-worded prompts may require more tokens)
+- Get human review on drafts before deploying prompt changes to production
 
 ## Troubleshooting
 
