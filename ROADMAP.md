@@ -331,207 +331,207 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 **Purpose:** Transform stub agents into fully functional LLM-powered agents. This is the core value-add of the system—without this phase, the pipeline only generates mock content.
 
 ### 7.0 Prerequisites & Safety Infrastructure
-- [ ] Load system prompts from `system_prompts.md` into memory
-  - [ ] Parse "Strategic Content Architect - User Prompt Engineer" section
-  - [ ] Parse "The Witty Expert Persona" section
-  - [ ] Parse "Social Media Visual Strategist" section
-  - [ ] Create utility function `load_system_prompt(section_name)` in `core/`
-- [ ] Implement cost tracking infrastructure
-  - [ ] Add `CostTracker` class to `core/` with per-model pricing
-    - [ ] Gemini 2.5 Pro text pricing (input/output tokens)
-    - [ ] Gemini 2.5 Flash Image pricing
-  - [ ] Add `estimate_run_cost()` method to Orchestrator
-  - [ ] Add API call counter to orchestrator metrics
-  - [ ] Add per-run cost accumulator (track actual spend)
-- [ ] Implement safety limits
-  - [ ] Add `MAX_API_CALLS_PER_RUN = 25` constant to Orchestrator
-  - [ ] Add `MAX_COST_PER_RUN_USD = 3.00` constant (configurable)
-  - [ ] Raise `ValidationError` if limits exceeded mid-run
-  - [ ] Add `--dry-run` flag to `main.py` (stop before first LLM call)
+- [x] Load system prompts from `system_prompts.md` into memory
+  - [x] Parse "Strategic Content Architect - User Prompt Engineer" section
+  - [x] Parse "The Witty Expert Persona" section
+  - [x] Parse "Social Media Visual Strategist" section
+  - [x] Create utility function `load_system_prompt(section_name)` in `core/`
+- [x] Implement cost tracking infrastructure
+  - [x] Add `CostTracker` class to `core/` with per-model pricing
+    - [x] Gemini 2.5 Pro text pricing (input/output tokens)
+    - [x] Gemini 2.5 Flash Image pricing
+  - [x] Add `estimate_run_cost()` method to Orchestrator
+  - [x] Add API call counter to orchestrator metrics
+  - [x] Add per-run cost accumulator (track actual spend)
+- [x] Implement safety limits
+  - [x] Add `MAX_API_CALLS_PER_RUN = 25` constant to Orchestrator (implemented in CostTracker with default 25)
+  - [x] Add `MAX_COST_PER_RUN_USD = 3.00` constant (configurable) (implemented in CostTracker with default 3.00)
+  - [x] Raise `ValidationError` if limits exceeded mid-run
+  - [ ] Add `--dry-run` flag to `main.py` (stop before first LLM call) (exists in smoke_test.py but not main.py)
 
 ### 7.1 Topic Agent Enhancement
-- [ ] Add LLM fallback for empty topic database
-  - [ ] Check if `potential_topics` has any unused topics (`used = FALSE`)
-  - [ ] If yes: use existing database selection logic (no LLM call)
-  - [ ] If no: call LLM to generate new topics
-    - [ ] Build prompt: "Generate 10 topic candidates for [field]. Prefer net-new, specific topics (emerging trends, overlooked fundamentals, concrete pain points). You MAY reuse a previously covered macro-topic ONLY if proposing a distinctly new avenue (fresh sub-problem, perspective, data source, or audience pain point). Otherwise produce topics not yet posted." 
-    - [ ] Parse LLM response into structured list (flag each as `net_new` or `reused_with_new_angle`)
-    - [ ] Insert topics into `potential_topics` with `used = FALSE` (for reused angles, include distinguishing detail in name or future metadata column)
-    - [ ] Select first acceptable topic (prioritize `net_new`; allow `reused_with_new_angle` if clearly distinct)
-- [ ] Update database schema to include `used` column
-  - [ ] Migration script: `ALTER TABLE potential_topics ADD COLUMN used BOOLEAN DEFAULT FALSE`
-  - [ ] Update `select_new_topic()` to mark selected topic as `used = TRUE`
-- [ ] Tests
-  - [ ] Test database selection path (no LLM call)
-  - [ ] Test LLM fallback path with empty database (mock LLM)
-  - [ ] Test topic insertion and `used` flag toggling
+- [x] Add LLM fallback for empty topic database
+  - [x] Check if `potential_topics` has any unused topics (`used = FALSE`)
+  - [x] If yes: use existing database selection logic (no LLM call)
+  - [x] If no: call LLM to generate new topics
+    - [x] Build prompt: "Generate 10 topic candidates for [field]. Prefer net-new, specific topics (emerging trends, overlooked fundamentals, concrete pain points). You MAY reuse a previously covered macro-topic ONLY if proposing a distinctly new avenue (fresh sub-problem, perspective, data source, or audience pain point). Otherwise produce topics not yet posted." 
+    - [x] Parse LLM response into structured list (flag each as `net_new` or `reused_with_new_angle`)
+    - [x] Insert topics into `potential_topics` with `used = FALSE` (for reused angles, include distinguishing detail in name or future metadata column)
+    - [x] Select first acceptable topic (prioritize `net_new`; allow `reused_with_new_angle` if clearly distinct)
+- [x] Update database schema to include `used` column
+  - [x] Migration script: `ALTER TABLE potential_topics ADD COLUMN used BOOLEAN DEFAULT FALSE`
+  - [x] Update `select_new_topic()` to mark selected topic as `used = TRUE`
+- [x] Tests
+  - [x] Test database selection path (no LLM call)
+  - [x] Test LLM fallback path with empty database (mock LLM)
+  - [x] Test topic insertion and `used` flag toggling
 
 ### 7.2 Research Agent Enhancement
-- [ ] Integrate web search capability
-  - [ ] Evaluate search tools: Tavily API, SerpAPI, or Google Custom Search
-  - [ ] Add chosen search API key to `.env`
-  - [ ] Implement `search_web(query, num_results=5)` in `core/search.py`
-- [ ] Replace stub logic with LLM-powered research
-  - [ ] Execute web search for selected topic
-  - [ ] Extract top 5-10 source URLs and snippets
-  - [ ] Build LLM prompt: "Synthesize these search results into a research summary: [sources]. Focus on key metrics, pain points, and recent developments."
-  - [ ] Call `get_text_client().generate_text()` with research prompt
-  - [ ] Parse LLM response into structured research summary
-  - [ ] Persist full sources + summary to `20_research.json`
-- [ ] Fallback handling
-  - [ ] If search returns 0 results: raise `DataNotFoundError` (triggers topic pivot)
-  - [ ] If LLM synthesis fails: use concatenated snippets as summary
-- [ ] Tests
-  - [ ] Test web search integration (mock API)
-  - [ ] Test LLM synthesis with sample search results
-  - [ ] Test fallback path for empty search results
+- [x] Integrate web search capability
+  - [x] Utilize Gemini API's built-in "grounding with Google Search" feature
+  - [x] Enable search grounding via `use_search_grounding=True` parameter in LLM calls
+  - [x] Uses existing `GOOGLE_API_KEY` from `.env` (no additional API keys needed)
+- [x] Replace stub logic with LLM-powered research
+  - [x] Execute web search for selected topic via Gemini's search grounding feature
+  - [x] Extract sources and synthesis from grounded LLM response
+  - [x] Build LLM prompt: "Synthesize research for this topic: [topic]. Focus on key metrics, pain points, and recent developments."
+  - [x] Call `get_text_client().generate_text()` with `use_search_grounding=True`
+  - [x] Parse LLM response into structured research summary (sources + summary)
+  - [x] Persist full sources + summary to `20_research.json`
+- [x] Fallback handling
+  - [x] If search returns 0 results: raise `DataNotFoundError` (triggers topic pivot)
+  - [x] If LLM synthesis fails: use fallback error handling
+- [x] Tests
+  - [x] Test search grounding integration (mock LLM client)
+  - [x] Test LLM synthesis with grounded responses
+  - [x] Test fallback path for empty search results
 
 ### 7.3 Prompt Generator Agent Enhancement
-- [ ] Load system prompt from `system_prompts.md`
-  - [ ] Extract "Strategic Content Architect - User Prompt Engineer" section
-  - [ ] Store as `PROMPT_ARCHITECT_SYSTEM_PROMPT` constant
-- [ ] Replace stub logic with LLM call
-  - [ ] Build user message: topic + research summary
-  - [ ] Call `get_text_client().generate_text()` with:
-    - [ ] `system_instruction=PROMPT_ARCHITECT_SYSTEM_PROMPT`
-    - [ ] `prompt="[topic]\n[research_summary]"`
-    - [ ] `temperature=0.7`
-  - [ ] Parse LLM response to extract structured prompt fields
-  - [ ] Validate required fields present (topic, audience, pain point, etc.)
-- [ ] Persona fidelity validation
-  - [ ] Check for template structure presence
-  - [ ] Detect cliché analogies (maintain blacklist: "distributed ledger", "like a library", etc.)
-  - [ ] Raise `ValidationError` if clichés detected
-- [ ] Tests
-  - [ ] Test LLM call with mock client
-  - [ ] Test structured output parsing
-  - [ ] Test cliché detection logic
-  - [ ] Test persona compliance assertions
+- [x] Load system prompt from `system_prompts.md`
+  - [x] Extract "Strategic Content Architect - User Prompt Engineer" section
+  - [x] Store as `PROMPT_ARCHITECT_SYSTEM_PROMPT` constant (loaded via load_system_prompt)
+- [x] Replace stub logic with LLM call
+  - [x] Build user message: topic + research summary
+  - [x] Call `get_text_client().generate_text()` with:
+    - [x] `system_instruction=PROMPT_ARCHITECT_SYSTEM_PROMPT`
+    - [x] `prompt="[topic]\n[research_summary]"`
+    - [x] `temperature=0.7`
+  - [x] Parse LLM response to extract structured prompt fields
+  - [x] Validate required fields present (topic, audience, pain point, etc.)
+- [x] Persona fidelity validation
+  - [x] Check for template structure presence
+  - [x] Detect cliché analogies (maintain blacklist: "distributed ledger", "like a library", etc.)
+  - [x] Raise `ValidationError` if clichés detected
+- [x] Tests
+  - [x] Test LLM call with mock client
+  - [x] Test structured output parsing
+  - [x] Test cliché detection logic
+  - [x] Test persona compliance assertions
 
 ### 7.4 Remove Strategic Type Agent from Pipeline
-- [ ] Update `orchestrator.py`
-  - [ ] Remove `_execute_strategic_planning()` method call from pipeline
-  - [ ] Remove import of `strategic_type_agent`
-  - [ ] Update Writer Agent input to receive only `structured_prompt` (no `strategy`)
-  - [ ] Update pipeline flow comments to reflect 7-step process (not 8)
-- [ ] Keep `agents/strategic_type_agent.py` file (do not delete)
-  - [ ] Add comment at top: "DEPRECATED: Removed from pipeline. May be refactored in future."
-- [ ] Update tests
-  - [ ] Remove Strategic Type Agent tests from integration tests
-  - [ ] Update orchestrator tests to skip strategic planning step
-- [ ] Update documentation
-  - [ ] Update ROADMAP agent list
-  - [ ] Update README pipeline diagram (when created)
+- [x] Update `orchestrator.py`
+  - [x] Remove `_execute_strategic_planning()` method call from pipeline
+  - [x] Remove import of `strategic_type_agent`
+  - [x] Update Writer Agent input to receive only `structured_prompt` (no `strategy`)
+  - [x] Update pipeline flow comments to reflect 7-step process (not 8)
+- [x] Keep `agents/strategic_type_agent.py` file (do not delete)
+  - [x] Add comment at top: "DEPRECATED: Removed from pipeline. May be refactored in future."
+- [x] Update tests
+  - [x] Remove Strategic Type Agent tests from integration tests
+  - [x] Update orchestrator tests to skip strategic planning step
+- [x] Update documentation
+  - [x] Update ROADMAP agent list
+  - [x] Update README pipeline diagram (when created)
 
 ### 7.5 Writer Agent Enhancement
-- [ ] Load system prompt from `system_prompts.md`
-  - [ ] Extract "The Witty Expert Persona" section
-  - [ ] Store as `WITTY_EXPERT_SYSTEM_PROMPT` constant
-- [ ] Replace stub logic with LLM call
-  - [ ] Build user message from `structured_prompt` dict
-  - [ ] Call `get_text_client().generate_text()` with:
-    - [ ] `system_instruction=WITTY_EXPERT_SYSTEM_PROMPT`
-    - [ ] `prompt=formatted_structured_prompt`
-    - [ ] `temperature=0.8` (higher for creative writing)
-- [ ] Implement character count loop **within Writer Agent**
-  - [ ] After LLM generates draft, check `count_chars(draft) < 3000`
-  - [ ] If pass: return draft in envelope
-  - [ ] If fail: build shortening prompt
-    - [ ] "This post is {char_count} characters (limit: 3000). Shorten it to under 3000 characters without impacting overall content."
-    - [ ] Retry LLM call with original system prompt + draft + shortening instruction
-    - [ ] Max 3 shortening attempts within agent (raise `ValidationError` if exceeded)
-- [ ] Update input/output contract
-  - [ ] Remove `strategy` from input
-  - [ ] Add optional `shortening_instruction` input (for orchestrator-level loop)
-  - [ ] Ensure draft passes character validation before returning
-- [ ] Tests
-  - [ ] Test LLM call with structured prompt
-  - [ ] Test character count validation pass/fail
-  - [ ] Test internal shortening retry loop
-  - [ ] Test max shortening attempts exceeded
+- [x] Load system prompt from `system_prompts.md`
+  - [x] Extract "The Witty Expert Persona" section
+  - [x] Store as `WITTY_EXPERT_SYSTEM_PROMPT` constant (loaded via load_system_prompt)
+- [x] Replace stub logic with LLM call
+  - [x] Build user message from `structured_prompt` dict
+  - [x] Call `get_text_client().generate_text()` with:
+    - [x] `system_instruction=WITTY_EXPERT_SYSTEM_PROMPT`
+    - [x] `prompt=formatted_structured_prompt`
+    - [x] `temperature=0.8` (higher for creative writing)
+- [x] Implement character count loop **within Writer Agent**
+  - [x] After LLM generates draft, check `count_chars(draft) < 3000`
+  - [x] If pass: return draft in envelope
+  - [x] If fail: build shortening prompt
+    - [x] "This post is {char_count} characters (limit: 3000). Shorten it to under 3000 characters without impacting overall content."
+    - [x] Retry LLM call with original system prompt + draft + shortening instruction
+    - [x] Max 3 shortening attempts within agent (raise `ValidationError` if exceeded)
+- [x] Update input/output contract
+  - [x] Remove `strategy` from input
+  - [x] Add optional `shortening_instruction` input (for orchestrator-level loop)
+  - [x] Ensure draft passes character validation before returning
+- [x] Tests
+  - [x] Test LLM call with structured prompt
+  - [x] Test character count validation pass/fail
+  - [x] Test internal shortening retry loop
+  - [x] Test max shortening attempts exceeded
 
 ### 7.6 Reviewer Agent Enhancement
-- [ ] Load review guidelines (optional: extract from persona docs)
-- [ ] Implement single-pass LLM review with local grammar checking
-  - [ ] **LLM Pass: Contextual & Coherence Review**
-    - [ ] Build prompt: "Review this LinkedIn post for logical flow, coherence, and persona consistency (Witty Expert). Return the revised version: [draft]"
-    - [ ] Call `get_text_client().generate_text()` with review prompt
-    - [ ] Parse LLM response to extract revised post
-  - [ ] **Local Grammar & Spelling Check**
-    - [ ] Use `language-tool-python` to check LLM-revised post for grammar/spelling errors
-    - [ ] Apply corrections automatically
-    - [ ] Store grammar-checked version
-- [ ] Character count validation loop
-  - [ ] Check if grammar-checked post passes `count_chars(post) < 3000`
-  - [ ] If pass: persist to `50_review.json` and return
-  - [ ] If fail: execute hashtag removal logic
-    - [ ] Programmatically remove all hashtags from end of post (lines starting with `#` after final paragraph)
-    - [ ] Re-check `count_chars(post_without_hashtags) < 3000`
-    - [ ] If now pass: persist and return
-    - [ ] If still fail: build shortening instruction
-      - [ ] "This post is {char_count} characters (limit: 3000). Revise with minor adjustments to shorten it. Do NOT include hashtags at the end."
-      - [ ] Send back to LLM review with shortening instruction
-      - [ ] Max 3 shortening attempts (raise `ValidationError` if exceeded)
-- [ ] Update artifact structure
-  - [ ] Persist review outputs to `50_review.json` (include: LLM-revised, grammar-checked, final version, char count, iteration count)
-  - [ ] Include diff summary between original → LLM-revised → grammar-checked → shortened (if applicable)
-- [ ] Tests
-  - [ ] Test LLM review pass with mock client
-  - [ ] Test local grammar tool integration
-  - [ ] Test character count validation pass/fail
-  - [ ] Test hashtag removal logic
-  - [ ] Test shortening iteration loop
-  - [ ] Test max shortening attempts exceeded
+- [x] Load review guidelines (optional: extract from persona docs)
+- [x] Implement single-pass LLM review with local grammar checking
+  - [x] **LLM Pass: Contextual & Coherence Review**
+    - [x] Build prompt: "Review this LinkedIn post for logical flow, coherence, and persona consistency (Witty Expert). Return the revised version: [draft]"
+    - [x] Call `get_text_client().generate_text()` with review prompt
+    - [x] Parse LLM response to extract revised post
+  - [x] **Local Grammar & Spelling Check**
+    - [x] Use `language-tool-python` to check LLM-revised post for grammar/spelling errors
+    - [x] Apply corrections automatically
+    - [x] Store grammar-checked version
+- [x] Character count validation loop
+  - [x] Check if grammar-checked post passes `count_chars(post) < 3000`
+  - [x] If pass: persist to `50_review.json` and return
+  - [x] If fail: execute hashtag removal logic
+    - [x] Programmatically remove all hashtags from end of post (lines starting with `#` after final paragraph)
+    - [x] Re-check `count_chars(post_without_hashtags) < 3000`
+    - [x] If now pass: persist and return
+    - [x] If still fail: build shortening instruction
+      - [x] "This post is {char_count} characters (limit: 3000). Revise with minor adjustments to shorten it. Do NOT include hashtags at the end."
+      - [x] Send back to LLM review with shortening instruction
+      - [x] Max 3 shortening attempts (raise `ValidationError` if exceeded)
+- [x] Update artifact structure
+  - [x] Persist review outputs to `50_review.json` (include: LLM-revised, grammar-checked, final version, char count, iteration count)
+  - [x] Include diff summary between original → LLM-revised → grammar-checked → shortened (if applicable)
+- [x] Tests
+  - [x] Test LLM review pass with mock client
+  - [x] Test local grammar tool integration
+  - [x] Test character count validation pass/fail
+  - [x] Test hashtag removal logic
+  - [x] Test shortening iteration loop
+  - [x] Test max shortening attempts exceeded
 
 ### 7.7 Image Prompt Generator Agent Enhancement
-- [ ] Load system prompt from `system_prompts.md`
-  - [ ] Extract "Social Media Visual Strategist" section
-  - [ ] Store as `VISUAL_STRATEGIST_SYSTEM_PROMPT` constant
-- [ ] Replace stub logic with LLM call
-  - [ ] Build user message: final reviewed post text
-  - [ ] Call `get_text_client().generate_text()` with:
-    - [ ] `system_instruction=VISUAL_STRATEGIST_SYSTEM_PROMPT`
-    - [ ] `prompt=final_post_text`
-    - [ ] `temperature=0.7`
-  - [ ] Parse LLM response to extract image prompt
-  - [ ] Validate prompt contains no text/words/letters instruction
-- [ ] Tests
-  - [ ] Test LLM call with final post
-  - [ ] Test prompt validation (no-text constraint)
-  - [ ] Test presence of visual keywords (subject, environment, lighting, mood)
+- [x] Load system prompt from `system_prompts.md`
+  - [x] Extract "Social Media Visual Strategist" section
+  - [x] Store as `VISUAL_STRATEGIST_SYSTEM_PROMPT` constant (loaded via load_visual_strategist_persona helper)
+- [x] Replace stub logic with LLM call
+  - [x] Build user message: final reviewed post text
+  - [x] Call `get_text_client().generate_text()` with:
+    - [x] `system_instruction=VISUAL_STRATEGIST_SYSTEM_PROMPT`
+    - [x] `prompt=final_post_text`
+    - [x] `temperature=0.7`
+  - [x] Parse LLM response to extract image prompt
+  - [x] Validate prompt contains no text/words/letters instruction
+- [x] Tests
+  - [x] Test LLM call with final post
+  - [x] Test prompt validation (no-text constraint)
+  - [x] Test presence of visual keywords (subject, environment, lighting, mood)
 
 ### 7.8 Image Generator Agent Enhancement
-- [ ] Replace stub PNG with real Gemini image generation
-  - [ ] Read image prompt from `70_image_prompt.txt`
-  - [ ] Call `get_image_client().generate_image()` with:
-    - [ ] `prompt=image_prompt_text`
-    - [ ] `output_path=80_image.png`
-    - [ ] `aspect_ratio="1:1"` (LinkedIn optimal)
-  - [ ] Verify generated image file size > 1KB (not empty)
-- [ ] Fallback handling
-  - [ ] If image generation fails: create simple gradient placeholder PNG
-  - [ ] Log warning but don't abort run
-- [ ] Tests
-  - [ ] Test real image generation (mock client)
-  - [ ] Test fallback placeholder generation
-  - [ ] Test file integrity validation
+- [x] Replace stub PNG with real Gemini image generation
+  - [x] Read image prompt from `70_image_prompt.txt`
+  - [x] Call `get_image_client().generate_image()` with:
+    - [x] `prompt=image_prompt_text`
+    - [x] `output_path=80_image.png`
+    - [x] `aspect_ratio="1:1"` (LinkedIn optimal)
+  - [x] Verify generated image file size > 1KB (not empty)
+- [x] Fallback handling
+  - [x] If image generation fails: create simple gradient placeholder PNG
+  - [x] Log warning but don't abort run
+- [x] Tests
+  - [x] Test real image generation (mock client)
+  - [x] Test fallback placeholder generation
+  - [x] Test file integrity validation
 
 ### 7.9 Cost Tracking & Reporting
-- [ ] Instrument all LLM calls with cost tracking
-  - [ ] After each `generate_text()` call: extract token usage
-  - [ ] Calculate cost: `(prompt_tokens * input_price + completion_tokens * output_price)`
-  - [ ] Accumulate in orchestrator metrics: `total_cost_usd`
-- [ ] Add cost reporting to run summary
-  - [ ] Print estimated cost before run starts
-  - [ ] Print actual cost in final summary
-  - [ ] Include cost breakdown by agent in `metrics` dict
-- [ ] Add cost alerts
-  - [ ] Warn if single run exceeds $0.50
-  - [ ] Abort if single run exceeds `MAX_COST_PER_RUN_USD`
-- [ ] Tests
-  - [ ] Test cost calculation with known token counts
-  - [ ] Test cost accumulation across multiple agents
-  - [ ] Test max cost abort logic
+- [x] Instrument all LLM calls with cost tracking
+  - [x] After each `generate_text()` call: extract token usage
+  - [x] Calculate cost: `(prompt_tokens * input_price + completion_tokens * output_price)`
+  - [x] Accumulate in orchestrator metrics: `total_cost_usd`
+- [x] Add cost reporting to run summary
+  - [x] Print estimated cost before run starts
+  - [x] Print actual cost in final summary
+  - [x] Include cost breakdown by agent in `metrics` dict
+- [x] Add cost alerts
+  - [x] Warn if single run exceeds $0.50
+  - [x] Abort if single run exceeds `MAX_COST_PER_RUN_USD`
+- [x] Tests
+  - [x] Test cost calculation with known token counts
+  - [x] Test cost accumulation across multiple agents
+  - [x] Test max cost abort logic
 
 ### 7.10 Integration Testing
 - [x] Create `tests/test_integration/test_llm_pipeline.py`
