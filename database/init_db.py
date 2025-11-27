@@ -132,5 +132,5 @@ def main() -> None:
         print(f"Initialized database at {args.db}")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

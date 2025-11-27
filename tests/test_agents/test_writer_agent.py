@@ -80,7 +80,10 @@ def test_writer_agent_success(
 
     # Mock LLM client
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = mock_short_draft
+    mock_client.generate_text.return_value = {
+        "text": mock_short_draft,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {
@@ -146,7 +149,16 @@ def test_writer_agent_character_count_loop(
 
     # Mock LLM client to return long draft first, then short draft
     mock_client = MagicMock()
-    mock_client.generate_text.side_effect = [mock_long_draft, mock_short_draft]
+    mock_client.generate_text.side_effect = [
+        {
+            "text": mock_long_draft,
+            "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+        },
+        {
+            "text": mock_short_draft,
+            "token_usage": {"prompt_tokens": 150, "completion_tokens": 250},
+        },
+    ]
     mock_get_client.return_value = mock_client
 
     input_obj = {
@@ -188,7 +200,10 @@ def test_writer_agent_max_shortening_attempts_exceeded(
 
     # Mock LLM client to always return long draft
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = mock_long_draft
+    mock_client.generate_text.return_value = {
+        "text": mock_long_draft,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {
@@ -269,7 +284,10 @@ def test_writer_agent_formats_prompt_correctly(
 
     # Mock LLM client
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = mock_short_draft
+    mock_client.generate_text.return_value = {
+        "text": mock_short_draft,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {

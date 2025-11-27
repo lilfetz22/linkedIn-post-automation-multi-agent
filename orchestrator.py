@@ -476,7 +476,7 @@ class Orchestrator:
         }
 
 
-def main():
+def main():  # pragma: no cover
     """Test harness for orchestrator development."""
     test_config = {"field": "Data Science (Optimizations & Time-Series Analysis)"}
 
@@ -508,5 +508,5 @@ def main():
         traceback.print_exc()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
