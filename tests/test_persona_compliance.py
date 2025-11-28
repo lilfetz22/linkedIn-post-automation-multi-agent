@@ -23,6 +23,7 @@ CLICHE_BLACKLIST = [
     "distributed ledger",
     "like a library",
     "like a recipe",
+    "think of it as",
     "imagine a library",
     "like a filing cabinet",
     "like a box",
