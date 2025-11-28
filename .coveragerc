@@ -7,7 +7,7 @@ source =
     agents
     core
     database
-    orchestrator
+    .
 
 # Omit test files and other non-production code
 omit =
