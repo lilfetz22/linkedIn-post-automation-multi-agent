@@ -649,10 +649,11 @@ Warm lighting and peaceful mood."""
         image_prompt = """Server racks transforming into organized filing cabinets, 
 with warm lighting suggesting efficiency and calm. No text."""
 
+        # Verify image prompt relates to the post theme
         theme_words = ["server", "storage", "organ", "file", "data"]
         prompt_lower = image_prompt.lower()
         has_theme = any(t in prompt_lower for t in theme_words)
-        assert has_theme, "Image should relate to post theme"
+        assert has_theme, f"Image prompt should relate to post theme '{post_theme}'"
 
     def test_metaphorical_over_literal(self):
         """Test metaphorical representations preferred over literal."""
