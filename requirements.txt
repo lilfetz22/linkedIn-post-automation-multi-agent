@@ -1,28 +1,59 @@
-# Core dependencies
-google-generativeai>=0.3.0
-google-genai>=0.2.0
-python-dotenv>=1.0.0
+# =============================================================================
+# LinkedIn Post Automation Multi-Agent System - Dependencies
+# =============================================================================
+# Install with: pip install -r requirements.txt
+# For development: pip install -r requirements.txt
+# For fresh install test: pip install --no-cache-dir -r requirements.txt
+# =============================================================================
 
-# RAG and vector embeddings
-chromadb>=0.4.0
+# -----------------------------------------------------------------------------
+# Core LLM Dependencies (Google Gemini)
+# -----------------------------------------------------------------------------
+google-generativeai>=0.8.0,<1.0.0   # Gemini API client (text + image generation)
+google-genai>=1.50.0,<2.0.0         # New Gemini client with grounding support
+python-dotenv>=1.0.0,<2.0.0         # Environment variable loading from .env
 
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
+# -----------------------------------------------------------------------------
+# RAG and Vector Embeddings (ChromaDB)
+# -----------------------------------------------------------------------------
+chromadb>=1.0.0,<2.0.0              # Vector store for memory bank RAG queries
 
-# Linting and Code Quality
-flake8>=6.0.0
-flake8-bugbear>=23.0.0
-pytest-flake8>=1.1.0
+# -----------------------------------------------------------------------------
+# Data Validation
+# -----------------------------------------------------------------------------
+pydantic>=2.0.0,<3.0.0              # Envelope validation and data models
 
-# Data validation (optional)
-pydantic>=2.0.0
+# -----------------------------------------------------------------------------
+# Grammar and Spell Checking
+# -----------------------------------------------------------------------------
+language-tool-python>=2.7.0,<4.0.0  # Local grammar checking fallback for Reviewer Agent
 
-# Grammar and spell checking
-language-tool-python>=2.7.0
+# -----------------------------------------------------------------------------
+# Progress Indicators
+# -----------------------------------------------------------------------------
+tqdm>=4.66.0,<5.0.0                 # Progress bars for long-running operations
 
-# Progress bars (optional)
-tqdm>=4.66.0
+# -----------------------------------------------------------------------------
+# Testing Framework
+# -----------------------------------------------------------------------------
+pytest>=8.0.0,<10.0.0               # Test runner
+pytest-cov>=5.0.0,<8.0.0            # Coverage plugin for pytest
+coverage>=7.0.0,<8.0.0              # Code coverage measurement
 
-# Note: This is a placeholder requirements.txt
-# Versions will be frozen after initial development and testing
+# -----------------------------------------------------------------------------
+# Code Quality and Linting
+# -----------------------------------------------------------------------------
+flake8>=7.0.0,<8.0.0                # Python linter
+flake8-bugbear>=24.0.0              # Additional flake8 checks for common bugs
+
+# -----------------------------------------------------------------------------
+# Implicit Dependencies (installed automatically, listed for reference)
+# -----------------------------------------------------------------------------
+# These are pulled in by the above packages:
+# - grpcio, grpcio-status (for Google API communication)
+# - protobuf, proto-plus (for protocol buffers)
+# - numpy (for ChromaDB)
+# - requests (for HTTP calls)
+# - typing_extensions (for type hints)
+# - onnxruntime (for ChromaDB embeddings)
+# - httpx (for async HTTP)

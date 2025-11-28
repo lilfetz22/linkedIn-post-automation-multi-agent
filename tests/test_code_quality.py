@@ -23,9 +23,13 @@ def test_no_bare_except_statements():
     # Get project root
     project_root = Path(__file__).parent.parent
 
-    # Run flake8 on the main source directories
+    # Only scan project source directories, not virtual environments
+    source_dirs = ["agents", "core", "database", "scripts", "tests"]
+    existing_dirs = [d for d in source_dirs if (project_root / d).exists()]
+
+    # Run flake8 on the main source directories (excludes venv, testvenv, etc.)
     result = subprocess.run(
-        [sys.executable, "-m", "flake8", ".", "--select=E722"],
+        [sys.executable, "-m", "flake8", *existing_dirs, "--select=E722"],
         cwd=project_root,
         capture_output=True,
         text=True,

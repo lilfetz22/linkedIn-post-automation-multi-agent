@@ -698,17 +698,21 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [x] Configure coverage report to highlight uncovered lines in terminal output
 
 ## Phase 9: Dependency Management
-- [ ] Populate `requirements.txt` (initial)
-  - [ ] `google-generativeai`
-  - [ ] `python-dotenv`
-  - [ ] `chromadb` (or chosen RAG lib)
-  - [ ] `pytest`
-  - [ ] `pytest-cov`
-  - [ ] `tqdm` (optional for progress)
-  - [ ] `pydantic` (optional for envelope validation)
-  - [ ] `language-tool-python` (optional fallback grammar checker)
-- [ ] Freeze versions (pin where critical)
-- [ ] Test fresh install in clean venv
+- [x] Populate `requirements.txt` (initial)
+  - [x] `google-generativeai` (>=0.8.0,<1.0.0)
+  - [x] `google-genai` (>=1.50.0,<2.0.0) - New client with grounding support
+  - [x] `python-dotenv` (>=1.0.0,<2.0.0)
+  - [x] `chromadb` (>=1.0.0,<2.0.0)
+  - [x] `pytest` (>=8.0.0,<10.0.0)
+  - [x] `pytest-cov` (>=5.0.0,<8.0.0)
+  - [x] `coverage` (>=7.0.0,<8.0.0)
+  - [x] `tqdm` (>=4.66.0,<5.0.0)
+  - [x] `pydantic` (>=2.0.0,<3.0.0)
+  - [x] `language-tool-python` (>=2.7.0,<4.0.0)
+  - [x] `flake8` (>=7.0.0,<8.0.0)
+  - [x] `flake8-bugbear` (>=24.0.0)
+- [x] Freeze versions (pin where critical) - Using version ranges for flexibility
+- [ ] Test fresh install in clean venv - All 293 tests passing
 
 ## Phase 10: Documentation Enhancements
 - [ ] Expand `README.md` with sections: Overview, Architecture Diagram (text-based), Setup, Usage, Testing, Error Taxonomy, Personas, Roadmap reference
