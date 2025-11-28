@@ -578,15 +578,18 @@ For Windows users, a convenience script is provided:
 ### Code Coverage
 
 Run tests with coverage reporting:
+
+> **Note:** Coverage source paths are configured in `.coveragerc`. You do **not** need to specify `--cov=...` for each module; simply use `--cov` and pytest will pick up the correct configuration automatically.
+
 ```bash
 # Run with coverage and show missing lines
-pytest tests/ --cov=agents --cov=core --cov=database --cov-report=term-missing
+pytest tests/ --cov --cov-report=term-missing
 
 # Generate HTML coverage report
-pytest tests/ --cov=agents --cov=core --cov=database --cov-report=html
+pytest tests/ --cov --cov-report=html
 
 # Generate both HTML and XML reports (for CI)
-pytest tests/ --cov=agents --cov=core --cov=database --cov-report=html --cov-report=xml
+pytest tests/ --cov --cov-report=html --cov-report=xml
 ```
 
 View the HTML report by opening `htmlcov/index.html` in your browser.
