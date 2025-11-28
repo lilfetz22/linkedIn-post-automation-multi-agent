@@ -408,8 +408,10 @@ class TestErrorPropagationOrchestrator:
             result = orch.run()
 
             # Verify orchestrator returns failed status
-            assert result["status"] == "failed", "Orchestrator should return failed status"
-            
+            assert (
+                result["status"] == "failed"
+            ), "Orchestrator should return failed status"
+
             # Check the failure data written to run_failed.json
             failure_calls = [
                 call
@@ -518,7 +520,7 @@ class TestAgentSpecificErrorScenarios:
             # Simulate response with empty sources array (triggers DataNotFoundError)
             mock_text.generate_text.return_value = {
                 "text": '{"sources": [], "summary": "No information found"}',
-                "token_usage": {"prompt_tokens": 10, "completion_tokens": 5}
+                "token_usage": {"prompt_tokens": 10, "completion_tokens": 5},
             }
             mock_client.return_value = mock_text
 
@@ -527,7 +529,7 @@ class TestAgentSpecificErrorScenarios:
 
             # Research agent should return error envelope with DataNotFoundError
             result = research_agent.run(input_obj, context)
-            
+
             assert result["status"] == "error"
             assert result["error"]["type"] == "DataNotFoundError"
             assert "No sources found" in result["error"]["message"]
@@ -536,13 +538,16 @@ class TestAgentSpecificErrorScenarios:
             # If the agent raises DataNotFoundError, check with pytest.raises
             with pytest.raises(DataNotFoundError):
                 research_agent.run(input_obj, context)
+
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):
         """Test Writer Agent: max shortening attempts exceeded raises ValidationError."""
         from agents import writer_agent
 
         with patch("agents.writer_agent.get_text_client") as mock_client, patch(
             "agents.writer_agent.atomic_write_text"
-        ), patch("agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"), patch(
+        ), patch(
+            "agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"
+        ), patch(
             "agents.writer_agent.log_event"
         ):
 
@@ -550,14 +555,14 @@ class TestAgentSpecificErrorScenarios:
             mock_text = MagicMock()
             mock_text.generate_text.return_value = {
                 "text": "A" * 4000,  # Always over limit
-                "token_usage": {"prompt_tokens": 100, "completion_tokens": 1000}
+                "token_usage": {"prompt_tokens": 100, "completion_tokens": 1000},
             }
             mock_client.return_value = mock_text
 
             # Call the writer agent
             context = {"run_id": "test", "run_path": Path("/tmp")}
             input_obj = {"structured_prompt": {"topic_title": "Test"}}
-            
+
             result = writer_agent.run(input_obj, context)
 
             # Should return error envelope with ValidationError after max shortening attempts
@@ -565,7 +570,10 @@ class TestAgentSpecificErrorScenarios:
             assert result["error"]["type"] == "ValidationError"
             assert "shortening attempts" in result["error"]["message"]
             # Verify the LLM was called MAX_SHORTENING_ATTEMPTS + 1 times (initial + retries)
-            assert mock_client.return_value.generate_text.call_count == writer_agent.MAX_SHORTENING_ATTEMPTS + 1
+            assert (
+                mock_client.return_value.generate_text.call_count
+                == writer_agent.MAX_SHORTENING_ATTEMPTS + 1
+            )
 
     def test_reviewer_agent_llm_failure_returns_error(self, mock_run_dir):
         """Test Reviewer Agent: LLM failure returns error envelope."""
