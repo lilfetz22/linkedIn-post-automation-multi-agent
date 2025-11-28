@@ -511,21 +511,27 @@ class TestAgentSpecificErrorScenarios:
         """Test Research Agent: zero search results triggers DataNotFoundError."""
         from agents import research_agent
 
-        with patch("agents.research_agent.get_text_client") as mock_client:
+        with patch("agents.research_agent.get_text_client") as mock_client, patch(
+            "agents.research_agent.log_event"
+        ):
             mock_text = MagicMock()
-            # Simulate response with no useful content
-            mock_text.generate_text.return_value = MagicMock(
-                text="No relevant information found.",
-                usage_metadata=MagicMock(
-                    prompt_token_count=10, candidates_token_count=5
-                ),
-            )
+            # Simulate response with empty sources array (triggers DataNotFoundError)
+            mock_text.generate_text.return_value = {
+                "text": '{"sources": [], "summary": "No information found"}',
+                "token_usage": {"prompt_tokens": 10, "completion_tokens": 5}
+            }
             mock_client.return_value = mock_text
 
             context = {"run_id": "test", "run_path": mock_run_dir}
+            input_obj = {"topic": "Test Topic"}
 
-            # Research agent should handle this gracefully
-            # The actual behavior depends on implementation
+            # Research agent should return error envelope with DataNotFoundError
+            result = research_agent.run(input_obj, context)
+            
+            assert result["status"] == "error"
+            assert result["error"]["type"] == "DataNotFoundError"
+            assert "No sources found" in result["error"]["message"]
+            assert result["error"]["retryable"] is False
             input_obj = {"topic": "Test Topic"}
             # If the agent raises DataNotFoundError, check with pytest.raises
             with pytest.raises(DataNotFoundError):
