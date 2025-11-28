@@ -715,10 +715,10 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [x] Test fresh install in clean venv - All 293 tests passing
 
 ## Phase 10: Documentation Enhancements
-- [ ] Expand `README.md` with sections: Overview, Architecture Diagram (text-based), Setup, Usage, Testing, Error Taxonomy, Personas, Roadmap reference
+- [x] Expand `README.md` with sections: Overview, Architecture Diagram (text-based), Setup, Usage, Testing, Error Taxonomy, Personas, Roadmap reference
 - [ ] Add `docs/` directory (optional) for deeper explanations
-- [ ] Provide example run artifact tree in README
-- [ ] Document LLM integration and cost management
+- [x] Provide example run artifact tree in README
+- [x] Document LLM integration and cost management
 
 ## Phase 11: Quality & Validation
 - [ ] Add CI workflow (GitHub Actions) for tests + coverage
@@ -740,7 +740,6 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 ## Phase 14: Future Enhancements (Backlog)
 - [ ] Scheduling (cron or Windows Task Scheduler integration)
 - [ ] Web UI dashboard for runs & artifacts
-- [ ] Post publishing automation to LinkedIn API (requires compliance checks)
 - [ ] Advanced analytics on engagement (placeholder)
 
 ## Milestone Tracking Summary
