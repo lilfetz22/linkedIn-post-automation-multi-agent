@@ -52,8 +52,9 @@ Examples:
     exit 0
 }
 
-# Set execution policy for this session (required for venv activation)
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+# If you encounter issues activating the venv, set execution policy manually:
+#   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+# See project_spec.md for details.
 
 # Build pytest command
 $pytestArgs = @("tests/")
