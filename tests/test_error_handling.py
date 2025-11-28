@@ -407,6 +407,9 @@ class TestErrorPropagationOrchestrator:
             orch = Orchestrator(valid_config)
             result = orch.run()
 
+            # Verify orchestrator returns failed status
+            assert result["status"] == "failed", "Orchestrator should return failed status"
+            
             # Check the failure data written to run_failed.json
             failure_calls = [
                 call
