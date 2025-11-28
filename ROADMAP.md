@@ -706,7 +706,6 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
   - [ ] `pytest-cov`
   - [ ] `tqdm` (optional for progress)
   - [ ] `pydantic` (optional for envelope validation)
-  - [ ] Search API library (Tavily, SerpAPI, or similar)
   - [ ] `language-tool-python` (optional fallback grammar checker)
 - [ ] Freeze versions (pin where critical)
 - [ ] Test fresh install in clean venv
