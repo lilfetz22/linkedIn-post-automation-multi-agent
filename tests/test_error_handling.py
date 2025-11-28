@@ -531,20 +531,30 @@ class TestAgentSpecificErrorScenarios:
 
         with patch("agents.writer_agent.get_text_client") as mock_client, patch(
             "agents.writer_agent.atomic_write_text"
-        ), patch("agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"):
+        ), patch("agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"), patch(
+            "agents.writer_agent.log_event"
+        ):
 
             # Always return text that's too long
             mock_text = MagicMock()
-            mock_text.generate_text.return_value = MagicMock(
-                text="A" * 4000,  # Always over limit
-                usage_metadata=MagicMock(
-                    prompt_token_count=100, candidates_token_count=1000
-                ),
-            )
+            mock_text.generate_text.return_value = {
+                "text": "A" * 4000,  # Always over limit
+                "token_usage": {"prompt_tokens": 100, "completion_tokens": 1000}
+            }
             mock_client.return_value = mock_text
 
-            # The writer agent should eventually raise ValidationError
-            # after max shortening attempts
+            # Call the writer agent
+            context = {"run_id": "test", "run_path": Path("/tmp")}
+            input_obj = {"structured_prompt": {"topic_title": "Test"}}
+            
+            result = writer_agent.run(input_obj, context)
+
+            # Should return error envelope with ValidationError after max shortening attempts
+            assert result["status"] == "error"
+            assert result["error"]["type"] == "ValidationError"
+            assert "shortening attempts" in result["error"]["message"]
+            # Verify the LLM was called MAX_SHORTENING_ATTEMPTS + 1 times (initial + retries)
+            assert mock_client.return_value.generate_text.call_count == writer_agent.MAX_SHORTENING_ATTEMPTS + 1
 
     def test_reviewer_agent_llm_failure_returns_error(self, mock_run_dir):
         """Test Reviewer Agent: LLM failure returns error envelope."""
