@@ -23,8 +23,6 @@ CLICHE_BLACKLIST = [
     "distributed ledger",
     "like a library",
     "like a recipe",
-    "think of x as y",
-    "think of it as",
     "imagine a library",
     "like a filing cabinet",
     "like a box",
@@ -34,6 +32,8 @@ CLICHE_BLACKLIST = [
     "move the needle",
     "synergy",
     "paradigm shift",
+    "game changer",
+    "gamechanger",
 ]
 
 # Corporate jargon to avoid
