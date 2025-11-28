@@ -678,13 +678,14 @@ representing modern Parquet format. Warm, hopeful lighting. No text."""
 
         for prompt in generic_prompts:
             # Generic stock photos often mention "business", "office", "meeting" generically
-            generic_indicators = all(
+            generic_indicators = any(
                 [
                     "business" in prompt.lower() or "office" in prompt.lower(),
                     "laptop" in prompt.lower() or "meeting" in prompt.lower(),
                 ]
             )
-            # This test shows what to avoid - these should NOT be the output
+            # These generic prompts should be flagged as unacceptable
+            assert generic_indicators, f"Generic stock photo prompt should be detected: {prompt}"
 
 
 # =============================================================================
