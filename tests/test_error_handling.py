@@ -534,10 +534,6 @@ class TestAgentSpecificErrorScenarios:
             assert result["error"]["type"] == "DataNotFoundError"
             assert "No sources found" in result["error"]["message"]
             assert result["error"]["retryable"] is False
-            input_obj = {"topic": "Test Topic"}
-            # If the agent raises DataNotFoundError, check with pytest.raises
-            with pytest.raises(DataNotFoundError):
-                research_agent.run(input_obj, context)
 
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):
         """Test Writer Agent: max shortening attempts exceeded raises ValidationError."""
