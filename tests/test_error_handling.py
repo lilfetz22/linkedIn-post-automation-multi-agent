@@ -160,6 +160,8 @@ class TestExponentialBackoff:
         with patch("core.retry.time.sleep") as mock_sleep:
             result = execute_with_retries(failing_twice, max_attempts=3, base_delay=1.0)
 
+        # Verify the result is returned successfully after retries
+        assert result == "done", "Should return successful result after retries"
         # Should sleep twice: after attempt 1 and after attempt 2
         assert mock_sleep.call_count == 2
         mock_sleep.assert_any_call(1.0)  # First backoff
