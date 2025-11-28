@@ -278,6 +278,8 @@ Parquet is like a hyper-organized index that jumps directly to what you need."""
 
         assert not contains_cliche(good_analogy), "Fresh analogy should pass"
         # Generic comparisons are hard to auto-detect, but clichés are clear
+        # Test that bad analogy is also not flagged (technical comparisons need different detection)
+        assert not contains_cliche(bad_analogy), "Generic technical comparisons need different detection than clichés"
 
     def test_analogy_connects_unexpected_domains(self):
         """Test analogies connect to unexpected domains (cooking, sports, psychology)."""
