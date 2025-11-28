@@ -84,9 +84,8 @@ if ($Persona) {
 
 # Add coverage options
 if ($Coverage -or $CoverageHtml) {
-    $pytestArgs += "--cov=agents"
-    $pytestArgs += "--cov=core"
-    $pytestArgs += "--cov=database"
+    # Coverage source paths are now managed in .coveragerc for maintainability.
+    $pytestArgs += "--cov"
     $pytestArgs += "--cov-report=term-missing"
     
     if ($CoverageHtml) {
