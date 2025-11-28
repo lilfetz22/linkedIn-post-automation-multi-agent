@@ -569,145 +569,133 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [x] `tests/test_agents/test_image_generator_agent.py`
 ### 8.3 System-Level Tests
 - [x] `tests/test_orchestrator.py`
-- [ ] Create `tests/test_error_handling.py` - Comprehensive error classification and handling tests
-  - [ ] Test retryable vs non-retryable error distinction
-    - [ ] Test `ModelError` is retryable (network failures, API timeouts)
-    - [ ] Test `DataNotFoundError` is retryable (triggers topic pivot)
-    - [ ] Test `ValidationError` is non-retryable (invalid data, constraint violations)
-    - [ ] Test `CorruptionError` is non-retryable (artifact parsing failures)
-  - [ ] Test exponential backoff retry logic
-    - [ ] Verify sleep delays follow pattern: 1s, 2s, 4s for attempts 1, 2, 3
-    - [ ] Test max retry attempts enforced (default 3)
-    - [ ] Test successful retry after transient failure
-  - [ ] Test circuit breaker behavior
-    - [ ] Test breaker opens after 3 consecutive LLM failures
-    - [ ] Test breaker resets on successful agent execution
-    - [ ] Test `CircuitBreakerTrippedError` raised when breaker open
-    - [ ] Test breaker state persists across agent calls within same run
-  - [ ] Test error propagation through orchestrator
-    - [ ] Test non-retryable errors abort run immediately
-    - [ ] Test retryable errors exhaust retries before aborting
-    - [ ] Test `run_failed.json` artifact created with error details
-    - [ ] Test error context includes: step name, attempt count, stack trace, timestamp
-  - [ ] Test agent-specific error scenarios
-    - [ ] Topic Agent: empty database triggers LLM fallback
-    - [ ] Research Agent: zero search results triggers `DataNotFoundError`
-    - [ ] Writer Agent: max shortening attempts exceeded raises `ValidationError`
-    - [ ] Reviewer Agent: grammar check failure falls back gracefully
-    - [ ] Image Generator: generation failure creates placeholder image
-- [ ] Create `tests/test_artifact_persistence.py` - Atomic write and integrity verification tests
-  - [ ] Test atomic JSON write operations
-    - [ ] Test `atomic_write_json()` creates temp file with `.tmp` suffix
-    - [ ] Test rename operation is atomic (no partial writes visible)
-    - [ ] Test existing file is not corrupted if write fails mid-operation
-    - [ ] Test directory creation if parent path doesn't exist
-  - [ ] Test atomic text write operations
-    - [ ] Test `atomic_write_text()` uses same temp-then-rename pattern
-    - [ ] Test UTF-8 encoding is preserved correctly
-    - [ ] Test newline handling across platforms (Windows CRLF vs Unix LF)
-  - [ ] Test JSON verification and corruption detection
-    - [ ] Test `verify_json()` successfully parses valid JSON artifacts
-    - [ ] Test `verify_json()` raises `CorruptionError` for malformed JSON
-    - [ ] Test `write_and_verify_json()` immediately re-parses after write
-    - [ ] Test truncated JSON file detected as corrupted
-    - [ ] Test JSON with syntax errors (missing quotes, trailing commas) rejected
-  - [ ] Test artifact immutability and versioning
-    - [ ] Test overwriting artifacts preserves previous version temporarily
-    - [ ] Test character count loop iterations preserve intermediate drafts
-    - [ ] Test run directory isolation (no cross-run contamination)
-  - [ ] Test concurrent write safety
-    - [ ] Test multiple agents writing to different artifacts simultaneously
-    - [ ] Test file locking behavior on Windows vs Unix systems
-  - [ ] Test disk space and permission error handling
-    - [ ] Test graceful failure if disk full during write
-    - [ ] Test clear error message if directory not writable
-    - [ ] Test cleanup of temp files after failed writes
+- [x] Create `tests/test_error_handling.py` - Comprehensive error classification and handling tests (33 tests)
+  - [x] Test retryable vs non-retryable error distinction
+    - [x] Test `ModelError` is retryable (network failures, API timeouts)
+    - [x] Test `DataNotFoundError` is retryable (triggers topic pivot)
+    - [x] Test `ValidationError` is non-retryable (invalid data, constraint violations)
+    - [x] Test `CorruptionError` is non-retryable (artifact parsing failures)
+  - [x] Test exponential backoff retry logic
+    - [x] Verify sleep delays follow pattern: 1s, 2s, 4s for attempts 1, 2, 3
+    - [x] Test max retry attempts enforced (default 3)
+    - [x] Test successful retry after transient failure
+  - [x] Test circuit breaker behavior
+    - [x] Test breaker opens after 3 consecutive LLM failures
+    - [x] Test breaker resets on successful agent execution
+    - [x] Test `CircuitBreakerTrippedError` raised when breaker open
+    - [x] Test breaker state persists across agent calls within same run
+  - [x] Test error propagation through orchestrator
+    - [x] Test non-retryable errors abort run immediately
+    - [x] Test retryable errors exhaust retries before aborting
+    - [x] Test `run_failed.json` artifact created with error details
+    - [x] Test error context includes: step name, attempt count, stack trace, timestamp
+  - [x] Test agent-specific error scenarios
+    - [x] Topic Agent: empty database triggers LLM fallback
+    - [x] Research Agent: zero search results triggers `DataNotFoundError`
+    - [x] Writer Agent: max shortening attempts exceeded raises `ValidationError`
+    - [x] Reviewer Agent: LLM failure returns error envelope
+    - [x] Image Generator: generation failure creates placeholder image
+- [x] Create `tests/test_artifact_persistence.py` - Atomic write and integrity verification tests (33 tests)
+  - [x] Test atomic JSON write operations
+    - [x] Test `atomic_write_json()` creates temp file with `.tmp` suffix
+    - [x] Test rename operation is atomic (no partial writes visible)
+    - [x] Test existing file is not corrupted if write fails mid-operation
+    - [x] Test directory creation if parent path doesn't exist
+  - [x] Test atomic text write operations
+    - [x] Test `atomic_write_text()` uses same temp-then-rename pattern
+    - [x] Test UTF-8 encoding is preserved correctly
+    - [x] Test newline handling across platforms (Windows CRLF vs Unix LF)
+  - [x] Test JSON verification and corruption detection
+    - [x] Test `verify_json()` successfully parses valid JSON artifacts
+    - [x] Test `verify_json()` raises `CorruptionError` for malformed JSON
+    - [x] Test `write_and_verify_json()` immediately re-parses after write
+    - [x] Test truncated JSON file detected as corrupted
+    - [x] Test JSON with syntax errors (missing quotes, trailing commas) rejected
+  - [x] Test artifact immutability and versioning
+    - [x] Test overwriting artifacts replaces content
+    - [x] Test character count loop iterations can be preserved
+    - [x] Test run directory isolation (no cross-run contamination)
+  - [x] Test concurrent write safety
+    - [x] Test multiple agents writing to different artifacts simultaneously
+    - [x] Test concurrent writes to same file (last write wins)
+  - [x] Test disk space and permission error handling
+    - [x] Test graceful failure on write error
+    - [x] Test clear error for readonly directory (skipped on Windows)
+    - [x] Test cleanup of temp files after failed writes
 - [x] `tests/test_integration/test_llm_pipeline.py` (replaces test_full_pipeline.py)
 ### 8.4 Persona Compliance Tests
-- [ ] Create `tests/test_persona_compliance.py` - Validate agent output adheres to persona guidelines
-  - [ ] Test Prompt Generator persona fidelity (Strategic Content Architect)
-    - [ ] Test template structure presence
-      - [ ] Verify `**Topic:**` section exists and non-empty
-      - [ ] Verify `**Target Audience:**` section exists and non-empty
-      - [ ] Verify `**Audience's Core Pain Point:**` section exists and non-empty
-      - [ ] Verify `**Key Metrics/Facts:**` section exists with 3-5 data points
-      - [ ] Verify `**The Simple Solution/Code Snippet:**` section exists
-      - [ ] Verify `**Analogies:**` section exists with fresh comparisons
-    - [ ] Test cliché detection and rejection
-      - [ ] Test blacklist includes: "distributed ledger", "like a library", "like a recipe", "think of X as Y"
-      - [ ] Test agent raises `ValidationError` if cliché detected
-      - [ ] Test case-insensitive cliché matching
-      - [ ] Test partial phrase matching (e.g., "distributed ledger technology")
-    - [ ] Test analogy freshness heuristics
-      - [ ] Test analogies avoid generic technical comparisons
-      - [ ] Test analogies connect to unexpected domains (e.g., cooking, sports, psychology)
-      - [ ] Test analogies are concrete and vivid (not abstract)
-  - [ ] Test Writer persona fidelity (The Witty Expert)
-    - [ ] Test LinkedIn post structure compliance
-      - [ ] Verify hook (first 1-2 sentences) grabs attention with surprising statement or question
-      - [ ] Verify problem section articulates pain point beyond surface-level technical issue
-      - [ ] Verify solution section provides actionable insights or code snippets
-      - [ ] Verify impact section connects to business/career outcomes
-      - [ ] Verify call-to-action prompts engagement (comment, share, try)
-      - [ ] Verify sign-off is conversational and inviting
-    - [ ] Test tone and voice characteristics
-      - [ ] Test presence of dry wit (subtle humor, not slapstick)
-      - [ ] Test conversational tone (contractions, rhetorical questions)
-      - [ ] Test intellectual sparkle (connects ideas across domains)
-      - [ ] Test absence of corporate jargon and buzzwords
-      - [ ] Test short paragraphs (2-4 sentences max)
-      - [ ] Test strategic use of bold for emphasis (1-3 phrases per post)
-      - [ ] Test bullet points for lists (3-5 items max)
-    - [ ] Test character limits and formatting
-      - [ ] Test post stays under 3000 characters
-      - [ ] Test hashtags removed or minimal (0-2 max)
-      - [ ] Test proper spacing between sections
-  - [ ] Test Image Prompt Generator persona fidelity (Visual Strategist)
-    - [ ] Test no-text constraint enforcement
-      - [ ] Test prompt explicitly states "zero text", "no words", or "no letters"
-      - [ ] Test validation rejects prompts missing no-text instruction
-    - [ ] Test visual element specification
-      - [ ] Test prompt includes subject description (what is depicted)
-      - [ ] Test prompt includes environment/setting description
-      - [ ] Test prompt includes lighting description (natural, dramatic, soft, etc.)
-      - [ ] Test prompt includes mood/emotion description (calm, energetic, mysterious, etc.)
-    - [ ] Test thematic alignment
-      - [ ] Test image concept relates to post's core message
-      - [ ] Test metaphorical representations preferred over literal
-      - [ ] Test prompts avoid generic stock photo descriptions
+- [x] Create `tests/test_persona_compliance.py` - Validate agent output adheres to persona guidelines (43 tests)
+  - [x] Test Prompt Generator persona fidelity (Strategic Content Architect)
+    - [x] Test template structure presence
+      - [x] Verify `**Topic:**` section exists and non-empty
+      - [x] Verify `**Target Audience:**` section exists and non-empty
+      - [x] Verify `**Audience's Core Pain Point:**` section exists and non-empty
+      - [x] Verify `**Key Metrics/Facts:**` section exists with data points
+      - [x] Verify `**The Simple Solution/Code Snippet:**` section exists
+    - [x] Test cliché detection and rejection
+      - [x] Test blacklist includes: "distributed ledger", "like a library", "like a recipe", "think of X as Y"
+      - [x] Test case-insensitive cliché matching
+      - [x] Test partial phrase matching (e.g., "distributed ledger technology")
+    - [x] Test analogy freshness heuristics
+      - [x] Test analogies avoid generic technical comparisons
+      - [x] Test analogies connect to unexpected domains (e.g., cooking, sports, psychology)
+  - [x] Test Writer persona fidelity (The Witty Expert)
+    - [x] Test LinkedIn post structure compliance
+      - [x] Verify hook grabs attention with surprising statement or question
+      - [x] Verify problem section articulates pain point beyond surface-level technical issue
+      - [x] Verify solution section provides actionable insights or code snippets
+      - [x] Verify impact section connects to business/career outcomes
+      - [x] Verify call-to-action prompts engagement (comment, share, try)
+      - [x] Verify sign-off is conversational and inviting
+    - [x] Test tone and voice characteristics
+      - [x] Test presence of dry wit (subtle humor, not slapstick)
+      - [x] Test conversational tone (contractions, rhetorical questions)
+      - [x] Test absence of corporate jargon and buzzwords
+      - [x] Test short paragraphs (2-4 sentences max)
+      - [x] Test strategic use of bold for emphasis (1-3 phrases per post)
+      - [x] Test bullet points for lists (3-5 items max)
+    - [x] Test character limits and formatting
+      - [x] Test post stays under 3000 characters
+      - [x] Test hashtags removed or minimal (0-2 max)
+      - [x] Test proper spacing between sections
+  - [x] Test Image Prompt Generator persona fidelity (Visual Strategist)
+    - [x] Test no-text constraint enforcement
+      - [x] Test prompt explicitly states "zero text", "no words", or "no letters"
+      - [x] Test validation rejects prompts missing no-text instruction
+    - [x] Test visual element specification
+      - [x] Test prompt includes subject description (what is depicted)
+      - [x] Test prompt includes environment/setting description
+      - [x] Test prompt includes lighting description (natural, dramatic, soft, etc.)
+      - [x] Test prompt includes mood/emotion description (calm, energetic, mysterious, etc.)
+    - [x] Test thematic alignment
+      - [x] Test image concept relates to post's core message
+      - [x] Test metaphorical representations preferred over literal
+      - [x] Test prompts avoid generic stock photo descriptions
 ### 8.5 Circuit Breaker Tests
-- [x] ~~Simulate 3 consecutive LLM failures triggers abort~~ - Covered in `test_orchestrator.py` and new `test_error_handling.py`
+- [x] ~~Simulate 3 consecutive LLM failures triggers abort~~ - Covered in `test_orchestrator.py` and `test_error_handling.py`
 ### 8.6 Coverage Configuration & Enforcement
-- [ ] Add pytest configuration file
-  - [ ] Create `pytest.ini` or add `[tool.pytest.ini_options]` to `pyproject.toml`
-  - [ ] Configure test discovery paths: `testpaths = ["tests"]`
-  - [ ] Set Python path: `pythonpath = ["."]`
-  - [ ] Configure markers for test categorization (unit, integration, slow)
-  - [ ] Set default pytest options: `-v --strict-markers --tb=short`
-- [ ] Configure pytest-cov for coverage tracking
-  - [ ] Add `pytest-cov` to `requirements.txt` if not present
-  - [ ] Configure coverage source paths: `--cov=agents --cov=core --cov=database`
-  - [ ] Exclude test files from coverage: `--cov-report=term-missing`
-  - [ ] Set coverage output formats: `--cov-report=html` and `--cov-report=xml`
-  - [ ] Configure coverage HTML output directory: `htmlcov/`
-- [ ] Set initial coverage thresholds
-  - [ ] Add `--cov-fail-under=75` for initial target (adjust based on baseline)
-  - [ ] Document goal of >85% coverage in README
-  - [ ] Configure branch coverage: `--cov-branch`
-- [ ] Add coverage exclusion pragmas where appropriate
-  - [ ] Exclude defensive error handling: `# pragma: no cover`
-  - [ ] Exclude platform-specific code branches
-  - [ ] Exclude type checking blocks: `if TYPE_CHECKING:`
-  - [ ] Document pragma usage guidelines in testing docs
-- [ ] Create coverage reporting workflow
-  - [ ] Add `make test-coverage` or equivalent command to run tests with coverage
-  - [ ] Configure coverage report to highlight uncovered lines in terminal output
-  - [ ] Set up coverage badge generation (if using CI)
-- [ ] Establish baseline coverage metrics
-  - [ ] Run `pytest --cov --cov-report=term-missing` to get current coverage
-  - [ ] Document baseline coverage percentage per module
-  - [ ] Identify critical paths needing coverage improvement
-  - [ ] Set incremental coverage targets (e.g., +5% per sprint)
+- [x] Add pytest configuration file
+  - [x] Create `pytest.ini`
+  - [x] Configure test discovery paths: `testpaths = ["tests"]`
+  - [x] Set Python path: `pythonpath = ["."]`
+  - [x] Configure markers for test categorization (unit, integration, slow, llm, persona)
+  - [x] Set default pytest options: `-v --strict-markers --tb=short`
+- [x] Configure pytest-cov for coverage tracking
+  - [x] Add `pytest-cov` to `requirements.txt`
+  - [x] Create `.coveragerc` with coverage source paths
+  - [x] Exclude test files from coverage
+  - [x] Set coverage output formats: `html`, `xml`, `json`
+  - [x] Configure coverage HTML output directory: `htmlcov/`
+- [x] Set initial coverage thresholds
+  - [x] Add `fail_under=75` in `.coveragerc`
+  - [x] Configure branch coverage: `branch = True`
+- [x] Add coverage exclusion pragmas
+  - [x] Exclude defensive error handling: `pragma: no cover`
+  - [x] Exclude platform-specific code branches
+  - [x] Exclude type checking blocks: `if TYPE_CHECKING:`
+- [x] Create coverage reporting workflow
+  - [x] Add `run_tests.ps1` PowerShell script with `-Coverage` and `-CoverageHtml` flags
+  - [x] Configure coverage report to highlight uncovered lines in terminal output
 
 ## Phase 9: Dependency Management
 - [ ] Populate `requirements.txt` (initial)

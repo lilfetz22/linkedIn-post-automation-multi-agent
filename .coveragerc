@@ -1,0 +1,86 @@
+[run]
+# Measure branch coverage
+branch = True
+
+# Source directories to measure
+source = 
+    agents
+    core
+    database
+    .
+
+# Omit test files and other non-production code
+omit =
+    tests/*
+    */__pycache__/*
+    */test_*
+    setup.py
+    conftest.py
+    scripts/*
+    runs/*
+
+# Parallel execution support
+parallel = True
+
+# Data file location
+data_file = .coverage
+
+[report]
+# Fail under this percentage
+fail_under = 75
+
+# Show missing lines in terminal output
+show_missing = True
+
+# Exclude these patterns from coverage
+exclude_lines =
+    # Standard exclusions
+    pragma: no cover
+    
+    # Don't cover defensive assertions
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't cover abstract methods
+    @abstractmethod
+    
+    # Don't cover type checking blocks
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    
+    # Don't cover debug-only code
+    if __name__ == "__main__":
+    if self.debug:
+    if settings.DEBUG
+    
+    # Don't cover platform-specific code
+    if sys.platform
+    if os.name
+    
+    # Don't cover import error fallbacks
+    except ImportError:
+    except ModuleNotFoundError:
+
+# Precision for coverage percentage
+precision = 2
+
+# Skip files with no code
+skip_empty = True
+
+# Sort output by coverage percentage
+sort = Cover
+
+[html]
+# HTML report directory
+directory = htmlcov
+
+# Title for HTML report
+title = LinkedIn Post Automation - Coverage Report
+
+[xml]
+# XML report output (for CI integration)
+output = coverage.xml
+
+[json]
+# JSON report output
+output = coverage.json

@@ -526,6 +526,100 @@ pytest tests/test_agents/ -v
 - Compare costs before/after (poorly-worded prompts may require more tokens)
 - Get human review on drafts before deploying prompt changes to production
 
+## Testing & Code Coverage
+
+### Running Tests
+
+Run the full test suite:
+```bash
+pytest tests/
+```
+
+Run with verbose output:
+```bash
+pytest tests/ -v
+```
+
+Run specific test categories using markers:
+```bash
+# Unit tests only
+pytest tests/ -m unit
+
+# Integration tests only
+pytest tests/ -m integration
+
+# Persona compliance tests
+pytest tests/ -m persona
+```
+
+#### Windows PowerShell Helper Script
+
+For Windows users, a convenience script is provided:
+```powershell
+# Run all tests
+.\run_tests.ps1
+
+# Run with coverage
+.\run_tests.ps1 -Coverage
+
+# Generate HTML coverage report
+.\run_tests.ps1 -CoverageHtml
+
+# Run specific test category
+.\run_tests.ps1 -Unit -Verbose
+
+# Run specific file
+.\run_tests.ps1 -File tests/test_error_handling.py
+
+# Show help
+.\run_tests.ps1 -Help
+```
+
+### Code Coverage
+
+Run tests with coverage reporting:
+
+> **Note:** Coverage source paths are configured in `.coveragerc`. You do **not** need to specify `--cov=...` for each module; simply use `--cov` and pytest will pick up the correct configuration automatically.
+
+```bash
+# Run with coverage and show missing lines
+pytest tests/ --cov --cov-report=term-missing
+
+# Generate HTML coverage report
+pytest tests/ --cov --cov-report=html
+
+# Generate both HTML and XML reports (for CI)
+pytest tests/ --cov --cov-report=html --cov-report=xml
+```
+
+View the HTML report by opening `htmlcov/index.html` in your browser.
+
+### Coverage Goals
+
+| Metric | Current Target | Ultimate Goal |
+|--------|----------------|---------------|
+| Overall Coverage | ≥75% | >85% |
+| Branch Coverage | Enabled | Enabled |
+| Core Module | ≥80% | >90% |
+| Agents Module | ≥70% | >85% |
+
+### Test Categories
+
+The test suite includes several specialized test files:
+
+- **`test_error_handling.py`**: Tests for error classification, retry logic, circuit breaker behavior, and error propagation
+- **`test_artifact_persistence.py`**: Tests for atomic file writes, JSON verification, corruption detection, and concurrent write safety
+- **`test_persona_compliance.py`**: Tests that validate agent outputs against persona guidelines (Strategic Content Architect, The Witty Expert, Visual Strategist)
+- **`test_orchestrator.py`**: Integration tests for the complete pipeline orchestration
+- **`test_agents/*.py`**: Unit tests for each individual agent
+
+### Continuous Integration
+
+Coverage is enforced via pytest-cov with a minimum threshold of 75%. To run the same checks as CI:
+```bash
+pytest tests/ --cov=agents --cov=core --cov=database --cov-fail-under=75
+```
+
 ## Troubleshooting
 
 ### Common Issues

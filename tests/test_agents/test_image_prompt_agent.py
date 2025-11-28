@@ -68,9 +68,13 @@ def test_image_prompt_agent_success(
     mock_cost_tracker,
 ):
     """Test successful image prompt generation with LLM."""
-    # Mock LLM client
+    # Mock LLM client - must return dict with 'text' key like real client
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_valid_prompt
+    mock_client.generate_text.return_value = {
+        "text": sample_valid_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {"final_post": sample_final_post}
@@ -144,7 +148,11 @@ def test_image_prompt_agent_validates_no_text_constraint(
     """Test that agent validates no-text constraint is present."""
     # Mock LLM to return invalid prompt (missing no-text constraint)
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_invalid_prompt
+    mock_client.generate_text.return_value = {
+        "text": sample_invalid_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {"final_post": sample_final_post}
@@ -226,7 +234,11 @@ def test_image_prompt_agent_prompt_preview(
     long_prompt = sample_valid_prompt + " " + ("A" * 200)
 
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = long_prompt
+    mock_client.generate_text.return_value = {
+        "text": long_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 150},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {"final_post": sample_final_post}
@@ -260,7 +272,11 @@ on the central data flow. Modern minimal aesthetic with subtle gradients.
 The image must contain zero text, words, or letters."""
 
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = realistic_prompt
+    mock_client.generate_text.return_value = {
+        "text": realistic_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 80},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {"final_post": sample_final_post}
@@ -299,7 +315,11 @@ def test_image_prompt_agent_cost_tracking_integration(
 ):
     """Test that cost tracking is properly integrated."""
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_valid_prompt
+    mock_client.generate_text.return_value = {
+        "text": sample_valid_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     input_obj = {"final_post": sample_final_post}

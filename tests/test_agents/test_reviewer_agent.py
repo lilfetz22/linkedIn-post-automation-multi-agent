@@ -66,9 +66,13 @@ def test_reviewer_agent_success(
     mock_grammar, mock_get_client, temp_run_dir, sample_short_draft, mock_cost_tracker
 ):
     """Test successful review with LLM and grammar checking."""
-    # Mock LLM client
+    # Mock LLM client - must return dict with 'text' key
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_short_draft
+    mock_client.generate_text.return_value = {
+        "text": sample_short_draft,
+        "token_usage": {"prompt_tokens": 200, "completion_tokens": 150},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     # Mock grammar checking (no changes)
@@ -130,9 +134,13 @@ def test_reviewer_agent_hashtag_removal(
     long_with_hashtags = base_text + "\n\n#redis #optimization"
     text_without_hashtags = base_text
 
-    # Mock LLM to return the long draft
+    # Mock LLM to return the long draft - must return dict with 'text' key
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = long_with_hashtags
+    mock_client.generate_text.return_value = {
+        "text": long_with_hashtags,
+        "token_usage": {"prompt_tokens": 200, "completion_tokens": 150},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     # Mock grammar checking (no changes)
@@ -165,9 +173,20 @@ def test_reviewer_agent_shortening_loop(
     mock_cost_tracker,
 ):
     """Test shortening loop when post is too long."""
-    # Mock LLM to return long draft first, then short draft
+    # Mock LLM to return long draft first, then short draft - must return dict with 'text' key
     mock_client = MagicMock()
-    mock_client.generate_text.side_effect = [sample_long_draft, sample_short_draft]
+    mock_client.generate_text.side_effect = [
+        {
+            "text": sample_long_draft,
+            "token_usage": {"prompt_tokens": 100, "completion_tokens": 1000},
+            "model": "gemini-2.5-pro",
+        },
+        {
+            "text": sample_short_draft,
+            "token_usage": {"prompt_tokens": 100, "completion_tokens": 100},
+            "model": "gemini-2.5-pro",
+        },
+    ]
     mock_get_client.return_value = mock_client
 
     # Mock grammar checking (no changes)
@@ -202,9 +221,13 @@ def test_reviewer_agent_max_shortening_attempts_exceeded(
     mock_grammar, mock_get_client, temp_run_dir, sample_long_draft, mock_cost_tracker
 ):
     """Test failure after max shortening attempts."""
-    # Mock LLM to always return long draft
+    # Mock LLM to always return long draft - must return dict with 'text' key
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_long_draft
+    mock_client.generate_text.return_value = {
+        "text": sample_long_draft,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 1000},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
 
     # Mock grammar checking (no changes)
@@ -267,10 +290,14 @@ def test_reviewer_agent_grammar_corrections(mock_grammar, temp_run_dir):
     # Mock grammar tool
     mock_grammar.return_value = (corrected, 2)
 
-    # We still need to mock LLM
+    # We still need to mock LLM - must return dict with 'text' key
     with patch("agents.reviewer_agent.get_text_client") as mock_get_client:
         mock_client = MagicMock()
-        mock_client.generate_text.return_value = original
+        mock_client.generate_text.return_value = {
+            "text": original,
+            "token_usage": {"prompt_tokens": 50, "completion_tokens": 50},
+            "model": "gemini-2.5-pro",
+        }
         mock_get_client.return_value = mock_client
 
         input_obj = {"draft_text": original}
@@ -322,9 +349,13 @@ def test_reviewer_agent_output_structure(
     mock_grammar, mock_get_client, temp_run_dir, sample_short_draft, mock_cost_tracker
 ):
     """Test that output data structure is correct."""
-    # Mock LLM and grammar
+    # Mock LLM and grammar - must return dict with 'text' key
     mock_client = MagicMock()
-    mock_client.generate_text.return_value = sample_short_draft
+    mock_client.generate_text.return_value = {
+        "text": sample_short_draft,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 100},
+        "model": "gemini-2.5-pro",
+    }
     mock_get_client.return_value = mock_client
     mock_grammar.return_value = (sample_short_draft, 0)
 
