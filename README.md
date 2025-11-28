@@ -19,6 +19,51 @@ This application orchestrates a series of specialized AI agents to create engagi
 
 ## Architecture
 
+### System Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              ORCHESTRATOR                                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │   Config    │  │   Retry     │  │   Circuit   │  │    Cost     │         │
+│  │   Loader    │  │   Logic     │  │   Breaker   │  │   Tracker   │         │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
+│         └────────────────┼────────────────┼────────────────┘                │
+│                          ▼                ▼                                  │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                        SEQUENTIAL PIPELINE                             │  │
+│  │                                                                        │  │
+│  │   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐           │  │
+│  │   │  Topic   │──▶│ Research │──▶│  Prompt  │──▶│  Writer  │           │  │
+│  │   │  Agent   │   │  Agent   │   │Generator │   │  Agent   │           │  │
+│  │   └──────────┘   └──────────┘   └──────────┘   └────┬─────┘           │  │
+│  │        │              │              │              │                  │  │
+│  │        ▼              ▼              ▼              ▼                  │  │
+│  │   10_topic.json  20_research  25_structured   40_draft.md             │  │
+│  │                      .json    _prompt.json                             │  │
+│  │                                                     │                  │  │
+│  │   ┌──────────┐   ┌──────────┐   ┌──────────┐       │                  │  │
+│  │   │  Image   │◀──│  Image   │◀──│ Reviewer │◀──────┘                  │  │
+│  │   │Generator │   │  Prompt  │   │  Agent   │                          │  │
+│  │   │  Agent   │   │  Agent   │   └────┬─────┘                          │  │
+│  │   └────┬─────┘   └────┬─────┘        │                                │  │
+│  │        │              │              ▼                                 │  │
+│  │        ▼              ▼         50_review.json                        │  │
+│  │   80_image.png  70_image_           │                                 │  │
+│  │                 prompt.txt          ▼                                 │  │
+│  │                              60_final_post.txt                        │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    ▼                 ▼                 ▼
+            ┌───────────┐     ┌───────────┐     ┌───────────┐
+            │  SQLite   │     │  Memory   │     │  Events   │
+            │ topics.db │     │   Bank    │     │  .jsonl   │
+            └───────────┘     │   (RAG)   │     └───────────┘
+                              └───────────┘
+```
+
 ### Language Models
 
 - **Core Logic & Text Agents**: `Gemini 2.5 Pro`
@@ -58,10 +103,53 @@ The application uses nine specialized agents orchestrated in a sequential workfl
 
 ### Agent Personas
 
-The system features two specialized personas defined in `system_prompts.md`:
+The system features three specialized personas defined in `system_prompts.md`:
 
-- **The Strategic Content Architect**: A prompt engineer who transforms technical topics into structured, high-quality prompts by inferring audience pain points and creating fresh analogies
-- **The Witty Expert**: A brilliant professor with a late-night talk show vibe—deeply knowledgeable but never stuffy, using intellectual sparkle and wit to make complex topics delightful
+#### The Strategic Content Architect (Prompt Generator Agent)
+
+This persona acts as a **prompt engineer**, not a content writer. It transforms raw technical topics into structured prompts that fuel the Writer Agent.
+
+**Core Responsibilities:**
+- Infer target audience characteristics beyond surface-level descriptions
+- Identify the audience's "Core Pain Point"—the human frustration behind technical challenges
+- Create fresh, unexpected analogies (avoiding clichés like "distributed ledger" or "like a library")
+- Structure output using a specific template format
+
+**Output Template:**
+```
+**Topic:** [Clear, compelling title]
+**Target Audience:** [Specific professional persona]
+**Audience's Core Pain Point:** [Emotional/practical frustration]
+**Key Metrics/Facts:** [Data points with fresh analogy]
+**The Simple Solution/Code Snippet:** [Aha! moment framing]
+```
+
+#### The Witty Expert (Writer Agent)
+
+A brilliant professor who hosts a late-night talk show—deeply knowledgeable but allergic to stuffiness.
+
+**Voice Characteristics:**
+- Intellectual sparkle: Makes complex topics genuinely delightful
+- Dry wit: Humor that makes you smarter, not just entertained
+- Rhythmic confidence: Short paragraphs, strategic emphasis, conversational flow
+- Fresh analogies: Every post uses unexpected comparisons that reveal insight
+
+**LinkedIn Post Structure:**
+1. **Scroll-stopping hook** (opens a curiosity gap)
+2. **Relatable problem** (addresses human frustration, not just technical issues)
+3. **Elegant solution** (code or concept that creates an "Aha!" moment)
+4. **Quantifiable impact** (concrete metrics when possible)
+5. **Simple action** (one thing the reader can try today)
+6. **Memorable sign-off** (reinforces the core insight)
+
+#### Social Media Visual Strategist (Image Prompt Agent)
+
+Creates image prompts that capture the post's emotional and conceptual essence.
+
+**Key Constraints:**
+- **Zero text**: All prompts must explicitly forbid text/words/letters in the image
+- **Metaphorical**: Prefer abstract representations over literal technical imagery
+- **Visual vocabulary**: Subject, environment, lighting, mood must be specified
 
 ## Workflow
 
@@ -196,6 +284,51 @@ Navigate to `runs/{YYYY-MM-DD}-{runId}/` to inspect:
 - LLM prompts and completions
 - Generated images
 
+### Example Run Artifact Tree
+
+Below is a complete example from an actual run, showing the artifact structure and sample content:
+
+```
+runs/
+└── 2025-11-23-57e8c3/
+    ├── 00_config.json          # Run configuration
+    ├── 10_topic.json           # Selected topic
+    ├── 20_research.json        # Research synthesis
+    ├── 25_structured_prompt.json  # Prompt Generator output
+    ├── 30_strategy.json        # Strategic structure (deprecated)
+    ├── 40_draft.md             # Writer Agent draft
+    ├── 50_review.json          # Reviewer Agent output
+    ├── 60_final_post.txt       # Approved LinkedIn post
+    ├── 70_image_prompt.txt     # Image generation prompt
+    └── 80_image.png            # Generated image (1:1 ratio)
+```
+
+**Sample `10_topic.json`:**
+```json
+{
+  "topic": "How to detect data leakage in time-series pipelines"
+}
+```
+
+**Sample `25_structured_prompt.json`:**
+```json
+{
+  "topic_title": "How To Detect Data Leakage In Time-Series Pipelines",
+  "target_audience": "Senior engineers scaling AI/Data systems",
+  "pain_point": "Hard to translate complexity into crisp narrative",
+  "key_metrics": ["Latency reduction %", "Throughput", "Retrieval hit-rate"],
+  "analogy": "Like tuning an orchestra so each instrument supports the melody without noise.",
+  "solution_outline": "Stepwise breakdown + strategic framing + wit hooks"
+}
+```
+
+**Sample `70_image_prompt.txt`:**
+```
+High-resolution conceptual illustration reflecting: 'How To Detect Data Leakage 
+In Time-Series Pipelines'. Modern minimal style, subtle gradients, clean 
+typography accent, professional tone. Zero text or words in the image.
+```
+
 ### Event Logging
 
 All system events are logged to `events.jsonl` at the project root. Each line is a JSON object containing:
@@ -250,6 +383,55 @@ All agents return standardized responses:
   },
   "metrics": { ... }
 }
+```
+
+### Error Taxonomy
+
+The system uses a structured error hierarchy defined in `core/errors.py`. Understanding these error types helps with debugging and extending the system.
+
+| Error Type | Retryable | Description | Example Scenarios |
+|------------|-----------|-------------|-------------------|
+| `ValidationError` | ❌ No | Agent output fails validation checks | Character count ≥3000, missing required fields, invalid JSON schema |
+| `DataNotFoundError` | ❌ No* | Expected data cannot be retrieved | Research finds no sources, empty database query, RAG yields no docs |
+| `ModelError` | ✅ Yes | LLM API call failures | API timeout, rate limiting (429), service unavailable (503) |
+| `CorruptionError` | ❌ No | Artifact persistence/parsing failures | JSON parse error after write, disk write failure, file corruption |
+
+*`DataNotFoundError` triggers fallback strategies (e.g., topic pivot) rather than retries.
+
+**Error Handling Flow:**
+
+```
+┌─────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│ Agent Call  │────▶│ Error Occurred? │────▶│   Retryable?    │
+└─────────────┘     └────────┬────────┘     └────────┬────────┘
+                             │ No                    │
+                             ▼                       ▼
+                    ┌────────────────┐      ┌───────────────────┐
+                    │ Return Success │      │ Yes: Retry with   │
+                    │    Envelope    │      │ exponential backoff│
+                    └────────────────┘      └─────────┬─────────┘
+                                                      │
+                                            ┌─────────▼─────────┐
+                                            │ Max retries (3)?  │
+                                            └─────────┬─────────┘
+                                                      │ Yes
+                                            ┌─────────▼─────────┐
+                                            │ Abort run, create │
+                                            │  run_failed.json  │
+                                            └───────────────────┘
+```
+
+**Circuit Breaker Pattern:**
+
+The system implements a circuit breaker that opens after 3 consecutive LLM failures across any agents:
+
+```python
+# Circuit breaker state
+consecutive_failures = 0  # Resets to 0 on any success
+CIRCUIT_BREAKER_THRESHOLD = 3
+
+# When breaker trips:
+raise CircuitBreakerTrippedError("Circuit breaker tripped after 3 consecutive LLM failures")
 ```
 
 ## Cost Management & Budget Controls
@@ -691,6 +873,33 @@ feat(api)!: change agent envelope structure
 
 BREAKING CHANGE: Agent return format now requires 'metrics' field
 ```
+
+## Roadmap
+
+Development progress is tracked in `ROADMAP.md`. The project follows a phased approach:
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 0-3** | Core skeleton, infrastructure, database | ✅ Complete |
+| **Phase 4-6** | Agent implementations, orchestrator, main entry point | ✅ Complete |
+| **Phase 7** | LLM integration (critical) | ✅ Complete |
+| **Phase 8** | Testing infrastructure & coverage | ✅ Complete |
+| **Phase 9** | Dependency management | ✅ Complete |
+| **Phase 10** | Documentation enhancements | ✅ Complete |
+| **Phase 11** | CI/CD workflows | 🔜 Planned |
+| **Phase 12** | Fallback & resilience edge cases | 🔜 Planned |
+| **Phase 13-14** | Performance & future enhancements | 📋 Backlog |
+
+### Key Milestones
+
+- **M1**: Core skeleton + database ready
+- **M2**: All agents + orchestrator functional (stubs)
+- **M3**: **LLM Integration** - Real agent intelligence ✅
+- **M4**: Memory bank + config + tests with high coverage ✅
+- **M5**: Stable release + CI/CD + docs
+- **M6**: Resilience edge cases + enhancements
+
+For detailed task breakdown, see [`ROADMAP.md`](ROADMAP.md).
 
 ## License
 
