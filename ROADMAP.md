@@ -717,14 +717,12 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 ## Phase 10: Documentation Enhancements
 - [ ] Expand `README.md` with sections: Overview, Architecture Diagram (text-based), Setup, Usage, Testing, Error Taxonomy, Personas, Roadmap reference
 - [ ] Add `docs/` directory (optional) for deeper explanations
-- [ ] Add `ROADMAP.md` (this file) – DONE
 - [ ] Provide example run artifact tree in README
 - [ ] Document LLM integration and cost management
 
 ## Phase 11: Quality & Validation
-- [ ] Run linting (consider adding `ruff` or `flake8`)
 - [ ] Add CI workflow (GitHub Actions) for tests + coverage
-- [ ] Add semantic-release workflow (Python flavor or conventional-changelog approach)
+- [ ] Add python-semantic-release workflow (Python package)
 - [ ] Verify Conventional Commits enforcement (optional hook)
 
 ## Phase 12: Fallback & Resilience Edge Cases
