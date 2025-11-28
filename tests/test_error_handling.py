@@ -521,7 +521,10 @@ class TestAgentSpecificErrorScenarios:
 
             # Research agent should handle this gracefully
             # The actual behavior depends on implementation
-
+            input_obj = {"topic": "Test Topic"}
+            # If the agent raises DataNotFoundError, check with pytest.raises
+            with pytest.raises(DataNotFoundError):
+                research_agent.run(input_obj, context)
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):
         """Test Writer Agent: max shortening attempts exceeded raises ValidationError."""
         from agents import writer_agent
