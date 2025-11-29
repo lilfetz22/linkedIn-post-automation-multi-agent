@@ -6,11 +6,10 @@ and that legitimate errors are not silently swallowed.
 """
 
 import logging
-import os
 import shutil
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 import pytest
 from chromadb.errors import InternalError, NotFoundError

@@ -1,11 +1,4 @@
 import os
-import sys
-from pathlib import Path
-
-# Add project root to sys.path for imports
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 import sqlite3
 from time import sleep
 
@@ -16,7 +9,11 @@ from database.init_db import (
     DEFAULT_FIELD_DS,
     DEFAULT_FIELD_GAI,
 )
-from database.operations import get_recent_topics, record_posted_topic, select_new_topic
+from database.operations import (
+    get_recent_topics,
+    record_posted_topic,
+    select_new_topic,
+)
 
 
 def _all_previous_topics(db_path):

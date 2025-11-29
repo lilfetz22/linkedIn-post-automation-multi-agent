@@ -1,12 +1,6 @@
 import os
-import sys
-from pathlib import Path
-
-# Add project root to sys.path for imports
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 import sqlite3
+
 from database.init_db import (
     init_db,
     ensure_db_dir,

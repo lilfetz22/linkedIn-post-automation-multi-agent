@@ -13,11 +13,8 @@ import json
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-import sqlite3
 
 from orchestrator import Orchestrator
-from core.errors import ValidationError, ModelError
-from core.cost_tracking import CostTracker, CostMetrics
 from core.system_prompts import load_system_prompt
 from database.init_db import init_db, seed_potential_topics, DEFAULT_SEED_ROWS
 

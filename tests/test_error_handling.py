@@ -10,8 +10,7 @@ This module provides comprehensive tests for:
 """
 
 import pytest
-import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from pathlib import Path
 
 from core.errors import (
@@ -27,7 +26,7 @@ from core.retry import (
     exponential_backoff,
     execute_with_retries,
 )
-from core.envelope import ok, err
+from core.envelope import err
 from orchestrator import Orchestrator
 
 
@@ -595,7 +594,6 @@ class TestAgentSpecificErrorScenarios:
     def test_image_generator_failure_creates_placeholder(self, mock_run_dir):
         """Test Image Generator: generation failure creates placeholder image."""
         from agents import image_generator_agent
-        from core.errors import ModelError
 
         # Create a test image prompt file
         prompt_path = mock_run_dir / "70_image_prompt.txt"

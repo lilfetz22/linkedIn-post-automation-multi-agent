@@ -10,7 +10,7 @@ defined in system_prompts.md:
 
 import pytest
 import re
-from typing import List, Dict, Any
+from typing import List
 
 
 # =============================================================================

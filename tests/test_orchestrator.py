@@ -7,14 +7,13 @@ character count loop, topic pivot logic, and error handling scenarios.
 
 import pytest
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 from orchestrator import Orchestrator
 from core.errors import (
     ValidationError,
     DataNotFoundError,
     CorruptionError,
-    ModelError,
 )
 from core.retry import CircuitBreakerTrippedError
 from core.envelope import ok, err

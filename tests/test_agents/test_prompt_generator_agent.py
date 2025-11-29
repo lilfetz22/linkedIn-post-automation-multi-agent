@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import pytest
 import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from agents.prompt_generator_agent import run, _validate_prompt_structure
 from core.envelope import validate_envelope

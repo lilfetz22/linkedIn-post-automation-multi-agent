@@ -16,8 +16,7 @@ import os
 import tempfile
 import threading
 import time
-from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch
 
 from core.persistence import (
     atomic_write_json,
