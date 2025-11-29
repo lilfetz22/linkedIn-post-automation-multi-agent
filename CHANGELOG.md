@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3 (2025-11-29)
+
+### Bug Fixes
+
+- **roadmap**: Mark Conventional Commits enforcement as completed
+  ([`186f04e`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/186f04e79b27e34794a29916b0b078f847ccc84d))
+
+
 ## v1.0.2 (2025-11-29)
 
 ### Bug Fixes
