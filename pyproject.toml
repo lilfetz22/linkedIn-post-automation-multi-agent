@@ -54,14 +54,7 @@ prerelease = false
 # Changelog configuration
 [tool.semantic_release.changelog]
 mode = "update"
-
-[tool.semantic_release.changelog.default_templates]
-changelog_file = "CHANGELOG.md"
-output_format = "md"
-
-# Exclude non-user-facing commits from changelog
-[tool.semantic_release.changelog.exclude_commit_patterns]
-patterns = [
+exclude_commit_patterns = [
     '''chore(?:\([^)]*?\))?: .+''',
     '''ci(?:\([^)]*?\))?: .+''',
     '''refactor(?:\([^)]*?\))?: .+''',
@@ -70,6 +63,10 @@ patterns = [
     '''build\((?!deps\): .+)''',
     '''Initial [Cc]ommit.*''',
 ]
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
 
 # Remote VCS configuration (GitHub)
 [tool.semantic_release.remote]
