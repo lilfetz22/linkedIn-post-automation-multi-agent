@@ -59,8 +59,8 @@ Return ONLY a JSON array of topic objects, each with:
 
 Example format:
 [
-    {{"topic": "Example Topic 1", "novelty": "net_new", "rationale": "Addresses emerging need..."}},
-    {{"topic": "Example Topic 2", "novelty": "reused_with_new_angle", "rationale": "New perspective on X..."}}
+    {{"topic": "Topic 1", "novelty": "net_new", "rationale": "..."}},
+    {{"topic": "Topic 2", "novelty": "reused_with_new_angle", "rationale": "..."}}
 ]"""
 
     # Check budget before API call

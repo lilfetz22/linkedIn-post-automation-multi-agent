@@ -75,7 +75,10 @@ def select_new_topic(
             )
             params = (field, *recent)
         else:
-            query = "SELECT id, topic_name FROM potential_topics WHERE field = ? AND used = FALSE ORDER BY id ASC LIMIT 1;"
+            query = (
+                "SELECT id, topic_name FROM potential_topics "
+                "WHERE field = ? AND used = FALSE ORDER BY id ASC LIMIT 1;"
+            )
             params = (field,)
         cur.execute(query, params)
         row = cur.fetchone()
@@ -91,7 +94,10 @@ def select_new_topic(
                 )
                 params = (field, *recent)
             else:
-                query = "SELECT id, topic_name FROM potential_topics WHERE field = ? ORDER BY id ASC LIMIT 1;"
+                query = (
+                    "SELECT id, topic_name FROM potential_topics "
+                    "WHERE field = ? ORDER BY id ASC LIMIT 1;"
+                )
                 params = (field,)
             cur.execute(query, params)
             row = cur.fetchone()

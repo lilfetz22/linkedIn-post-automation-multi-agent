@@ -94,7 +94,8 @@ def _llm_coherence_review(
     """
     # Build review prompt
     if shortening_context:
-        prompt = f"""Review and revise this LinkedIn post for coherence and Witty Expert persona consistency.
+        prompt = f"""Review and revise this LinkedIn post for coherence \
+and Witty Expert persona consistency.
 
 **CRITICAL: This post is too long ({count_chars(draft_text)} characters, limit: 3000).**
 
@@ -115,7 +116,8 @@ def _llm_coherence_review(
 
 Return ONLY the revised post, no explanations."""
     else:
-        prompt = f"""Review this LinkedIn post for logical flow, coherence, and persona consistency (Witty Expert).
+        prompt = f"""Review this LinkedIn post for logical flow, coherence, \
+and persona consistency (Witty Expert).
 
 **Post to Review:**
 ---
@@ -148,7 +150,11 @@ Return ONLY the revised post, no explanations."""
     try:
         response = client.generate_text(
             prompt=prompt,
-            system_instruction="You are a meticulous editor reviewing LinkedIn posts for coherence and persona consistency. Make precise improvements while preserving the author's voice.",
+            system_instruction=(
+                "You are a meticulous editor reviewing LinkedIn posts for "
+                "coherence and persona consistency. Make precise improvements "
+                "while preserving the author's voice."
+            ),
             temperature=REVIEW_TEMPERATURE,
             use_search_grounding=False,
         )
@@ -303,12 +309,16 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             shortening_attempts += 1
             if shortening_attempts > MAX_SHORTENING_ATTEMPTS:
                 raise ValidationError(
-                    f"Post still {char_count} chars after {MAX_SHORTENING_ATTEMPTS} shortening attempts (limit: {MAX_CHAR_COUNT})"
+                    f"Post still {char_count} chars after {MAX_SHORTENING_ATTEMPTS} "
+                    f"shortening attempts (limit: {MAX_CHAR_COUNT})"
                 )
 
             # Prepare for next iteration
             draft_text = grammar_checked
-            shortening_instruction = f"Revise to under 3000 characters with minor adjustments. Current: {char_count} characters."
+            shortening_instruction = (
+                f"Revise to under 3000 characters with minor adjustments. "
+                f"Current: {char_count} characters."
+            )
             attempt += 1
 
         # Should never reach here due to loop logic

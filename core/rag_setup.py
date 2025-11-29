@@ -126,7 +126,8 @@ class RAGVectorStore:
                 self.collection = self.client.get_collection(name=COLLECTION_NAME)
             except ValueError:
                 raise ValueError(
-                    "Vector store not initialized. Call init_vector_store() or use get_rag_store(auto_init=True)."
+                    "Vector store not initialized. "
+                    "Call init_vector_store() or use get_rag_store(auto_init=True)."
                 )
 
         # Perform semantic search
@@ -190,7 +191,8 @@ def get_rag_store(
                     # Collection already exists - try to get it instead
                     if "already exists" in str(e):
                         logger.info(
-                            f"Collection {COLLECTION_NAME} already exists, using existing collection"
+                            f"Collection {COLLECTION_NAME} already exists, "
+                            "using existing collection"
                         )
                         try:
                             _rag_store.collection = _rag_store.client.get_collection(

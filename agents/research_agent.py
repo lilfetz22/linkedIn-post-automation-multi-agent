@@ -38,17 +38,33 @@ def _conduct_llm_research(topic: str, cost_tracker=None) -> Dict[str, Any]:
         ModelError: If LLM call fails
         DataNotFoundError: If LLM returns no useful information
     """
-    prompt = f"""You are a research analyst. Provide a comprehensive research summary for the following topic:
+    # Build JSON example separately to avoid long lines
+    source_example_1 = (
+        '{"title": "Source Title 1", "url": "https://example.com/1", '
+        '"key_point": "Main insight from this source"}'
+    )
+    source_example_2 = (
+        '{"title": "Source Title 2", "url": "https://example.com/2", '
+        '"key_point": "Main insight from this source"}'
+    )
+    summary_desc = (
+        "A comprehensive 2-3 paragraph summary covering: key metrics, "
+        "pain points, recent developments, and practical considerations. "
+        "Focus on actionable insights and surprising findings."
+    )
+
+    prompt = f"""You are a research analyst. Provide a comprehensive \
+research summary for the following topic:
 
 Topic: {topic}
 
 Your response must be valid JSON with this exact structure:
 {{
     "sources": [
-        {{"title": "Source Title 1", "url": "https://example.com/1", "key_point": "Main insight from this source"}},
-        {{"title": "Source Title 2", "url": "https://example.com/2", "key_point": "Main insight from this source"}}
+        {source_example_1},
+        {source_example_2}
     ],
-    "summary": "A comprehensive 2-3 paragraph summary covering: key metrics, pain points, recent developments, and practical considerations. Focus on actionable insights and surprising findings."
+    "summary": "{summary_desc}"
 }}
 
 Requirements:

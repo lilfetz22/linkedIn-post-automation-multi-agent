@@ -89,7 +89,8 @@ class CostTracker:
         # API call count enforcement
         if self.api_call_count >= self.max_api_calls:
             raise ValidationError(
-                f"Maximum API calls ({self.max_api_calls}) exceeded. Current count: {self.api_call_count}"
+                f"Maximum API calls ({self.max_api_calls}) exceeded. "
+                f"Current count: {self.api_call_count}"
             )
 
         # Count input tokens using Gemini if available; fallback to heuristic
@@ -100,7 +101,10 @@ class CostTracker:
                     model=model, contents=prompt
                 )
                 # Some client versions return dict-like, others object with total_tokens
-                input_tokens = getattr(token_info, "total_tokens", None) or token_info.get("total_tokens", 0)  # type: ignore
+                input_tokens = (
+                    getattr(token_info, "total_tokens", None)
+                    or token_info.get("total_tokens", 0)  # type: ignore
+                )
             except Exception:
                 # Fallback heuristic: rough average 4 chars per token
                 input_tokens = max(1, len(prompt) // 4)
@@ -116,8 +120,9 @@ class CostTracker:
         projected_total = self.total_cost_usd + projected_cost_metrics.cost_usd
         if projected_total > self.max_cost_usd:
             raise ValidationError(
-                f"Maximum cost (${self.max_cost_usd:.2f}) would be exceeded. Current: ${self.total_cost_usd:.4f}, "
-                f"Projected new total: ${projected_total:.4f} (input_tokens={input_tokens}, output_tokens={estimated_output_tokens})"
+                f"Maximum cost (${self.max_cost_usd:.2f}) exceeded. "
+                f"Current: ${self.total_cost_usd:.4f}, "
+                f"Projected: ${projected_total:.4f}"
             )
 
         # Store a lightweight preview (not recorded yet) for possible future use
@@ -139,8 +144,8 @@ class CostTracker:
         Record an API call and update cost tracking.
 
         Supports two calling patterns:
-        1. Old pattern: record_call(agent_name: str, metrics: CostMetrics)
-        2. New pattern: record_call(model: str, prompt_tokens: int, completion_tokens: int, agent_name: str)
+        1. Old pattern: record_call(agent_name, metrics: CostMetrics)
+        2. New pattern: record_call(model, prompt_tokens, completion_tokens, agent_name)
 
         Args:
             agent_name_or_model: Agent name (old) or model name (new)

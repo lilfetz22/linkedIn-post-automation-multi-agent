@@ -66,8 +66,8 @@ class GeminiTextClient:
             prompt: User prompt text
             temperature: Sampling temperature (0.0-1.0, default: 0.7)
             max_output_tokens: Maximum tokens to generate (optional)
-            system_instruction: System prompt for persona/instructions (optional)
-            use_search_grounding: Enable Google Search grounding for current information (default: False)
+            system_instruction: System prompt for persona/instructions
+            use_search_grounding: Enable Google Search grounding (default: False)
 
         Returns:
             Dict with keys:

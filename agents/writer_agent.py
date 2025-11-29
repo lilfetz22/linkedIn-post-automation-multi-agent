@@ -110,7 +110,10 @@ The previous draft was too long. Here it is:
 {shortening_context}
 ---
 
-Please regenerate the post with the SAME core message and structure, but shorten it to under 3000 characters (excluding line breaks). Remove unnecessary elaboration, tighten phrasing, but preserve the hook, analogy, metrics, and sign-off."""
+Please regenerate the post with the SAME core message and structure, \
+but shorten it to under 3000 characters (excluding line breaks). \
+Remove unnecessary elaboration, tighten phrasing, but preserve the hook, \
+analogy, metrics, and sign-off."""
 
     # Budget check with full prompt prior to LLM call
     if cost_tracker:
@@ -220,7 +223,8 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             shortening_attempts += 1
             if shortening_attempts > MAX_SHORTENING_ATTEMPTS:
                 raise ValidationError(
-                    f"Draft still {char_count} chars after {MAX_SHORTENING_ATTEMPTS} shortening attempts (limit: {MAX_CHAR_COUNT})"
+                    f"Draft still {char_count} chars after {MAX_SHORTENING_ATTEMPTS} "
+                    f"shortening attempts (limit: {MAX_CHAR_COUNT})"
                 )
 
             # Prepare for next iteration
