@@ -54,6 +54,8 @@ def test_seed_data_contains_all_essential_fields(tmp_path):
             assert field in present_fields, f"Missing field in seed data: {field}"
     finally:
         conn.close()
+
+
 def test_uniqueness_constraint_on_topic_name(tmp_path):
     db_path = os.path.join(tmp_path, "topics.db")
     init_db(db_path)

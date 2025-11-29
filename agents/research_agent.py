@@ -66,10 +66,10 @@ Return ONLY the JSON, no additional text."""
 
     client = get_text_client()
     result = client.generate_text(
-        prompt=prompt, 
-        temperature=0.7, 
+        prompt=prompt,
+        temperature=0.7,
         max_output_tokens=2000,
-        use_search_grounding=True  # Enable Google Search for current research
+        use_search_grounding=True,  # Enable Google Search for current research
     )
 
     # Parse JSON response

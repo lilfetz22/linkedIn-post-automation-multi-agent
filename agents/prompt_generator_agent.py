@@ -55,7 +55,9 @@ def _validate_prompt_structure(prompt_text: str) -> None:
         )
 
 
-def _generate_structured_prompt(topic: str, research: Dict[str, Any], cost_tracker=None) -> Dict[str, Any]:
+def _generate_structured_prompt(
+    topic: str, research: Dict[str, Any], cost_tracker=None
+) -> Dict[str, Any]:
     """
     Use LLM with Strategic Content Architect persona to generate structured prompt.
 
