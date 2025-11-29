@@ -17,9 +17,9 @@ class BaseAgentError(Exception):
             message: Human-readable error description
             retryable: Whether this error should trigger a retry attempt
         """
-        super().__init__(message)
         self.message = message
         self.retryable = retryable
+        super().__init__(self.message, self.retryable)
 
 
 class ValidationError(BaseAgentError):

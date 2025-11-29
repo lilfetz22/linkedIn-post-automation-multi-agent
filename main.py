@@ -385,7 +385,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except (ValidationError, CorruptionError) as e:
         print(f"Error: {e}")
         return 1
-    except (OSError, IOError) as e:
+    except OSError as e:
         print(f"File I/O error: {e}")
         return 1
     except KeyboardInterrupt:

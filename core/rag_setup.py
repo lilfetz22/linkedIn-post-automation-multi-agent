@@ -205,7 +205,7 @@ def get_rag_store(
                         # Other internal errors should be logged and propagated
                         logger.error(f"ChromaDB internal error: {e}")
                         raise
-                except (OSError, PermissionError) as e:
+                except OSError as e:
                     # File system errors should be logged and propagated
                     logger.error(f"File system error initializing RAG store: {e}")
                     raise

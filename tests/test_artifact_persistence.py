@@ -463,8 +463,8 @@ class TestDiskErrorHandling:
         initial_files = set(tmp_path.iterdir())
 
         # Simulate failure during json.dump
-        with patch("json.dump", side_effect=Exception("Serialization failed")):
-            with pytest.raises(Exception):
+        with patch("json.dump", side_effect=RuntimeError("Serialization failed")):
+            with pytest.raises(RuntimeError):
                 atomic_write_json(target_path, {"data": "test"})
 
         # Temp file should be cleaned up

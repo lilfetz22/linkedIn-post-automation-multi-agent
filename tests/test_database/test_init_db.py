@@ -73,7 +73,7 @@ def test_uniqueness_constraint_on_topic_name(tmp_path):
                 (topic_name, field),
             )
             conn.commit()
-            assert False, "Expected IntegrityError for duplicate topic_name"
+            pytest.fail("Expected IntegrityError for duplicate topic_name")
         except sqlite3.IntegrityError:
             pass
     finally:
