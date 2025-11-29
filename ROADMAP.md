@@ -724,7 +724,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [x] Add CI workflow (GitHub Actions) for tests + coverage
 - [x] Add python-semantic-release workflow (Python package)
 - [x] Add pyproject.toml with semantic-release configuration
-- [ ] Verify Conventional Commits enforcement (optional hook)
+- [x] Verify Conventional Commits enforcement (optional hook)
 
 ## Phase 12: Fallback & Resilience Edge Cases
 - [ ] Research Agent pivot logic (no sources scenario)
