@@ -19,7 +19,11 @@ class BaseAgentError(Exception):
         """
         self.message = message
         self.retryable = retryable
-        super().__init__(message)
+        super().__init__(message, retryable)
+
+    def __str__(self):
+        """Return just the message for string representation."""
+        return self.message
 
 
 class ValidationError(BaseAgentError):
