@@ -444,7 +444,7 @@ class Orchestrator:
 
         # Create failure artifact
         cost_summary = self.cost_tracker.get_summary()
-        
+
         failure_data = {
             "timestamp": datetime.now().isoformat(),
             "run_id": self.run_id,
@@ -484,21 +484,21 @@ def main():  # pragma: no cover
         orchestrator = Orchestrator(test_config)
         result = orchestrator.run()
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("ORCHESTRATOR RESULT")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(json.dumps(result, indent=2))
-        
+
         # Display cost summary
         if "cost" in result:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("COST SUMMARY")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
             cost = result["cost"]
             print(f"Total Cost: ${cost['total_cost_usd']:.4f}")
             print(f"Total API Calls: {cost['total_api_calls']}")
             print(f"Budget Remaining: ${cost['budget_remaining_usd']:.4f}")
-            print(f"\nCosts by Agent:")
+            print("\nCosts by Agent:")
             for agent, agent_cost in cost['costs_by_agent'].items():
                 calls = cost['calls_by_agent'].get(agent, 0)
                 print(f"  {agent}: ${agent_cost:.4f} ({calls} calls)")

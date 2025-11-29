@@ -36,17 +36,17 @@ Ever feel like Redis is a race car engine that's either overheating or underperf
 @pytest.fixture
 def sample_valid_prompt():
     """Sample valid image prompt with no-text constraint."""
-    return """A sleek race car engine with glowing red and blue circuits, 
-representing the balance between speed and efficiency. The scene is set in a 
-modern, minimalist garage with dramatic side lighting creating strong shadows. 
-The mood is focused and precise, with cool metallic tones. 
+    return """A sleek race car engine with glowing red and blue circuits,
+representing the balance between speed and efficiency. The scene is set in a
+modern, minimalist garage with dramatic side lighting creating strong shadows.
+The mood is focused and precise, with cool metallic tones.
 **Critical: The image must contain zero text, words, or letters.**"""
 
 
 @pytest.fixture
 def sample_invalid_prompt():
     """Sample invalid prompt missing no-text constraint."""
-    return """A race car engine with circuits, modern garage setting, 
+    return """A race car engine with circuits, modern garage setting,
 dramatic lighting, cool metallic tones."""
 
 
@@ -265,10 +265,10 @@ def test_image_prompt_agent_includes_visual_elements(
 ):
     """Test that generated prompt includes visual elements."""
     # Mock a realistic prompt
-    realistic_prompt = """A high-tech data center with flowing streams of light 
-representing data pipelines, set against a dark background with cool blue and 
-green accent lighting. The mood is efficient and futuristic, with sharp focus 
-on the central data flow. Modern minimal aesthetic with subtle gradients. 
+    realistic_prompt = """A high-tech data center with flowing streams of light
+representing data pipelines, set against a dark background with cool blue and
+green accent lighting. The mood is efficient and futuristic, with sharp focus
+on the central data flow. Modern minimal aesthetic with subtle gradients.
 The image must contain zero text, words, or letters."""
 
     mock_client = MagicMock()

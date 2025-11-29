@@ -7,7 +7,10 @@ This module provides comprehensive tests for:
 - Circuit breaker behavior
 - Error propagation through orchestrator
 - Agent-specific error scenarios
+
+Contains long mock response strings for test fixtures.
 """
+# flake8: noqa: E501
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -480,9 +483,9 @@ class TestAgentSpecificErrorScenarios:
         # and get_text_client for LLM fallback
         with patch(
             "agents.topic_agent.select_new_topic", return_value=None
-        ) as mock_select, patch(
+        ), patch(
             "agents.topic_agent.get_recent_topics", return_value=[]
-        ) as mock_recent, patch(
+        ), patch(
             "agents.topic_agent.get_text_client"
         ) as mock_client, patch(
             "agents.topic_agent.write_and_verify_json"
@@ -491,7 +494,10 @@ class TestAgentSpecificErrorScenarios:
             # Mock LLM client for fallback - returns valid JSON array
             mock_text = MagicMock()
             mock_text.generate_text.return_value = {
-                "text": '[{"topic": "LLM Generated Topic", "novelty": "net_new", "rationale": "Test"}]',
+                "text": (
+                    '[{"topic": "LLM Topic", '
+                    '"novelty": "net_new", "rationale": "Test"}]'
+                ),
                 "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
             }
             mock_client.return_value = mock_text

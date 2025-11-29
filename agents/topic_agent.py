@@ -41,12 +41,12 @@ def _generate_topics_with_llm(field: str, recent_topics: List[str], cost_tracker
         "\n".join(f"- {topic}" for topic in recent_topics) if recent_topics else "None"
     )
 
-    prompt = f"""Generate 10 topic candidates for {field}. 
+    prompt = f"""Generate 10 topic candidates for {field}.
 
 Prefer net-new, specific topics (emerging trends, overlooked fundamentals, concrete pain points).
 
-You MAY reuse a previously covered macro-topic ONLY if proposing a distinctly new avenue 
-(fresh sub-problem, perspective, data source, or audience pain point). Otherwise produce 
+You MAY reuse a previously covered macro-topic ONLY if proposing a distinctly new avenue
+(fresh sub-problem, perspective, data source, or audience pain point). Otherwise produce
 topics not yet posted.
 
 Recently posted topics to avoid or reimagine:

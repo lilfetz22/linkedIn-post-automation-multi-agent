@@ -1,4 +1,8 @@
-"""Tests for writer_agent.py (Phase 7.5 - LLM-powered)."""
+"""Tests for writer_agent.py (Phase 7.5 - LLM-powered).
+
+Contains long mock response strings for test fixtures.
+"""
+# flake8: noqa: E501
 
 import tempfile
 from pathlib import Path

@@ -132,7 +132,6 @@ def test_reviewer_agent_hashtag_removal(
     # After hashtag removal, should be under 3000
     base_text = "A" * 2990
     long_with_hashtags = base_text + "\n\n#redis #optimization"
-    text_without_hashtags = base_text
 
     # Mock LLM to return the long draft - must return dict with 'text' key
     mock_client = MagicMock()

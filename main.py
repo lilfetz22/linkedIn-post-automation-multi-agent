@@ -171,7 +171,10 @@ def ensure_config(root: Path, non_interactive_field: Optional[str] = None) -> di
                         or if write verification fails
 
     Example:
-        >>> config = ensure_config(Path.cwd(), "Data Science (Optimizations & Time-Series Analysis)")
+        >>> config = ensure_config(
+        ...     Path.cwd(),
+        ...     "Data Science (Optimizations & Time-Series Analysis)"
+        ... )
         >>> config
         {"field": "Data Science (Optimizations & Time-Series Analysis)"}
     """
@@ -313,7 +316,10 @@ def run_pipeline(
         CorruptionError: If config.json is corrupted or write verification fails
 
     Example:
-        >>> exit_code, result = run_pipeline(Path.cwd(), "Data Science (Optimizations & Time-Series Analysis)")
+        >>> exit_code, result = run_pipeline(
+        ...     Path.cwd(),
+        ...     "Data Science (Optimizations & Time-Series Analysis)"
+        ... )
         >>> exit_code
         0
         >>> result["status"]

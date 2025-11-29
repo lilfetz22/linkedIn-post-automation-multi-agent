@@ -1,4 +1,8 @@
-"""Tests for research_agent.py."""
+"""Tests for research_agent.py.
+
+Contains long mock response strings for test fixtures.
+"""
+# flake8: noqa: E501
 
 import tempfile
 from pathlib import Path

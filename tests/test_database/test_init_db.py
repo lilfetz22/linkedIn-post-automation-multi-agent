@@ -1,6 +1,8 @@
 import os
 import sqlite3
 
+import pytest
+
 from database.init_db import (
     init_db,
     ensure_db_dir,

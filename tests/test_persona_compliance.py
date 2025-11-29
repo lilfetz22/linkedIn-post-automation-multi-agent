@@ -6,7 +6,10 @@ defined in system_prompts.md:
 - Prompt Generator persona fidelity (Strategic Content Architect)
 - Writer persona fidelity (The Witty Expert)
 - Image Prompt Generator persona fidelity (Visual Strategist)
+
+Contains long sample strings for test validation.
 """
+# flake8: noqa: E501
 
 import pytest
 import re
@@ -287,8 +290,8 @@ Parquet is like a hyper-organized index that jumps directly to what you need."""
     def test_analogy_connects_unexpected_domains(self):
         """Test analogies connect to unexpected domains (cooking, sports, psychology)."""
         sample = """
-**Key Metrics/Facts:** 
-- Think of feature engineering like being a head chef: you take raw ingredients (data) 
+**Key Metrics/Facts:**
+- Think of feature engineering like being a head chef: you take raw ingredients (data)
   and transform them into a gourmet dish (useful features).
 - A well-engineered feature is the secret seasoning that separates a home cook from a Michelin star.
 """
@@ -542,12 +545,12 @@ class TestImagePromptGeneratorPersona:
     @pytest.fixture
     def sample_image_prompt(self):
         """Sample image prompt following Visual Strategist guidelines."""
-        return """A sleek, modern server room with towering racks of glowing hardware, 
-viewed from a low angle. In the foreground, a small, cozy apartment with warm 
-lighting is superimposed, creating a surreal contrast between industrial scale 
-and personal comfort. The lighting transitions from cool blue LED in the server 
-room to warm golden hues in the apartment. The mood is aspirational and 
-transformative—showing the journey from chaos to organization. 
+        return """A sleek, modern server room with towering racks of glowing hardware,
+viewed from a low angle. In the foreground, a small, cozy apartment with warm
+lighting is superimposed, creating a surreal contrast between industrial scale
+and personal comfort. The lighting transitions from cool blue LED in the server
+room to warm golden hues in the apartment. The mood is aspirational and
+transformative—showing the journey from chaos to organization.
 No text, words, or letters should appear in the image."""
 
     # --- No-Text Constraint Tests ---
@@ -560,7 +563,7 @@ No text, words, or letters should appear in the image."""
 
     def test_validation_rejects_missing_no_text(self):
         """Test validation rejects prompts missing no-text instruction."""
-        bad_prompt = """A beautiful landscape with mountains and sunset. 
+        bad_prompt = """A beautiful landscape with mountains and sunset.
 Warm lighting and peaceful mood."""
         assert not has_no_text_instruction(
             bad_prompt
@@ -620,7 +623,7 @@ Warm lighting and peaceful mood."""
             "soft",
         ]
         prompt_lower = sample_image_prompt.lower()
-        has_lighting = any(l in prompt_lower for l in lighting_words)
+        has_lighting = any(word in prompt_lower for word in lighting_words)
         assert has_lighting, "Should describe lighting"
 
     def test_prompt_includes_mood(self, sample_image_prompt):
@@ -649,7 +652,7 @@ Warm lighting and peaceful mood."""
         """Test image concept relates to post's core message."""
         # Post about data storage -> image should reflect storage/organization
         post_theme = "data storage optimization"
-        image_prompt = """Server racks transforming into organized filing cabinets, 
+        image_prompt = """Server racks transforming into organized filing cabinets,
 with warm lighting suggesting efficiency and calm. No text."""
 
         # Verify image prompt relates to the post theme
@@ -661,8 +664,8 @@ with warm lighting suggesting efficiency and calm. No text."""
     def test_metaphorical_over_literal(self):
         """Test metaphorical representations preferred over literal."""
         # Metaphorical: data as physical objects, concepts as scenes
-        metaphorical_prompt = """A caterpillar transforming into a butterfly, 
-with the caterpillar representing old CSV files and the butterfly 
+        metaphorical_prompt = """A caterpillar transforming into a butterfly,
+with the caterpillar representing old CSV files and the butterfly
 representing modern Parquet format. Warm, hopeful lighting. No text."""
 
         # Should have comparison/transformation language
@@ -714,7 +717,7 @@ class TestPersonaValidationIntegration:
 
 **Audience's Core Pain Point:** Training takes forever and I'm tired of watching progress bars crawl.
 
-**Key Metrics/Facts:** 
+**Key Metrics/Facts:**
 - A CPU is like a brilliant surgeon: one very skilled pair of hands doing one thing at a time.
 - A GPU is like a drill sergeant commanding 10,000 soldiers: less skilled individually, but devastating in parallel.
 - GPUs can be 100x faster for matrix operations.
@@ -747,7 +750,7 @@ model.to('cuda')  # That's it. One line.
         """Validate complete Writer output against persona checklist."""
         post = """Why is your model still doing push-ups when it could be running a marathon?
 
-If you're training on CPU, you're asking one brilliant surgeon to perform 10,000 surgeries. 
+If you're training on CPU, you're asking one brilliant surgeon to perform 10,000 surgeries.
 One at a time. Sequentially. **While you watch the progress bar mock you.**
 
 Here's the thing: matrix math is embarrassingly parallel. Every GPU core is a soldier waiting for orders.
@@ -780,10 +783,10 @@ What's stopping you from making the switch?
 
     def test_validate_image_prompt_output(self):
         """Validate complete Image Prompt output against persona checklist."""
-        prompt = """A vast training ground with thousands of tiny soldiers (representing GPU cores) 
-standing in perfect formation, illuminated by dramatic stadium lighting. In contrast, 
-a single surgeon stands alone in a spotlight, representing CPU's sequential processing. 
-The mood is powerful and transformative, showing the scale difference. 
+        prompt = """A vast training ground with thousands of tiny soldiers (representing GPU cores)
+standing in perfect formation, illuminated by dramatic stadium lighting. In contrast,
+a single surgeon stands alone in a spotlight, representing CPU's sequential processing.
+The mood is powerful and transformative, showing the scale difference.
 The image must contain no text, words, or letters."""
 
         # No-text constraint

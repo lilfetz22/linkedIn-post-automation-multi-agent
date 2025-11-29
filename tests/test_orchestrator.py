@@ -3,7 +3,10 @@ Tests for the Orchestrator agent.
 
 Covers configuration loading, run directory creation, circuit breaker integration,
 character count loop, topic pivot logic, and error handling scenarios.
+
+Contains long comments and mock strings for test clarity.
 """
+# flake8: noqa: E501
 
 import pytest
 from pathlib import Path

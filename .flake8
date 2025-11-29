@@ -3,18 +3,22 @@
 max-line-length = 100
 
 # Error codes to check
-select = 
+select =
     E,      # pycodestyle errors
     W,      # pycodestyle warnings
     F,      # pyflakes
     C,      # McCabe complexity
     B,      # flake8-bugbear
 
+# Ignore certain warnings
+# W503: line break before binary operator (PEP 8 now recommends this)
+ignore = W503
+
 # Specific error codes we want to enforce
 # E722: bare except statement (the main focus of this issue)
 
 # Exclude directories
-exclude = 
+exclude =
     .git,
     __pycache__,
     .venv,
