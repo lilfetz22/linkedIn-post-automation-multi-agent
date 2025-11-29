@@ -19,7 +19,7 @@ class BaseAgentError(Exception):
         """
         self.message = message
         self.retryable = retryable
-        super().__init__(self.message, self.retryable)
+        super().__init__(message)
 
 
 class ValidationError(BaseAgentError):
