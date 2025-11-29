@@ -7,7 +7,11 @@ Tests the complete agent pipeline with mocked LLM responses to verify:
 - Cost tracking works across full run
 - Data flows correctly between agents
 - Artifacts are created at each step
+
+This file contains long mock response strings for test fixtures.
+Line length violations are intentional for readability of test data.
 """
+# flake8: noqa: E501
 
 import json
 import pytest
