@@ -101,10 +101,11 @@ class CostTracker:
                     model=model, contents=prompt
                 )
                 # Some client versions return dict-like, others object with total_tokens
-                input_tokens = (
-                    getattr(token_info, "total_tokens", None)
-                    or token_info.get("total_tokens", 0)  # type: ignore
-                )
+                input_tokens = getattr(
+                    token_info, "total_tokens", None
+                ) or token_info.get(
+                    "total_tokens", 0
+                )  # type: ignore
             except Exception:
                 # Fallback heuristic: rough average 4 chars per token
                 input_tokens = max(1, len(prompt) // 4)

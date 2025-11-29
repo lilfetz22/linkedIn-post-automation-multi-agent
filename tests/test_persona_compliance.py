@@ -9,6 +9,7 @@ defined in system_prompts.md:
 
 Contains long sample strings for test validation.
 """
+
 # flake8: noqa: E501
 
 import pytest

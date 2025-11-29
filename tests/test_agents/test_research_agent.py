@@ -2,6 +2,7 @@
 
 Contains long mock response strings for test fixtures.
 """
+
 # flake8: noqa: E501
 
 import tempfile

@@ -22,7 +22,9 @@ from database.operations import select_new_topic, get_recent_topics
 STEP_CODE = "10_topic"
 
 
-def _generate_topics_with_llm(field: str, recent_topics: List[str], cost_tracker=None) -> str:
+def _generate_topics_with_llm(
+    field: str, recent_topics: List[str], cost_tracker=None
+) -> str:
     """
     Use LLM to generate a new topic when database is empty.
 
@@ -72,7 +74,7 @@ Example format:
         prompt=prompt,
         temperature=0.8,  # Higher temperature for creative topic generation
         max_output_tokens=2000,
-        use_search_grounding=True  # Enable Google Search for current trends
+        use_search_grounding=True,  # Enable Google Search for current trends
     )
 
     # Parse JSON response

@@ -263,10 +263,15 @@ class TestGetRAGStore:
         mock_collection.name = COLLECTION_NAME
         mock_chromadb_client.get_collection.return_value = mock_collection
 
-        with patch(
-            "core.rag_setup.RAGVectorStore.init_vector_store",
-            side_effect=InternalError("Collection [test_collection] already exists"),
-        ), caplog.at_level(logging.INFO):
+        with (
+            patch(
+                "core.rag_setup.RAGVectorStore.init_vector_store",
+                side_effect=InternalError(
+                    "Collection [test_collection] already exists"
+                ),
+            ),
+            caplog.at_level(logging.INFO),
+        ):
             store = get_rag_store(
                 persist_directory=chromadb_dir,
                 auto_init=True,
@@ -281,10 +286,13 @@ class TestGetRAGStore:
         self, memory_bank_dir, chromadb_dir, caplog
     ):
         """Test that other InternalErrors are propagated."""
-        with patch(
-            "core.rag_setup.RAGVectorStore.init_vector_store",
-            side_effect=InternalError("Some other internal error"),
-        ), caplog.at_level(logging.ERROR):
+        with (
+            patch(
+                "core.rag_setup.RAGVectorStore.init_vector_store",
+                side_effect=InternalError("Some other internal error"),
+            ),
+            caplog.at_level(logging.ERROR),
+        ):
             with pytest.raises(InternalError, match="Some other internal error"):
                 get_rag_store(
                     persist_directory=chromadb_dir,
@@ -297,10 +305,13 @@ class TestGetRAGStore:
 
     def test_get_rag_store_logs_errors(self, memory_bank_dir, chromadb_dir, caplog):
         """Test that errors are logged before being propagated."""
-        with patch(
-            "core.rag_setup.RAGVectorStore.init_vector_store",
-            side_effect=ValueError("Test validation error"),
-        ), caplog.at_level(logging.ERROR):
+        with (
+            patch(
+                "core.rag_setup.RAGVectorStore.init_vector_store",
+                side_effect=ValueError("Test validation error"),
+            ),
+            caplog.at_level(logging.ERROR),
+        ):
             with pytest.raises(ValueError):
                 get_rag_store(
                     persist_directory=chromadb_dir,
@@ -366,10 +377,13 @@ class TestLogging:
 
     def test_file_system_errors_are_logged(self, memory_bank_dir, chromadb_dir, caplog):
         """Test that file system errors are logged with appropriate level."""
-        with patch(
-            "core.rag_setup.RAGVectorStore.init_vector_store",
-            side_effect=OSError("Disk full"),
-        ), caplog.at_level(logging.ERROR):
+        with (
+            patch(
+                "core.rag_setup.RAGVectorStore.init_vector_store",
+                side_effect=OSError("Disk full"),
+            ),
+            caplog.at_level(logging.ERROR),
+        ):
             with pytest.raises(OSError):
                 get_rag_store(
                     persist_directory=chromadb_dir,
@@ -382,10 +396,13 @@ class TestLogging:
 
     def test_chromadb_errors_are_logged(self, memory_bank_dir, chromadb_dir, caplog):
         """Test that ChromaDB errors are logged with appropriate level."""
-        with patch(
-            "core.rag_setup.RAGVectorStore.init_vector_store",
-            side_effect=InternalError("ChromaDB API error"),
-        ), caplog.at_level(logging.ERROR):
+        with (
+            patch(
+                "core.rag_setup.RAGVectorStore.init_vector_store",
+                side_effect=InternalError("ChromaDB API error"),
+            ),
+            caplog.at_level(logging.ERROR),
+        ):
             with pytest.raises(InternalError):
                 get_rag_store(
                     persist_directory=chromadb_dir,

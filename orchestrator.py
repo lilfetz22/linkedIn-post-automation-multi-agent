@@ -499,8 +499,8 @@ def main():  # pragma: no cover
             print(f"Total API Calls: {cost['total_api_calls']}")
             print(f"Budget Remaining: ${cost['budget_remaining_usd']:.4f}")
             print("\nCosts by Agent:")
-            for agent, agent_cost in cost['costs_by_agent'].items():
-                calls = cost['calls_by_agent'].get(agent, 0)
+            for agent, agent_cost in cost["costs_by_agent"].items():
+                calls = cost["calls_by_agent"].get(agent, 0)
                 print(f"  {agent}: ${agent_cost:.4f} ({calls} calls)")
 
     except Exception as e:

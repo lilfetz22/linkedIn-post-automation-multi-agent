@@ -10,6 +10,7 @@ This module provides comprehensive tests for:
 
 Contains long mock response strings for test fixtures.
 """
+
 # flake8: noqa: E501
 
 import pytest
@@ -319,13 +320,14 @@ class TestErrorPropagationOrchestrator:
         self, valid_config, mock_run_dir
     ):
         """Test non-retryable errors cause immediate run abort."""
-        with patch(
-            "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json"), patch(
-            "orchestrator.log_event"
-        ), patch(
-            "orchestrator.topic_agent"
-        ) as mock_topic:
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json"),
+            patch("orchestrator.log_event"),
+            patch("orchestrator.topic_agent") as mock_topic,
+        ):
 
             # Topic agent returns validation error
             mock_topic.run.return_value = err(
@@ -342,15 +344,15 @@ class TestErrorPropagationOrchestrator:
         self, valid_config, mock_run_dir
     ):
         """Test retryable errors exhaust all retry attempts before aborting."""
-        with patch(
-            "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json"), patch(
-            "orchestrator.log_event"
-        ), patch(
-            "core.retry.time.sleep"
-        ), patch(
-            "orchestrator.topic_agent"
-        ) as mock_topic:
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json"),
+            patch("orchestrator.log_event"),
+            patch("core.retry.time.sleep"),
+            patch("orchestrator.topic_agent") as mock_topic,
+        ):
 
             # Simulate ModelError response that gets reconstructed
             mock_topic.run.return_value = err(
@@ -368,13 +370,14 @@ class TestErrorPropagationOrchestrator:
         self, valid_config, mock_run_dir
     ):
         """Test run_failed.json artifact is created with error details."""
-        with patch(
-            "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json") as mock_write, patch(
-            "orchestrator.log_event"
-        ), patch(
-            "orchestrator.topic_agent"
-        ) as mock_topic:
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json") as mock_write,
+            patch("orchestrator.log_event"),
+            patch("orchestrator.topic_agent") as mock_topic,
+        ):
 
             mock_topic.run.return_value = err(
                 "ValidationError", "Test error", retryable=False
@@ -394,13 +397,14 @@ class TestErrorPropagationOrchestrator:
 
     def test_error_context_includes_required_fields(self, valid_config, mock_run_dir):
         """Test error context includes step name, attempt count, stack trace, timestamp."""
-        with patch(
-            "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json") as mock_write, patch(
-            "orchestrator.log_event"
-        ), patch(
-            "orchestrator.topic_agent"
-        ) as mock_topic:
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json") as mock_write,
+            patch("orchestrator.log_event"),
+            patch("orchestrator.topic_agent") as mock_topic,
+        ):
 
             mock_topic.run.return_value = err(
                 "ValidationError", "Test error", retryable=False
@@ -434,10 +438,12 @@ class TestErrorPropagationOrchestrator:
 
     def test_corruption_error_aborts_immediately(self, valid_config, mock_run_dir):
         """Test CorruptionError causes immediate abort without retry."""
-        with patch(
-            "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json") as mock_write, patch(
-            "orchestrator.log_event"
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("test123", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json") as mock_write,
+            patch("orchestrator.log_event"),
         ):
 
             # First call (config write) fails with CorruptionError
@@ -481,14 +487,11 @@ class TestAgentSpecificErrorScenarios:
 
         # Patch select_new_topic to return None (empty database)
         # and get_text_client for LLM fallback
-        with patch(
-            "agents.topic_agent.select_new_topic", return_value=None
-        ), patch(
-            "agents.topic_agent.get_recent_topics", return_value=[]
-        ), patch(
-            "agents.topic_agent.get_text_client"
-        ) as mock_client, patch(
-            "agents.topic_agent.write_and_verify_json"
+        with (
+            patch("agents.topic_agent.select_new_topic", return_value=None),
+            patch("agents.topic_agent.get_recent_topics", return_value=[]),
+            patch("agents.topic_agent.get_text_client") as mock_client,
+            patch("agents.topic_agent.write_and_verify_json"),
         ):
 
             # Mock LLM client for fallback - returns valid JSON array
@@ -518,8 +521,9 @@ class TestAgentSpecificErrorScenarios:
         """Test Research Agent: zero search results triggers DataNotFoundError."""
         from agents import research_agent
 
-        with patch("agents.research_agent.get_text_client") as mock_client, patch(
-            "agents.research_agent.log_event"
+        with (
+            patch("agents.research_agent.get_text_client") as mock_client,
+            patch("agents.research_agent.log_event"),
         ):
             mock_text = MagicMock()
             # Simulate response with empty sources array (triggers DataNotFoundError)
@@ -544,12 +548,13 @@ class TestAgentSpecificErrorScenarios:
         """Test Writer Agent: max shortening attempts exceeded raises ValidationError."""
         from agents import writer_agent
 
-        with patch("agents.writer_agent.get_text_client") as mock_client, patch(
-            "agents.writer_agent.atomic_write_text"
-        ), patch(
-            "agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"
-        ), patch(
-            "agents.writer_agent.log_event"
+        with (
+            patch("agents.writer_agent.get_text_client") as mock_client,
+            patch("agents.writer_agent.atomic_write_text"),
+            patch(
+                "agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"
+            ),
+            patch("agents.writer_agent.log_event"),
         ):
 
             # Always return text that's too long
@@ -608,12 +613,13 @@ class TestAgentSpecificErrorScenarios:
         # The artifact path should be a Path object, not a string
         artifact_path = mock_run_dir / "80_image.png"
 
-        with patch(
-            "agents.image_generator_agent.get_image_client"
-        ) as mock_client, patch(
-            "agents.image_generator_agent.get_artifact_path", return_value=artifact_path
-        ), patch(
-            "agents.image_generator_agent.log_event"
+        with (
+            patch("agents.image_generator_agent.get_image_client") as mock_client,
+            patch(
+                "agents.image_generator_agent.get_artifact_path",
+                return_value=artifact_path,
+            ),
+            patch("agents.image_generator_agent.log_event"),
         ):
 
             # Simulate image generation failure - raise ModelError for fallback to catch
@@ -653,15 +659,15 @@ class TestErrorFlowIntegration:
         mock_run_dir = tmp_path / "2025-11-27-integration"
         mock_run_dir.mkdir(parents=True, exist_ok=True)
 
-        with patch(
-            "orchestrator.create_run_dir", return_value=("int-test", mock_run_dir)
-        ), patch("orchestrator.write_and_verify_json"), patch(
-            "orchestrator.log_event"
-        ), patch(
-            "core.retry.time.sleep"
-        ), patch(
-            "orchestrator.topic_agent"
-        ) as mock_topic:
+        with (
+            patch(
+                "orchestrator.create_run_dir", return_value=("int-test", mock_run_dir)
+            ),
+            patch("orchestrator.write_and_verify_json"),
+            patch("orchestrator.log_event"),
+            patch("core.retry.time.sleep"),
+            patch("orchestrator.topic_agent") as mock_topic,
+        ):
 
             # Always return retryable error
             mock_topic.run.return_value = err(

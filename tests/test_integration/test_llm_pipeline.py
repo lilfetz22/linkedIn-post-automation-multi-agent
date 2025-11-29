@@ -11,6 +11,7 @@ Tests the complete agent pipeline with mocked LLM responses to verify:
 This file contains long mock response strings for test fixtures.
 Line length violations are intentional for readability of test data.
 """
+
 # flake8: noqa: E501
 
 import json
@@ -417,24 +418,31 @@ class TestLLMPipelineIntegration:
             mock_text_client_instance.generate_text.side_effect = mock_generate_text
 
             # Patch get_text_client at all agent module locations (must patch where used, not where defined)
-            with patch(
-                "agents.topic_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.research_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.prompt_generator_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.writer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.reviewer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.image_prompt_agent.get_text_client",
-                return_value=mock_text_client_instance,
+            with (
+                patch(
+                    "agents.topic_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.research_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.prompt_generator_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.writer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.reviewer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.image_prompt_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
             ):
                 # Mock image generation
                 mock_image_client_instance = MagicMock()
@@ -520,24 +528,31 @@ class TestLLMPipelineIntegration:
             mock_text_client_instance.generate_text.side_effect = generate_mock_response
 
             # Patch at agent module level (where used, not where defined)
-            with patch(
-                "agents.topic_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.research_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.prompt_generator_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.writer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.reviewer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.image_prompt_agent.get_text_client",
-                return_value=mock_text_client_instance,
+            with (
+                patch(
+                    "agents.topic_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.research_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.prompt_generator_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.writer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.reviewer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.image_prompt_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
             ):
 
                 mock_image_client_instance = MagicMock()
@@ -563,10 +578,16 @@ class TestLLMPipelineIntegration:
                             result = orchestrator.run()
                             # Assert that result follows the standardized agent envelope
                             assert isinstance(result, dict), "Result should be a dict"
-                            assert "status" in result, "Result should have a 'status' key"
+                            assert (
+                                "status" in result
+                            ), "Result should have a 'status' key"
                             assert "data" in result, "Result should have a 'data' key"
-                            assert "error" in result, "Result should have an 'error' key"
-                            assert "metrics" in result, "Result should have a 'metrics' key"
+                            assert (
+                                "error" in result
+                            ), "Result should have an 'error' key"
+                            assert (
+                                "metrics" in result
+                            ), "Result should have a 'metrics' key"
                         except Exception:
                             pass  # We expect some failures due to minimal mocking
 
@@ -716,24 +737,31 @@ class TestLLMPipelineIntegration:
             mock_text_client_instance.generate_text.side_effect = capture_call
 
             # Patch at agent module level (where used, not where defined)
-            with patch(
-                "agents.topic_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.research_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.prompt_generator_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.writer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.reviewer_agent.get_text_client",
-                return_value=mock_text_client_instance,
-            ), patch(
-                "agents.image_prompt_agent.get_text_client",
-                return_value=mock_text_client_instance,
+            with (
+                patch(
+                    "agents.topic_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.research_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.prompt_generator_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.writer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.reviewer_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
+                patch(
+                    "agents.image_prompt_agent.get_text_client",
+                    return_value=mock_text_client_instance,
+                ),
             ):
                 # Mock image generation
                 mock_image_client_instance = MagicMock()

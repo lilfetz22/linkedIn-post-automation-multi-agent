@@ -6,6 +6,7 @@ character count loop, topic pivot logic, and error handling scenarios.
 
 Contains long comments and mock strings for test clarity.
 """
+
 # flake8: noqa: E501
 
 import pytest
@@ -201,14 +202,17 @@ def test_execute_research_with_pivot_on_data_not_found(
             raise DataNotFoundError("No sources found")
         return ok({"sources": ["source1"], "summary": "summary"})
 
-    with patch.object(
-        orchestrator_with_config,
-        "_execute_agent_with_retry",
-        side_effect=mock_research_call,
-    ), patch.object(
-        orchestrator_with_config,
-        "_execute_topic_selection",
-        return_value="New Topic",
+    with (
+        patch.object(
+            orchestrator_with_config,
+            "_execute_agent_with_retry",
+            side_effect=mock_research_call,
+        ),
+        patch.object(
+            orchestrator_with_config,
+            "_execute_topic_selection",
+            return_value="New Topic",
+        ),
     ):
         result = orchestrator_with_config._execute_research_with_pivot("Old Topic")
 
@@ -229,14 +233,18 @@ def test_execute_research_max_pivots_exceeded(
     }
 
     # Always fail research
-    with patch.object(
-        orchestrator_with_config,
-        "_execute_agent_with_retry",
-        side_effect=DataNotFoundError("No sources"),
-    ), patch.object(
-        orchestrator_with_config, "_execute_topic_selection", return_value="New Topic"
-    ), patch(
-        "orchestrator.log_event"
+    with (
+        patch.object(
+            orchestrator_with_config,
+            "_execute_agent_with_retry",
+            side_effect=DataNotFoundError("No sources"),
+        ),
+        patch.object(
+            orchestrator_with_config,
+            "_execute_topic_selection",
+            return_value="New Topic",
+        ),
+        patch("orchestrator.log_event"),
     ):
         with pytest.raises(DataNotFoundError, match="after 2 topic pivots"):
             orchestrator_with_config._execute_research_with_pivot("Initial Topic")
@@ -261,16 +269,15 @@ def test_character_count_loop_passes_first_iteration(orchestrator_with_config):
 
     short_text = "A" * 2000  # Under 3000 chars
 
-    with patch.object(
-        orchestrator_with_config,
-        "_execute_agent_with_retry",
-        return_value=ok({"draft_path": "40_draft.md"}),
-    ) as mock_execute, patch(
-        "orchestrator.Path.read_text", return_value=short_text
-    ), patch(
-        "orchestrator.atomic_write_text"
-    ) as mock_write, patch(
-        "orchestrator.log_event"
+    with (
+        patch.object(
+            orchestrator_with_config,
+            "_execute_agent_with_retry",
+            return_value=ok({"draft_path": "40_draft.md"}),
+        ) as mock_execute,
+        patch("orchestrator.Path.read_text", return_value=short_text),
+        patch("orchestrator.atomic_write_text") as mock_write,
+        patch("orchestrator.log_event"),
     ):
         # Mock reviewer to return short text
         def mock_agent_call(agent_name, *args, **kwargs):
@@ -319,14 +326,15 @@ def test_character_count_loop_retries_on_long_text(orchestrator_with_config):
         else:
             raise ValueError(f"Unexpected agent name: {agent_name}")
 
-    with patch.object(
-        orchestrator_with_config,
-        "_execute_agent_with_retry",
-        side_effect=mock_agent_call,
-    ), patch("orchestrator.Path.read_text", side_effect=[long_text, short_text]), patch(
-        "orchestrator.atomic_write_text"
-    ) as mock_write, patch(
-        "orchestrator.log_event"
+    with (
+        patch.object(
+            orchestrator_with_config,
+            "_execute_agent_with_retry",
+            side_effect=mock_agent_call,
+        ),
+        patch("orchestrator.Path.read_text", side_effect=[long_text, short_text]),
+        patch("orchestrator.atomic_write_text") as mock_write,
+        patch("orchestrator.log_event"),
     ):
         result = orchestrator_with_config._execute_writing_and_review_loop(
             {"topic": "test"}
@@ -358,12 +366,14 @@ def test_character_count_loop_max_iterations_exceeded(orchestrator_with_config):
         else:
             raise ValueError(f"Unexpected agent name: {agent_name}")
 
-    with patch.object(
-        orchestrator_with_config,
-        "_execute_agent_with_retry",
-        side_effect=mock_agent_call,
-    ), patch("orchestrator.Path.read_text", return_value=long_text), patch(
-        "orchestrator.log_event"
+    with (
+        patch.object(
+            orchestrator_with_config,
+            "_execute_agent_with_retry",
+            side_effect=mock_agent_call,
+        ),
+        patch("orchestrator.Path.read_text", return_value=long_text),
+        patch("orchestrator.log_event"),
     ):
         with pytest.raises(ValidationError, match="exceeded 5 iterations"):
             orchestrator_with_config._execute_writing_and_review_loop({"topic": "test"})
@@ -509,15 +519,19 @@ def test_orchestrator_aborts_on_corruption_error(orchestrator_with_config):
     orchestrator_with_config.run_id = "test-run"
     orchestrator_with_config.run_path = Path("/tmp/test-run")
 
-    with patch.object(orchestrator_with_config, "_initialize_run"), patch.object(
-        orchestrator_with_config,
-        "_execute_topic_selection",
-        side_effect=CorruptionError("Artifact corrupted"),
-    ), patch.object(
-        orchestrator_with_config,
-        "_handle_run_failure",
-        return_value={"status": "failed"},
-    ) as mock_handle:
+    with (
+        patch.object(orchestrator_with_config, "_initialize_run"),
+        patch.object(
+            orchestrator_with_config,
+            "_execute_topic_selection",
+            side_effect=CorruptionError("Artifact corrupted"),
+        ),
+        patch.object(
+            orchestrator_with_config,
+            "_handle_run_failure",
+            return_value={"status": "failed"},
+        ) as mock_handle,
+    ):
         result = orchestrator_with_config.run()
 
     assert result["status"] == "failed"
