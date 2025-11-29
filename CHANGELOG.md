@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.0.1 (2025-11-29)
+
+### Bug Fixes
+
+- Pass only message to Exception.__init__ in BaseAgentError
+  ([`efd9893`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/efd98931e51852d8112baa9d82b6567b4bdb3bc6))
+
+- **lint**: Task 2 bugbear fixes (B042, B014, B011, B017)
+  ([`c497f7c`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/c497f7cb5ee30b791a0094e721f3b40d7e0d5249))
+
+
 ## v1.0.0 (2025-11-29)
 
 - Initial Release
