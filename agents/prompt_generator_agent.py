@@ -9,7 +9,7 @@ from typing import Dict, Any
 
 from core.envelope import ok, err, validate_envelope
 from core.errors import ValidationError, ModelError
-from core.persistence import write_and_verify_json, atomic_write_text
+from core.persistence import write_and_verify_json
 from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client

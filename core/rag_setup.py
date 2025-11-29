@@ -6,12 +6,10 @@ semantic search for strategic content patterns.
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import List, Dict, Any
 
 import chromadb
-from chromadb.config import Settings
 from chromadb.errors import InternalError, NotFoundError
 
 # Set up logging

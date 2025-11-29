@@ -17,7 +17,6 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.system_prompts import load_system_prompt
-from core.cost_tracking import CostTracker
 
 STEP_CODE = "40_draft"
 MAX_CHAR_COUNT = 3000
@@ -137,8 +136,8 @@ Please regenerate the post with the SAME core message and structure, but shorten
         duration_ms = int((time.time() - start_time) * 1000)
 
         # Extract token usage (implementation depends on client interface)
-        # For now, return empty dict - will be populated by cost tracker
-        token_usage = {}
+        # Include duration_ms to avoid unused variable warning and support future metrics
+        token_usage = {"duration_ms": duration_ms}
 
         return draft_text.strip(), token_usage
 
@@ -166,7 +165,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     run_path: Path = context["run_path"]
     cost_tracker = context.get("cost_tracker")  # Optional from orchestrator
     structured = input_obj.get("structured_prompt")
-    external_shortening = input_obj.get("shortening_instruction")  # From orchestrator
+    # external_shortening retained for future orchestrator-driven shortening; currently unused
 
     attempt = 1
     shortening_attempts = 0
@@ -230,7 +229,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
         # Should never reach here due to loop logic, but defensive
         raise ValidationError(
-            f"Internal error: exceeded shortening loop without proper exit"
+            "Internal error: exceeded shortening loop without proper exit"
         )
     except ValidationError as e:
         response = err(type(e).__name__, str(e), retryable=e.retryable)

@@ -7,7 +7,6 @@ Includes character count validation loop with hashtag removal logic.
 from pathlib import Path
 from typing import Dict, Any
 import time
-import re
 
 from core.envelope import ok, err, validate_envelope
 from core.errors import ValidationError, ModelError
@@ -15,7 +14,6 @@ from core.persistence import write_and_verify_json
 from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
-from core.cost_tracking import CostTracker
 
 STEP_CODE = "50_review"
 MAX_CHAR_COUNT = 3000
@@ -74,7 +72,7 @@ def _apply_grammar_corrections(text: str) -> tuple[str, int]:
 
         return corrected, len(matches)
 
-    except Exception as e:
+    except Exception:
         # Fallback: return original text if grammar tool fails
         return text, 0
 
@@ -157,7 +155,8 @@ Return ONLY the revised post, no explanations."""
         revised_text = response["text"]
 
         duration_ms = int((time.time() - start_time) * 1000)
-        token_usage = {}  # TODO: Extract from client
+        # Include duration_ms to avoid unused variable warning and support future metrics
+        token_usage = {"duration_ms": duration_ms}  # TODO: Extend with real token usage
 
         return revised_text.strip(), token_usage
 

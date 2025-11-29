@@ -6,7 +6,7 @@ TODO: Integrate external web search API (Tavily, SerpAPI, or Google Custom Searc
 """
 
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any
 import json
 
 from core.envelope import ok, err, validate_envelope

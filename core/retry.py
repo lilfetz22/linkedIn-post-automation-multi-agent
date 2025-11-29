@@ -6,7 +6,7 @@ while preventing cascading failures through circuit breaker protection.
 """
 
 import time
-from typing import Callable, TypeVar, Any
+from typing import Callable, TypeVar
 from dataclasses import dataclass
 
 from core.errors import BaseAgentError
@@ -137,7 +137,7 @@ def execute_with_retries(
             delay = exponential_backoff(attempt, base_delay)
             time.sleep(delay)
 
-        except Exception as e:
+        except Exception:
             # Unexpected errors are not retried
             if circuit_breaker:
                 circuit_breaker.record_failure()
