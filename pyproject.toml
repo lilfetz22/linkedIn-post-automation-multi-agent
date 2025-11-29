@@ -1,0 +1,146 @@
+# =============================================================================
+# LinkedIn Post Automation Multi-Agent System - Project Configuration
+# =============================================================================
+
+[project]
+name = "linkedin-post-automation"
+version = "0.0.0"
+description = "Multi-agent orchestration system for generating LinkedIn posts"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "William Fetzner" }
+]
+keywords = ["linkedin", "automation", "multi-agent", "llm", "gemini", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Repository = "https://github.com/lilfetz22/linkedIn-post-automation-multi-agent"
+
+# =============================================================================
+# Python Semantic Release Configuration
+# =============================================================================
+
+[tool.semantic_release]
+# Version stamping - update version in pyproject.toml
+version_toml = ["pyproject.toml:project.version"]
+
+# Commit message parser - Conventional Commits
+commit_parser = "conventional"
+
+[tool.semantic_release.commit_parser_options]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+parse_squash_commits = true
+ignore_merge_commits = true
+
+# Branch configuration - release from master
+[tool.semantic_release.branches.main]
+match = "(main|master)"
+prerelease_token = "rc"
+prerelease = false
+
+# Changelog configuration
+[tool.semantic_release.changelog]
+mode = "update"
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+
+# Exclude non-user-facing commits from changelog
+[tool.semantic_release.changelog.exclude_commit_patterns]
+patterns = [
+    '''chore(?:\([^)]*?\))?: .+''',
+    '''ci(?:\([^)]*?\))?: .+''',
+    '''refactor(?:\([^)]*?\))?: .+''',
+    '''style(?:\([^)]*?\))?: .+''',
+    '''test(?:\([^)]*?\))?: .+''',
+    '''build\((?!deps\): .+)''',
+    '''Initial [Cc]ommit.*''',
+]
+
+# Remote VCS configuration (GitHub)
+[tool.semantic_release.remote]
+type = "github"
+
+[tool.semantic_release.remote.token]
+env = "GH_TOKEN"
+
+# Commit author for release commits
+commit_author = "github-actions <actions@github.com>"
+
+# Tag format
+tag_format = "v{version}"
+
+# =============================================================================
+# Pytest Configuration (mirrors pytest.ini)
+# =============================================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "unit: Unit tests for individual components",
+    "integration: Integration tests spanning multiple components",
+    "slow: Tests that take longer to execute",
+    "llm: Tests that interact with LLM APIs",
+    "persona: Tests that validate persona compliance",
+]
+addopts = "-v --strict-markers --tb=short"
+
+# =============================================================================
+# Coverage Configuration (mirrors .coveragerc)
+# =============================================================================
+
+[tool.coverage.run]
+source = ["."]
+branch = true
+omit = [
+    "tests/*",
+    "*/tests/*",
+    "*/__pycache__/*",
+    "runs/*",
+    "venv/*",
+    ".venv/*",
+    "setup.py",
+    "conftest.py",
+]
+
+[tool.coverage.report]
+fail_under = 75
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.json]
+output = "coverage.json"
+
+# =============================================================================
+# Flake8 Configuration (for reference - flake8 doesn't read pyproject.toml)
+# =============================================================================
+# Note: Flake8 configuration remains in setup.cfg or .flake8 file
+# This section is for documentation purposes only
