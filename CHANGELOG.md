@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.2 (2025-11-29)
+
+### Bug Fixes
+
+- **errors**: Pass all args to super().__init__ and override __str__ for B042
+  ([`099a764`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/099a764c3bd5bcc124428bbf8d1cb53d5aa4d61b))
+
+
 ## v1.0.1 (2025-11-29)
 
 ### Bug Fixes

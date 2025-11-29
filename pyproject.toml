@@ -4,7 +4,7 @@
 
 [project]
 name = "linkedin-post-automation"
-version = "1.0.1"
+version = "1.0.2"
 description = "Multi-agent orchestration system for generating LinkedIn posts"
 readme = "README.md"
 requires-python = ">=3.10"
