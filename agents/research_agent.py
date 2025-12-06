@@ -181,7 +181,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     run_path: Path = context["run_path"]
     topic = input_obj.get("topic")
     cost_tracker = context.get("cost_tracker")
-    fallback_tracker = FallbackTracker(run_path)
+    fallback_tracker = context.get("fallback_tracker")
 
     attempt = 1
     metrics_dict = {}
