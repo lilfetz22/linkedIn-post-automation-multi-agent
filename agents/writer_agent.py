@@ -275,11 +275,12 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
         # Should never reach here due to loop logic, but defensive
         raise ValidationError(
-            "Internal error: exceeded shortening loop without proper exit"
+            "Max shortening attempts (3) exceeded; post still exceeds 3000 characters",
+            error_code="MAX_SHORTENING_EXCEEDED"
         )
     except ValidationError as e:
         # If we exhausted shortening attempts, fall back to deterministic template
-        if "shortening attempts" in str(e).lower():
+        if getattr(e, 'error_code', None) == "MAX_SHORTENING_EXCEEDED":
             # Request user approval before proceeding with fallback
             warning = fallback_tracker.record_warning(
                 agent_name="writer_agent",
