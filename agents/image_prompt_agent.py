@@ -41,7 +41,7 @@ def _build_minimal_fallback_prompt(final_post: str) -> str:
     """Construct a deterministic, no-text prompt when LLM generation fails."""
 
     first_line = next(
-        (line.strip("* ") for line in final_post.splitlines() if line.strip()),
+        (line for line in final_post.splitlines() if line.strip()),
         "Concept visual",
     )
     mood = "energetic" if "!" in final_post else "thoughtful"
