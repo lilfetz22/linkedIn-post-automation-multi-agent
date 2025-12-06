@@ -28,3 +28,26 @@ if isinstance(e, ValidationError) and "Missing 'final_post'" in str(e):
     # Handle input validation error logic here
     pass 
 ```
+
+***
+
+**Task: Refactor magic number in truncation logic in `agents/writer_agent.py`**
+
+**Context:**
+In `agents/writer_agent.py` (lines 185-187), the code currently uses a "magic number" (`120`) when calculating the character limit for the fallback post. This number is intended as a buffer for the appended sign-off string (`"\n\n- Tech Audience Accelerator"`), but `120` is excessive (the string is only ~30 chars) and lacks semantic meaning.
+
+**Instructions:**
+1.  Locate the truncation logic around lines 185-187.
+2.  Replace the hardcoded value `120` with a named constant `SIGNOFF_BUFFER`.
+3.  Set the `SIGNOFF_BUFFER` value to `50` (a safer, more reasonable buffer size).
+4.  Update both the `if` condition and the slice operation to use this new constant.
+5.  Add a comment explaining that this buffer reserves space for the sign-off.
+
+**Suggested Implementation:**
+```python
+SIGNOFF_BUFFER = 50  # Buffer for sign-off text (~30 chars)
+
+if count_chars(fallback_post) >= MAX_CHARS - SIGNOFF_BUFFER:
+    trimmed = fallback_post[: MAX_CHARS - SIGNOFF_BUFFER]
+    fallback_post = f"{trimmed}\n\n- Tech Audience Accelerator"
+```
