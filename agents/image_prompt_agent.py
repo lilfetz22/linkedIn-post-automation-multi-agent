@@ -144,7 +144,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     cost_tracker = context.get("cost_tracker")
     final_post = input_obj.get("final_post")
     attempt = 1
-    fallback_tracker = FallbackTracker(run_path)
+    fallback_tracker = context.get("fallback_tracker")
 
     try:
         if not final_post:
