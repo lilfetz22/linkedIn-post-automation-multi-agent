@@ -17,7 +17,6 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.system_prompts import load_system_prompt
-from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "40_draft"
 MAX_CHAR_COUNT = 3000
