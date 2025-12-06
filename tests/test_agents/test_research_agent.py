@@ -9,11 +9,12 @@ import tempfile
 from pathlib import Path
 import pytest
 import json
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from agents.research_agent import run
 from core.envelope import validate_envelope
 from core.errors import ModelError
+from core.fallback_tracker import FallbackTracker
 
 
 @pytest.fixture
@@ -22,6 +23,16 @@ def temp_run_dir():
     with tempfile.TemporaryDirectory() as tmpdir:
         run_path = Path(tmpdir)
         yield run_path
+
+
+@pytest.fixture
+def mock_fallback_tracker():
+    """Mock fallback tracker."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mock_tracker = FallbackTracker(Path(tmpdir))
+        mock_tracker.record_warning = MagicMock()
+        mock_tracker.request_user_approval = MagicMock(return_value=True)
+        yield mock_tracker
 
 
 def test_research_agent_success(temp_run_dir):
@@ -177,10 +188,14 @@ def test_research_agent_llm_failure(temp_run_dir):
         assert response["error"]["retryable"] is True
 
 
-def test_research_agent_empty_sources(temp_run_dir):
-    """Test handling of empty sources from LLM."""
+def test_research_agent_empty_sources(temp_run_dir, mock_fallback_tracker):
+    """Test handling of empty sources from LLM - memory bank fallback with user approval."""
     input_obj = {"topic": "Test topic"}
-    context = {"run_id": "test-run-006", "run_path": temp_run_dir}
+    context = {
+        "run_id": "test-run-006",
+        "run_path": temp_run_dir,
+        "fallback_tracker": mock_fallback_tracker,
+    }
 
     # Mock LLM response with empty sources
     mock_research = {"sources": [], "summary": "No sources available"}
@@ -195,7 +210,39 @@ def test_research_agent_empty_sources(temp_run_dir):
 
         response = run(input_obj, context)
 
-        validate_envelope(response)
-        assert response["status"] == "error"
-        assert response["error"]["type"] == "DataNotFoundError"
-        assert response["error"]["retryable"] is False
+    validate_envelope(response)
+    assert response["status"] == "ok"
+    assert response["data"].get("fallback_used") is True
+    assert "memory_bank" in response["data"].get("fallback_reason", "")
+    assert len(response["data"]["sources"]) >= 1
+
+
+def test_research_agent_user_rejects_fallback(temp_run_dir, mock_fallback_tracker):
+    """Test research agent aborts when user rejects memory bank fallback."""
+    input_obj = {"topic": "Test topic"}
+    context = {
+        "run_id": "test-run-007",
+        "run_path": temp_run_dir,
+        "fallback_tracker": mock_fallback_tracker,
+    }
+
+    # Mock LLM response with empty sources
+    mock_research = {"sources": [], "summary": "No sources available"}
+    mock_llm_response = {
+        "text": json.dumps(mock_research),
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
+
+    with patch("agents.research_agent.get_text_client") as mock_client:
+        mock_client.return_value.generate_text.return_value = mock_llm_response
+
+        # Simulate user rejecting the fallback
+        mock_fallback_tracker.request_user_approval.return_value = False
+
+        response = run(input_obj, context)
+
+    validate_envelope(response)
+    assert response["status"] == "error"
+    assert response["error"]["type"] == "DataNotFoundError"
+    assert "User declined fallback" in response["error"]["message"]
