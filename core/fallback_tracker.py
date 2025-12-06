@@ -117,7 +117,7 @@ class FallbackTracker:
         print(f"\nAgent: {warning.agent_name}")
         print(f"Step {warning.step_number}: {warning.original_objective}")
         print(f"Reason: {warning.reason}")
-        print(f"\nError Details:")
+        print("\nError Details:")
         print(f"  {warning.error_message}")
         print("\n" + "-" * 70)
         print("FALLBACK PLAN:")
