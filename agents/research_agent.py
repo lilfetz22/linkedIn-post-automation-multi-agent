@@ -198,7 +198,10 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             # No sources returned; attempt offline memory bank fallback
             fallback = _memory_bank_fallback(topic)
             if not fallback:
-                raise
+                raise DataNotFoundError(
+                    f"No sources found for '{topic}' in web search or local memory bank. "
+                    f"Original error: {str(e)}"
+                )
 
             # Request user approval before proceeding with fallback
             warning = fallback_tracker.record_warning(
