@@ -192,8 +192,8 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         return response
 
     except (ValidationError, ModelError) as e:
-        error_msg = str(e).lower()
-        if "final_post" in error_msg:
+        # Check specifically for validation errors regarding missing 'final_post'
+        if isinstance(e, ValidationError) and "'final_post'" in str(e):
             # Input validation error should still bubble up
             response = err(type(e).__name__, str(e), retryable=e.retryable)
             validate_envelope(response)

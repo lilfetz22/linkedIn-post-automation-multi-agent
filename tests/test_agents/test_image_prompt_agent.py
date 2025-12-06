@@ -7,6 +7,7 @@ from unittest.mock import patch, MagicMock
 
 from agents.image_prompt_agent import run, _validate_no_text_constraint
 from core.envelope import validate_envelope
+from core.fallback_tracker import FallbackTracker
 
 
 @pytest.fixture
@@ -57,6 +58,18 @@ def mock_cost_tracker():
     mock_tracker.check_budget = MagicMock()
     mock_tracker.record_call = MagicMock()
     return mock_tracker
+
+
+@pytest.fixture
+def mock_fallback_tracker():
+    """Mock fallback tracker."""
+    # Use a temporary directory for the run_path
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mock_tracker = FallbackTracker(Path(tmpdir))
+        mock_tracker.record_warning = MagicMock()
+        # Mock user approval to always be true to avoid interactive prompts
+        mock_tracker.request_user_approval = MagicMock(return_value=True)
+        yield mock_tracker
 
 
 @patch("agents.image_prompt_agent.get_text_client")
@@ -124,10 +137,14 @@ def test_image_prompt_agent_missing_final_post(temp_run_dir):
     assert response["error"]["retryable"] is False
 
 
-def test_image_prompt_agent_empty_final_post(temp_run_dir):
+def test_image_prompt_agent_empty_final_post(temp_run_dir, mock_fallback_tracker):
     """Test error handling when final_post is empty."""
     input_obj = {"final_post": "   "}
-    context = {"run_id": "test-run-003", "run_path": temp_run_dir}
+    context = {
+        "run_id": "test-run-003",
+        "run_path": temp_run_dir,
+        "fallback_tracker": mock_fallback_tracker,
+    }
 
     response = run(input_obj, context)
 
@@ -144,6 +161,7 @@ def test_image_prompt_agent_validates_no_text_constraint(
     sample_final_post,
     sample_invalid_prompt,
     mock_cost_tracker,
+    mock_fallback_tracker,
 ):
     """Test that agent validates no-text constraint is present."""
     # Mock LLM to return invalid prompt (missing no-text constraint)
@@ -160,10 +178,10 @@ def test_image_prompt_agent_validates_no_text_constraint(
         "run_id": "test-run-004",
         "run_path": temp_run_dir,
         "cost_tracker": mock_cost_tracker,
+        "fallback_tracker": mock_fallback_tracker,
     }
 
-    with patch("builtins.input", return_value="yes"):  # Mock user approval
-        response = run(input_obj, context)
+    response = run(input_obj, context)
 
     # Should fall back to deterministic prompt with no-text clause
     assert response["status"] == "ok"
@@ -174,7 +192,11 @@ def test_image_prompt_agent_validates_no_text_constraint(
 
 @patch("agents.image_prompt_agent.get_text_client")
 def test_image_prompt_agent_llm_failure(
-    mock_get_client, temp_run_dir, sample_final_post, mock_cost_tracker
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    mock_cost_tracker,
+    mock_fallback_tracker,
 ):
     """Test error handling when LLM call fails."""
     # Mock LLM client to raise exception
@@ -187,10 +209,10 @@ def test_image_prompt_agent_llm_failure(
         "run_id": "test-run-005",
         "run_path": temp_run_dir,
         "cost_tracker": mock_cost_tracker,
+        "fallback_tracker": mock_fallback_tracker,
     }
 
-    with patch("builtins.input", return_value="yes"):  # Mock user approval
-        response = run(input_obj, context)
+    response = run(input_obj, context)
 
     # Should fall back to deterministic prompt
     assert response["status"] == "ok"

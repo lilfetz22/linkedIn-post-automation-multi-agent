@@ -12,6 +12,7 @@ from unittest.mock import patch, MagicMock
 
 from agents.writer_agent import run, count_chars
 from core.envelope import validate_envelope
+from core.fallback_tracker import FallbackTracker
 
 
 @pytest.fixture
@@ -67,6 +68,16 @@ def mock_cost_tracker():
     mock_tracker.check_budget = MagicMock()
     mock_tracker.record_call = MagicMock()
     return mock_tracker
+
+
+@pytest.fixture
+def mock_fallback_tracker():
+    """Mock fallback tracker."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mock_tracker = FallbackTracker(Path(tmpdir))
+        mock_tracker.record_warning = MagicMock()
+        mock_tracker.request_user_approval = MagicMock(return_value=True)
+        yield mock_tracker
 
 
 @patch("agents.writer_agent.load_system_prompt")
@@ -198,6 +209,7 @@ def test_writer_agent_max_shortening_attempts_exceeded(
     sample_structured_prompt,
     mock_long_draft,
     mock_cost_tracker,
+    mock_fallback_tracker,
 ):
     """Test failure after max shortening attempts."""
     # Mock system prompt loader
@@ -218,13 +230,18 @@ def test_writer_agent_max_shortening_attempts_exceeded(
         "run_id": "test-run-004",
         "run_path": temp_run_dir,
         "cost_tracker": mock_cost_tracker,
+        "fallback_tracker": mock_fallback_tracker,
     }
 
-    with patch("builtins.input", return_value="yes"):  # Mock user approval
-        response = run(input_obj, context)
+    # Simulate user rejecting the fallback
+    mock_fallback_tracker.request_user_approval.return_value = False
 
-    # Should succeed with fallback after exhausting shortening
-    assert response["status"] == "ok"
+    response = run(input_obj, context)
+
+    # Should fail after exhausting shortening attempts and user rejection
+    assert response["status"] == "error"
+    assert response["error"]["type"] == "ValidationError"
+    assert "still 3100 chars after 3 shortening attempts" in response["error"]["message"]
 
     # Verify LLM was called 4 times (1 initial + 3 shortening)
     assert mock_client.generate_text.call_count == 4
@@ -238,6 +255,7 @@ def test_writer_agent_llm_failure(
     temp_run_dir,
     sample_structured_prompt,
     mock_cost_tracker,
+    mock_fallback_tracker,
 ):
     """Test error handling when LLM call fails."""
     # Mock system prompt loader
@@ -255,10 +273,10 @@ def test_writer_agent_llm_failure(
         "run_id": "test-run-005",
         "run_path": temp_run_dir,
         "cost_tracker": mock_cost_tracker,
+        "fallback_tracker": mock_fallback_tracker,
     }
 
-    with patch("builtins.input", return_value="yes"):  # Mock user approval
-        response = run(input_obj, context)
+    response = run(input_obj, context)
 
     # Fallback should produce a deterministic post
     assert response["status"] == "ok"

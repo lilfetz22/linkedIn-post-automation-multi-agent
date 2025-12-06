@@ -182,8 +182,10 @@ Action: Try it today, share what broke, and keep the iteration tight.
 — Tech Audience Accelerator"""
 
     # Guardrail: ensure we stay under limit even with unexpected long fields
-    if count_chars(fallback_post) >= MAX_CHAR_COUNT:
-        trimmed = fallback_post[: MAX_CHAR_COUNT - 120].rstrip()
+    SIGNOFF_BUFFER = 50  # Buffer for sign-off text (~30 chars)
+
+    if count_chars(fallback_post) >= MAX_CHAR_COUNT - SIGNOFF_BUFFER:
+        trimmed = fallback_post[: MAX_CHAR_COUNT - SIGNOFF_BUFFER]
         fallback_post = f"{trimmed}\n\n— Tech Audience Accelerator"
 
     return fallback_post
