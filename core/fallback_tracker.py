@@ -129,7 +129,9 @@ class FallbackTracker:
             print("  • Using existing local content instead of web search")
         elif warning.reason == "model_error":
             print("  • Using deterministic template (not LLM-generated)")
-            print("  • Content will follow persona guidelines but without LLM creativity")
+            print(
+                "  • Content will follow persona guidelines but without LLM creativity"
+            )
         elif warning.reason == "character_limit":
             print("  • Content shortened to meet 3000 character limit")
             print("  • Core message preserved; elaboration trimmed")
@@ -140,15 +142,19 @@ class FallbackTracker:
         print("\n" + "-" * 70)
         print("CONSEQUENCES:")
         print("-" * 70)
-        print("  • If you approve: Pipeline proceeds with fallback (no additional LLM cost)")
+        print(
+            "  • If you approve: Pipeline proceeds with fallback (no additional LLM cost)"
+        )
         print("  • If you decline: Run aborts; no further LLM calls will be made")
         print("\n")
 
         while True:
             try:
-                response = input(
-                    "Continue with fallback? (yes/no/show_error): "
-                ).strip().lower()
+                response = (
+                    input("Continue with fallback? (yes/no/show_error): ")
+                    .strip()
+                    .lower()
+                )
 
                 if response in ["yes", "y"]:
                     warning.user_approved = True
@@ -167,7 +173,9 @@ class FallbackTracker:
                     print("-" * 70 + "\n")
 
                 else:
-                    print("Invalid input. Please answer 'yes', 'no', or 'show_error'.\n")
+                    print(
+                        "Invalid input. Please answer 'yes', 'no', or 'show_error'.\n"
+                    )
 
             except KeyboardInterrupt:
                 print("\n✗ Run cancelled by user (Ctrl+C).\n")

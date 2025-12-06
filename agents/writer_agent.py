@@ -292,7 +292,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             if not fallback_tracker.request_user_approval(warning):
                 response = err(type(e).__name__, str(e), retryable=e.retryable)
                 validate_envelope(response)
-                log_event(run_id, "writer", attempt, "error", error_type=type(e).__name__)
+                log_event(
+                    run_id, "writer", attempt, "error", error_type=type(e).__name__
+                )
                 return response
 
             fallback_post = _generate_fallback_post(structured)
@@ -304,7 +306,11 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 "writer",
                 attempt,
                 "ok",
-                token_usage={"fallback": True, "reason": "character_limit", "user_approved": True},
+                token_usage={
+                    "fallback": True,
+                    "reason": "character_limit",
+                    "user_approved": True,
+                },
             )
 
             response = ok(
@@ -346,7 +352,11 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             "writer",
             attempt,
             "ok",
-            token_usage={"fallback": True, "reason": "model_error", "user_approved": True},
+            token_usage={
+                "fallback": True,
+                "reason": "model_error",
+                "user_approved": True,
+            },
         )
 
         response = ok(

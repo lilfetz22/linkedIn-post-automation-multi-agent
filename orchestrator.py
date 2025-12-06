@@ -424,7 +424,11 @@ class Orchestrator:
         cost_summary = self.cost_tracker.get_summary()
 
         # Generate fallback report
-        fallback_report = self.fallback_tracker.create_fallback_report() if self.fallback_tracker else ""
+        fallback_report = (
+            self.fallback_tracker.create_fallback_report()
+            if self.fallback_tracker
+            else ""
+        )
 
         return {
             "status": "success",
@@ -433,11 +437,17 @@ class Orchestrator:
             "artifacts": {
                 "final_post": str(self.run_path / "60_final_post.txt"),
                 "image": str(self.run_path / "80_image.png"),
-                "fallback_warnings": str(self.fallback_tracker.warnings_file) if self.fallback_tracker else None,
+                "fallback_warnings": (
+                    str(self.fallback_tracker.warnings_file)
+                    if self.fallback_tracker
+                    else None
+                ),
             },
             "metrics": self.metrics,
             "cost": cost_summary,
-            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
+            "fallback_summary": (
+                self.fallback_tracker.get_summary() if self.fallback_tracker else None
+            ),
             "fallback_report": fallback_report,
         }
 
@@ -468,7 +478,9 @@ class Orchestrator:
             },
             "metrics": self.metrics,
             "cost": cost_summary,
-            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
+            "fallback_summary": (
+                self.fallback_tracker.get_summary() if self.fallback_tracker else None
+            ),
             "stack_trace": stack_trace,
         }
 
@@ -485,7 +497,9 @@ class Orchestrator:
             "error": {"type": error_type, "message": error_msg},
             "failure_artifact": str(failure_path) if self.run_path else None,
             "cost": cost_summary,
-            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
+            "fallback_summary": (
+                self.fallback_tracker.get_summary() if self.fallback_tracker else None
+            ),
         }
 
 

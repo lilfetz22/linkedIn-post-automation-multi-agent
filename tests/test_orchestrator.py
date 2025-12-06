@@ -304,12 +304,24 @@ def test_orchestrator_runs_with_fallback_artifacts(valid_config, tmp_path):
 
     with (
         patch.object(orch, "_initialize_run", side_effect=fake_initialize),
-        patch.object(orch, "_execute_topic_selection", side_effect=fake_topic_selection),
+        patch.object(
+            orch, "_execute_topic_selection", side_effect=fake_topic_selection
+        ),
         patch.object(orch, "_execute_research_with_pivot", side_effect=fake_research),
-        patch.object(orch, "_execute_prompt_generation", side_effect=fake_prompt_generation),
-        patch.object(orch, "_execute_writing_and_review_loop", side_effect=fake_writing_and_review),
-        patch.object(orch, "_execute_image_prompt_generation", side_effect=fake_image_prompt),
-        patch.object(orch, "_execute_image_generation", side_effect=fake_image_generation),
+        patch.object(
+            orch, "_execute_prompt_generation", side_effect=fake_prompt_generation
+        ),
+        patch.object(
+            orch,
+            "_execute_writing_and_review_loop",
+            side_effect=fake_writing_and_review,
+        ),
+        patch.object(
+            orch, "_execute_image_prompt_generation", side_effect=fake_image_prompt
+        ),
+        patch.object(
+            orch, "_execute_image_generation", side_effect=fake_image_generation
+        ),
     ):
         result = orch.run()
 

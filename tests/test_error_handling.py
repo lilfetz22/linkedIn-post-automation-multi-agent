@@ -542,8 +542,10 @@ class TestAgentSpecificErrorScenarios:
 
             assert result["status"] == "error"
             assert result["error"]["type"] == "DataNotFoundError"
-            assert ("No sources found" in result["error"]["message"] or 
-                    "User declined fallback" in result["error"]["message"])
+            assert (
+                "No sources found" in result["error"]["message"]
+                or "User declined fallback" in result["error"]["message"]
+            )
             assert result["error"]["retryable"] is False
 
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):

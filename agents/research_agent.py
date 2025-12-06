@@ -215,7 +215,11 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 )
 
             research_result = fallback
-            fallback_metadata = {"fallback_used": True, "fallback_reason": "memory_bank", "user_approved": True}
+            fallback_metadata = {
+                "fallback_used": True,
+                "fallback_reason": "memory_bank",
+                "user_approved": True,
+            }
 
         # Track cost if tracker provided and LLM was used
         if cost_tracker and "token_usage" in research_result:
@@ -253,9 +257,15 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             "research",
             attempt,
             "ok",
-            token_usage=metrics_dict.get("token_usage")
-            if not fallback_metadata
-            else {"fallback": True, "reason": fallback_metadata.get("fallback_reason"), "user_approved": fallback_metadata.get("user_approved")},
+            token_usage=(
+                metrics_dict.get("token_usage")
+                if not fallback_metadata
+                else {
+                    "fallback": True,
+                    "reason": fallback_metadata.get("fallback_reason"),
+                    "user_approved": fallback_metadata.get("user_approved"),
+                }
+            ),
         )
         return response
 
