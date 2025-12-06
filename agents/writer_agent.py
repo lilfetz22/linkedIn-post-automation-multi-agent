@@ -210,7 +210,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     cost_tracker = context.get("cost_tracker")  # Optional from orchestrator
     structured = input_obj.get("structured_prompt")
     # external_shortening retained for future orchestrator-driven shortening; currently unused
-    fallback_tracker = FallbackTracker(run_path)
+    fallback_tracker = context.get("fallback_tracker")
 
     attempt = 1
     shortening_attempts = 0
