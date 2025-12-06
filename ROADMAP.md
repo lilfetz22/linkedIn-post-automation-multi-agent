@@ -729,7 +729,6 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 ## Phase 12: Fallback & Resilience Edge Cases
 - [ ] Research Agent pivot logic (no sources scenario)
 - [ ] Writer simplified prompt fallback
-- [ ] Reviewer grammar local pass
 - [ ] Image prompt minimal fallback
 - [ ] Demonstrate each in tests with forced failure injection
 
