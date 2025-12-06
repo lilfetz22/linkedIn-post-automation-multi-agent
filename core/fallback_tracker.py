@@ -6,7 +6,6 @@ Persists warnings to run directory for auditability and final reporting.
 """
 
 from pathlib import Path
-from typing import Optional
 from datetime import datetime
 import json
 
