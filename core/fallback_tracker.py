@@ -157,7 +157,7 @@ class FallbackTracker:
 
                 if response in ["yes", "y"]:
                     warning.user_approved = True
-                    self._persist_warning(warning)
+                    # Persistence is now handled after user approval; do not persist here.
                     print("✓ Continuing with fallback...\n")
                     return True
 
