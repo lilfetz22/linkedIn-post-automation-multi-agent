@@ -227,7 +227,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             return response
 
         # Fallback: deterministic prompt with explicit no-text rule
-        fallback_prompt = _build_minimal_fallback_prompt(final_post or "")
+        fallback_prompt = _build_minimal_fallback_prompt(final_post)
         artifact_path = get_artifact_path(run_path, STEP_CODE, extension="txt")
         atomic_write_text(artifact_path, fallback_prompt)
 
