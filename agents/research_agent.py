@@ -16,7 +16,6 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.cost_tracking import CostMetrics
-from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "20_research"
 
