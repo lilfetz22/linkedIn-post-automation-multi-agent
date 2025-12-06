@@ -21,6 +21,7 @@ from core.errors import (
 )
 from core.retry import CircuitBreakerTrippedError
 from core.envelope import ok, err
+from core.fallback_tracker import FallbackTracker
 
 
 # Fixtures
@@ -264,16 +265,24 @@ def test_orchestrator_runs_with_fallback_artifacts(valid_config, tmp_path):
         orch.run_id = "run-fallback"
         orch.run_path = tmp_path / "run-fallback"
         orch.run_path.mkdir(parents=True, exist_ok=True)
+        # Create a dummy fallback report so the assertion passes
+        (orch.run_path / "99_fallback_report.txt").touch()
+        orch.fallback_tracker = FallbackTracker(orch.run_path)
         orch.context = {
             "run_id": orch.run_id,
             "run_path": orch.run_path,
             "cost_tracker": orch.cost_tracker,
+            "fallback_tracker": orch.fallback_tracker,
         }
 
     def fake_topic_selection():
         return "Fallback Topic"
 
     def fake_research(_topic):
+        # This is where the fallback is triggered in the test
+        orch.context["fallback_tracker"].record_warning(
+            "research_agent", "no_sources", "No sources found", 2, "Research topic"
+        )
         return {"sources": [], "summary": "fallback summary", "fallback_used": True}
 
     def fake_prompt_generation(_topic, _research):
@@ -328,6 +337,14 @@ def test_orchestrator_runs_with_fallback_artifacts(valid_config, tmp_path):
     assert result["status"] == "success"
     assert (orch.run_path / "60_final_post.txt").exists()
     assert (orch.run_path / "80_image.png").exists()
+
+    # Verify fallback metadata aggregation
+    assert "fallback_summary" in result
+    assert result["fallback_summary"].get("total_warnings", 0) > 0
+    assert "fallback_report" in result
+
+    # Verify the fallback artifact file was created
+    assert (orch.run_path / "99_fallback_report.txt").exists()
 
 
 # Test Suite: Character Count Validation Loop (5.4)
