@@ -11,7 +11,6 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.system_prompts import load_visual_strategist_persona
-from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "70_image_prompt"
 PROMPT_TEMPERATURE = 0.6  # Moderate creativity for visual descriptions
