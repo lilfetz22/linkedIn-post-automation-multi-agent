@@ -255,6 +255,69 @@ def test_execute_research_max_pivots_exceeded(
     assert orchestrator_with_config.metrics["topic_pivots"] == 3
 
 
+def test_orchestrator_runs_with_fallback_artifacts(valid_config, tmp_path):
+    """Ensure orchestrator completes when agents return fallback artifacts."""
+
+    orch = Orchestrator(valid_config)
+
+    def fake_initialize():
+        orch.run_id = "run-fallback"
+        orch.run_path = tmp_path / "run-fallback"
+        orch.run_path.mkdir(parents=True, exist_ok=True)
+        orch.context = {
+            "run_id": orch.run_id,
+            "run_path": orch.run_path,
+            "cost_tracker": orch.cost_tracker,
+        }
+
+    def fake_topic_selection():
+        return "Fallback Topic"
+
+    def fake_research(_topic):
+        return {"sources": [], "summary": "fallback summary", "fallback_used": True}
+
+    def fake_prompt_generation(_topic, _research):
+        return {
+            "topic_title": "Fallback Topic",
+            "target_audience": "Engineers",
+            "pain_point": "LLM unavailable",
+            "key_metrics": ["Reduced retries"],
+            "analogy": "Seatbelt for the pipeline",
+            "solution_outline": "Deterministic fallback path",
+            "code_snippet": "print('fallback')",
+        }
+
+    def fake_writing_and_review(_structured):
+        final_text = "Stable fallback post"
+        final_path = orch.run_path / "60_final_post.txt"
+        final_path.write_text(final_text, encoding="utf-8")
+        return final_text
+
+    def fake_image_prompt(_final_post):
+        prompt_path = orch.run_path / "70_image_prompt.txt"
+        prompt_path.write_text("zero text image", encoding="utf-8")
+        return str(prompt_path)
+
+    def fake_image_generation(_prompt_path):
+        image_path = orch.run_path / "80_image.png"
+        image_path.write_bytes(b"png")
+
+    with (
+        patch.object(orch, "_initialize_run", side_effect=fake_initialize),
+        patch.object(orch, "_execute_topic_selection", side_effect=fake_topic_selection),
+        patch.object(orch, "_execute_research_with_pivot", side_effect=fake_research),
+        patch.object(orch, "_execute_prompt_generation", side_effect=fake_prompt_generation),
+        patch.object(orch, "_execute_writing_and_review_loop", side_effect=fake_writing_and_review),
+        patch.object(orch, "_execute_image_prompt_generation", side_effect=fake_image_prompt),
+        patch.object(orch, "_execute_image_generation", side_effect=fake_image_generation),
+    ):
+        result = orch.run()
+
+    assert result["status"] == "success"
+    assert (orch.run_path / "60_final_post.txt").exists()
+    assert (orch.run_path / "80_image.png").exists()
+
+
 # Test Suite: Character Count Validation Loop (5.4)
 
 

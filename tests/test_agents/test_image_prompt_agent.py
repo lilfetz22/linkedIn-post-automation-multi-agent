@@ -162,12 +162,14 @@ def test_image_prompt_agent_validates_no_text_constraint(
         "cost_tracker": mock_cost_tracker,
     }
 
-    response = run(input_obj, context)
+    with patch("builtins.input", return_value="yes"):  # Mock user approval
+        response = run(input_obj, context)
 
-    # Should fail validation
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "ValidationError"
-    assert "no text" in response["error"]["message"].lower()
+    # Should fall back to deterministic prompt with no-text clause
+    assert response["status"] == "ok"
+    assert response["data"].get("fallback_used") is True
+    prompt_text = Path(response["data"]["image_prompt_path"]).read_text()
+    assert "no text" in prompt_text.lower() or "zero text" in prompt_text.lower()
 
 
 @patch("agents.image_prompt_agent.get_text_client")
@@ -187,12 +189,12 @@ def test_image_prompt_agent_llm_failure(
         "cost_tracker": mock_cost_tracker,
     }
 
-    response = run(input_obj, context)
+    with patch("builtins.input", return_value="yes"):  # Mock user approval
+        response = run(input_obj, context)
 
-    # Should fail with ModelError
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "ModelError"
-    assert "LLM image prompt generation failed" in response["error"]["message"]
+    # Should fall back to deterministic prompt
+    assert response["status"] == "ok"
+    assert response["data"].get("fallback_used") is True
 
 
 def test_validate_no_text_constraint_accepts_valid():

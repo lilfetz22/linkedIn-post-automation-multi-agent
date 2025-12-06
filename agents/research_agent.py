@@ -16,8 +16,60 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.cost_tracking import CostMetrics
+from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "20_research"
+
+
+def _memory_bank_fallback(topic: str) -> Dict[str, Any] | None:
+    """Build a lightweight research summary from local memory bank files.
+
+    This is a deterministic, offline fallback used when the LLM returns
+    zero sources so the orchestrator can continue without immediate topic
+    pivots. Returns None if no usable memory bank content exists.
+    """
+
+    memory_bank = Path("memory_bank")
+    if not memory_bank.exists():
+        return None
+
+    sources: list[dict[str, str]] = []
+    for txt_file in sorted(memory_bank.glob("*.txt")):
+        try:
+            content = txt_file.read_text(encoding="utf-8")
+        except OSError:
+            continue
+
+        snippet = " ".join(content.split())[:240]
+        if not snippet:
+            continue
+
+        sources.append(
+            {
+                "title": f"Memory Bank — {txt_file.stem}",
+                "url": f"file://{txt_file}",
+                "key_point": snippet,
+            }
+        )
+
+        if len(sources) >= 3:
+            break
+
+    if not sources:
+        return None
+
+    summary = (
+        f"Fallback research summary for '{topic}' derived from internal memory bank "
+        "excerpts. Includes distilled takeaways to keep the pipeline moving."
+    )
+
+    return {
+        "topic": topic,
+        "sources": sources,
+        "summary": summary,
+        "fallback_used": True,
+        "fallback_reason": "memory_bank",
+    }
 
 
 def _conduct_llm_research(topic: str, cost_tracker=None) -> Dict[str, Any]:
@@ -129,18 +181,43 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     run_path: Path = context["run_path"]
     topic = input_obj.get("topic")
     cost_tracker = context.get("cost_tracker")
+    fallback_tracker = FallbackTracker(run_path)
 
     attempt = 1
     metrics_dict = {}
+    fallback_metadata: Dict[str, Any] | None = None
 
     try:
         if not topic:
             raise ValidationError("Missing 'topic' in research agent input")
 
         # Conduct LLM-powered research
-        research_result = _conduct_llm_research(topic, cost_tracker)
+        try:
+            research_result = _conduct_llm_research(topic, cost_tracker)
+        except DataNotFoundError as e:
+            # No sources returned; attempt offline memory bank fallback
+            fallback = _memory_bank_fallback(topic)
+            if not fallback:
+                raise
 
-        # Track cost if tracker provided
+            # Request user approval before proceeding with fallback
+            warning = fallback_tracker.record_warning(
+                agent_name="research_agent",
+                reason="no_sources",
+                error_message=f"Web search returned zero sources for topic '{topic}': {str(e)}",
+                step_number=2,
+                original_objective=f"Research topic: {topic}",
+            )
+
+            if not fallback_tracker.request_user_approval(warning):
+                raise DataNotFoundError(
+                    f"User declined fallback for research on '{topic}'. Run aborted."
+                )
+
+            research_result = fallback
+            fallback_metadata = {"fallback_used": True, "fallback_reason": "memory_bank", "user_approved": True}
+
+        # Track cost if tracker provided and LLM was used
         if cost_tracker and "token_usage" in research_result:
             token_usage = research_result["token_usage"]
             cost_metrics = CostMetrics(
@@ -152,12 +229,18 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             metrics_dict["cost_usd"] = cost_metrics.cost_usd
             metrics_dict["token_usage"] = token_usage
 
+        if fallback_metadata:
+            metrics_dict.update(fallback_metadata)
+
         # Build response data
         data = {
             "topic": topic,
             "sources": research_result["sources"],
             "summary": research_result["summary"],
         }
+
+        if fallback_metadata:
+            data.update(fallback_metadata)
 
         # Persist artifact
         artifact_path = get_artifact_path(run_path, STEP_CODE)
@@ -170,7 +253,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             "research",
             attempt,
             "ok",
-            token_usage=metrics_dict.get("token_usage"),
+            token_usage=metrics_dict.get("token_usage")
+            if not fallback_metadata
+            else {"fallback": True, "reason": fallback_metadata.get("fallback_reason"), "user_approved": fallback_metadata.get("user_approved")},
         )
         return response
 

@@ -524,6 +524,7 @@ class TestAgentSpecificErrorScenarios:
         with (
             patch("agents.research_agent.get_text_client") as mock_client,
             patch("agents.research_agent.log_event"),
+            patch("builtins.input", return_value="no"),  # User declines fallback
         ):
             mock_text = MagicMock()
             # Simulate response with empty sources array (triggers DataNotFoundError)
@@ -541,7 +542,8 @@ class TestAgentSpecificErrorScenarios:
 
             assert result["status"] == "error"
             assert result["error"]["type"] == "DataNotFoundError"
-            assert "No sources found" in result["error"]["message"]
+            assert ("No sources found" in result["error"]["message"] or 
+                    "User declined fallback" in result["error"]["message"])
             assert result["error"]["retryable"] is False
 
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):
@@ -555,6 +557,7 @@ class TestAgentSpecificErrorScenarios:
                 "agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"
             ),
             patch("agents.writer_agent.log_event"),
+            patch("builtins.input", return_value="no"),  # User declines fallback
         ):
 
             # Always return text that's too long

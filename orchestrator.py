@@ -32,6 +32,7 @@ from core.errors import (
 )
 from core.logging import log_event
 from core.cost_tracking import CostTracker
+from core.fallback_tracker import FallbackTracker
 
 # Import all agents
 from agents import (
@@ -81,6 +82,7 @@ class Orchestrator:
         self.run_path = None
         self.circuit_breaker = CircuitBreaker()
         self.cost_tracker = CostTracker()  # Initialize cost tracking
+        self.fallback_tracker = None  # Will be initialized in _initialize_run
         self.context = {}
         self.metrics = {
             "start_time": None,
@@ -145,6 +147,9 @@ class Orchestrator:
         """Initialize run directory, context, and save config (Phase 5.1)."""
         # Create unique run directory
         self.run_id, self.run_path = create_run_dir()
+
+        # Initialize fallback tracker
+        self.fallback_tracker = FallbackTracker(self.run_path)
 
         # Set up shared context for all agents
         self.context = {
@@ -418,6 +423,9 @@ class Orchestrator:
         # Add cost summary to metrics
         cost_summary = self.cost_tracker.get_summary()
 
+        # Generate fallback report
+        fallback_report = self.fallback_tracker.create_fallback_report() if self.fallback_tracker else ""
+
         return {
             "status": "success",
             "run_id": self.run_id,
@@ -425,9 +433,12 @@ class Orchestrator:
             "artifacts": {
                 "final_post": str(self.run_path / "60_final_post.txt"),
                 "image": str(self.run_path / "80_image.png"),
+                "fallback_warnings": str(self.fallback_tracker.warnings_file) if self.fallback_tracker else None,
             },
             "metrics": self.metrics,
             "cost": cost_summary,
+            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
+            "fallback_report": fallback_report,
         }
 
     def _handle_run_failure(self, error: Exception, stack_trace: str) -> Dict[str, Any]:
@@ -457,6 +468,7 @@ class Orchestrator:
             },
             "metrics": self.metrics,
             "cost": cost_summary,
+            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
             "stack_trace": stack_trace,
         }
 
@@ -473,6 +485,7 @@ class Orchestrator:
             "error": {"type": error_type, "message": error_msg},
             "failure_artifact": str(failure_path) if self.run_path else None,
             "cost": cost_summary,
+            "fallback_summary": self.fallback_tracker.get_summary() if self.fallback_tracker else None,
         }
 
 

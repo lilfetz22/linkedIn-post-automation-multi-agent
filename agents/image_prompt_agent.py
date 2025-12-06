@@ -11,6 +11,7 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.system_prompts import load_visual_strategist_persona
+from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "70_image_prompt"
 PROMPT_TEMPERATURE = 0.6  # Moderate creativity for visual descriptions
@@ -34,6 +35,20 @@ def _validate_no_text_constraint(prompt: str) -> bool:
     ]
     prompt_lower = prompt.lower()
     return any(keyword in prompt_lower for keyword in no_text_keywords)
+
+
+def _build_minimal_fallback_prompt(final_post: str) -> str:
+    """Construct a deterministic, no-text prompt when LLM generation fails."""
+
+    first_line = next((line.strip("* ") for line in final_post.splitlines() if line.strip()), "Concept visual")
+    mood = "energetic" if "!" in final_post else "thoughtful"
+
+    return (
+        f"Subject: metaphorical visualization of '{first_line}'. "
+        "Environment: abstract geometric backdrop with clean gradients. "
+        f"Mood: {mood}. Lighting: soft studio lighting with clear contrast. "
+        "ABSOLUTE RULE: zero text, no words, no letters anywhere in the image."
+    )
 
 
 def _generate_image_prompt_with_llm(
@@ -126,6 +141,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     cost_tracker = context.get("cost_tracker")
     final_post = input_obj.get("final_post")
     attempt = 1
+    fallback_tracker = FallbackTracker(run_path)
 
     try:
         if not final_post:
@@ -172,15 +188,65 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         validate_envelope(response)
         return response
 
-    except ValidationError as e:
-        response = err(type(e).__name__, str(e), retryable=e.retryable)
+    except (ValidationError, ModelError) as e:
+        error_msg = str(e).lower()
+        if "final_post" in error_msg:
+            # Input validation error should still bubble up
+            response = err(type(e).__name__, str(e), retryable=e.retryable)
+            validate_envelope(response)
+            log_event(
+                run_id, "image_prompt", attempt, "error", error_type=type(e).__name__
+            )
+            return response
+
+        # Request user approval before proceeding with deterministic fallback
+        reason = "validation_error" if isinstance(e, ValidationError) else "model_error"
+        error_detail = (
+            "Image prompt missing 'no text' constraint. Cannot proceed with LLM output."
+            if reason == "validation_error"
+            else f"LLM image prompt generation failed: {str(e)}"
+        )
+
+        warning = fallback_tracker.record_warning(
+            agent_name="image_prompt_agent",
+            reason=reason,
+            error_message=error_detail,
+            step_number=8,
+            original_objective="Generate image prompt for LinkedIn post visual",
+        )
+
+        if not fallback_tracker.request_user_approval(warning):
+            response = err(type(e).__name__, str(e), retryable=e.retryable)
+            validate_envelope(response)
+            log_event(
+                run_id, "image_prompt", attempt, "error", error_type=type(e).__name__
+            )
+            return response
+
+        # Fallback: deterministic prompt with explicit no-text rule
+        fallback_prompt = _build_minimal_fallback_prompt(final_post or "")
+        artifact_path = get_artifact_path(run_path, STEP_CODE, extension="txt")
+        atomic_write_text(artifact_path, fallback_prompt)
+
+        log_event(
+            run_id,
+            "image_prompt",
+            attempt,
+            "ok",
+            model="fallback",
+            token_usage={"fallback": True, "reason": reason, "user_approved": True},
+        )
+
+        response = ok(
+            {
+                "image_prompt_path": str(artifact_path),
+                "prompt_preview": fallback_prompt[:100]
+                + ("..." if len(fallback_prompt) > 100 else ""),
+                "fallback_used": True,
+                "fallback_reason": reason,
+            }
+        )
         validate_envelope(response)
-        log_event(run_id, "image_prompt", attempt, "error", error_type=type(e).__name__)
-        return response
-    except ModelError as e:
-        response = err(type(e).__name__, str(e), retryable=e.retryable)
-        validate_envelope(response)
-        log_event(run_id, "image_prompt", attempt, "error", error_type=type(e).__name__)
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)

@@ -220,13 +220,11 @@ def test_writer_agent_max_shortening_attempts_exceeded(
         "cost_tracker": mock_cost_tracker,
     }
 
-    response = run(input_obj, context)
+    with patch("builtins.input", return_value="yes"):  # Mock user approval
+        response = run(input_obj, context)
 
-    # Should fail with ValidationError
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "ValidationError"
-    assert "shortening attempts" in response["error"]["message"].lower()
-    assert response["error"]["retryable"] is False
+    # Should succeed with fallback after exhausting shortening
+    assert response["status"] == "ok"
 
     # Verify LLM was called 4 times (1 initial + 3 shortening)
     assert mock_client.generate_text.call_count == 4
@@ -259,12 +257,14 @@ def test_writer_agent_llm_failure(
         "cost_tracker": mock_cost_tracker,
     }
 
-    response = run(input_obj, context)
+    with patch("builtins.input", return_value="yes"):  # Mock user approval
+        response = run(input_obj, context)
 
-    # Should fail with ModelError
-    assert response["status"] == "error"
-    assert response["error"]["type"] == "ModelError"
-    assert "LLM generation failed" in response["error"]["message"]
+    # Fallback should produce a deterministic post
+    assert response["status"] == "ok"
+    assert response["data"].get("fallback_used") is True
+    draft_path = Path(response["data"]["draft_path"])
+    assert draft_path.exists()
 
 
 def test_count_chars_excludes_newlines():
@@ -287,7 +287,6 @@ def test_writer_agent_formats_prompt_correctly(
     # Mock system prompt loader
     mock_load_prompt.return_value = "You are the Witty Expert persona."
 
-    # Mock LLM client
     mock_client = MagicMock()
     mock_client.generate_text.return_value = {
         "text": mock_short_draft,

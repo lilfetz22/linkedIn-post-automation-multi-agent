@@ -17,6 +17,7 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.system_prompts import load_system_prompt
+from core.fallback_tracker import FallbackTracker
 
 STEP_CODE = "40_draft"
 MAX_CHAR_COUNT = 3000
@@ -148,6 +149,46 @@ analogy, metrics, and sign-off."""
         raise ModelError(f"LLM generation failed: {str(e)}")
 
 
+def _generate_fallback_post(structured: Dict[str, Any]) -> str:
+    """Generate a deterministic short post when LLM is unavailable.
+
+    Keeps persona essentials while guaranteeing we stay below the
+    character limit to unblock the pipeline.
+    """
+
+    topic = structured.get("topic_title", "Practical Engineering Insight")
+    pain_point = structured.get(
+        "pain_point", "Teams struggle to balance speed, quality, and cost."
+    )
+    solution = structured.get(
+        "solution_outline",
+        "Share a three-step approach with a small code/config example.",
+    )
+    metrics = structured.get("key_metrics", [])
+    metrics_str = ", ".join(metrics) if metrics else "measurable gains"
+
+    fallback_post = f"""**{topic}: A fast, clear take**
+
+Hook: A quick gut-check on something we keep over-complicating.
+
+Problem: {pain_point} It slows momentum and frustrates teams.
+
+Solution: {solution}
+
+Impact: Expect {metrics_str} when you implement this calmly and consistently.
+
+Action: Try it today, share what broke, and keep the iteration tight.
+
+— Tech Audience Accelerator"""
+
+    # Guardrail: ensure we stay under limit even with unexpected long fields
+    if count_chars(fallback_post) >= MAX_CHAR_COUNT:
+        trimmed = fallback_post[: MAX_CHAR_COUNT - 120].rstrip()
+        fallback_post = f"{trimmed}\n\n— Tech Audience Accelerator"
+
+    return fallback_post
+
+
 def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     """Generate LinkedIn post draft with internal character count validation loop.
 
@@ -169,6 +210,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     cost_tracker = context.get("cost_tracker")  # Optional from orchestrator
     structured = input_obj.get("structured_prompt")
     # external_shortening retained for future orchestrator-driven shortening; currently unused
+    fallback_tracker = FallbackTracker(run_path)
 
     attempt = 1
     shortening_attempts = 0
@@ -236,14 +278,85 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             "Internal error: exceeded shortening loop without proper exit"
         )
     except ValidationError as e:
+        # If we exhausted shortening attempts, fall back to deterministic template
+        if "shortening attempts" in str(e).lower():
+            # Request user approval before proceeding with fallback
+            warning = fallback_tracker.record_warning(
+                agent_name="writer_agent",
+                reason="character_limit",
+                error_message=f"Could not shorten post below 3000 chars after 3 attempts. Last attempt: {str(e)}",
+                step_number=5,
+                original_objective="Generate LinkedIn post under 3000 characters",
+            )
+
+            if not fallback_tracker.request_user_approval(warning):
+                response = err(type(e).__name__, str(e), retryable=e.retryable)
+                validate_envelope(response)
+                log_event(run_id, "writer", attempt, "error", error_type=type(e).__name__)
+                return response
+
+            fallback_post = _generate_fallback_post(structured)
+            artifact_path = get_artifact_path(run_path, STEP_CODE, extension="md")
+            atomic_write_text(artifact_path, fallback_post)
+
+            log_event(
+                run_id,
+                "writer",
+                attempt,
+                "ok",
+                token_usage={"fallback": True, "reason": "character_limit", "user_approved": True},
+            )
+
+            response = ok(
+                {
+                    "draft_path": str(artifact_path),
+                    "fallback_used": True,
+                    "fallback_reason": "character_limit",
+                }
+            )
+            validate_envelope(response)
+            return response
+
         response = err(type(e).__name__, str(e), retryable=e.retryable)
         validate_envelope(response)
         log_event(run_id, "writer", attempt, "error", error_type=type(e).__name__)
         return response
     except ModelError as e:
-        response = err(type(e).__name__, str(e), retryable=e.retryable)
+        # LLM unavailable: generate deterministic fallback draft
+        warning = fallback_tracker.record_warning(
+            agent_name="writer_agent",
+            reason="model_error",
+            error_message=f"LLM generation failed: {str(e)}",
+            step_number=5,
+            original_objective="Generate LinkedIn post using LLM (Witty Expert persona)",
+        )
+
+        if not fallback_tracker.request_user_approval(warning):
+            response = err(type(e).__name__, str(e), retryable=e.retryable)
+            validate_envelope(response)
+            log_event(run_id, "writer", attempt, "error", error_type=type(e).__name__)
+            return response
+
+        fallback_post = _generate_fallback_post(structured)
+        artifact_path = get_artifact_path(run_path, STEP_CODE, extension="md")
+        atomic_write_text(artifact_path, fallback_post)
+
+        log_event(
+            run_id,
+            "writer",
+            attempt,
+            "ok",
+            token_usage={"fallback": True, "reason": "model_error", "user_approved": True},
+        )
+
+        response = ok(
+            {
+                "draft_path": str(artifact_path),
+                "fallback_used": True,
+                "fallback_reason": "model_error",
+            }
+        )
         validate_envelope(response)
-        log_event(run_id, "writer", attempt, "error", error_type=type(e).__name__)
         return response
     except Exception as e:
         response = err(type(e).__name__, str(e), retryable=True)
