@@ -97,9 +97,11 @@ class GeminiTextClient:
         # Check if dry-run mode is enabled
         if is_dry_run():
             # Return mock response with estimated token counts
-            estimated_prompt_tokens = len(prompt) // 4  # Rough estimate: 4 chars per token
+            estimated_prompt_tokens = (
+                len(prompt) // 4
+            )  # Rough estimate: 4 chars per token
             estimated_completion_tokens = max_output_tokens or 1000
-            
+
             return {
                 "text": "[DRY RUN] Mock response - no actual API call made",
                 "token_usage": {
@@ -257,7 +259,7 @@ class GeminiImageClient:
             # Create placeholder file
             with open(output_path, "w") as f:
                 f.write("[DRY RUN] Placeholder image file - no actual generation")
-            
+
             return {
                 "image_path": str(output_path),
                 "model": self.model_name,
