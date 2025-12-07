@@ -347,9 +347,9 @@ def print_summary(result: dict) -> None:
         if next_steps:
             print()
             print(f"Next LLM Call: {next_steps.get('first_llm_call', 'N/A')}")
-            print(
-                f"Model: {next_steps.get('model', 'N/A')} (temperature: {next_steps.get('temperature', 'N/A')})"
-            )
+            model = next_steps.get('model', 'N/A')
+            temp = next_steps.get('temperature', 'N/A')
+            print(f"Model: {model} (temperature: {temp})")
 
         print()
         print(
