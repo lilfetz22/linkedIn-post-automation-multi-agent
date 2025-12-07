@@ -286,6 +286,28 @@ python main.py --dry-run
 - ❌ Does NOT make any API calls to Gemini
 - ❌ Does NOT incur any costs
 
+### Cost Optimization: Skip Image Generation
+
+Reduce costs by ~85% by skipping image generation (text-only posts):
+
+```bash
+# Skip image generation during actual run
+python main.py --no-image
+
+# Test text-only cost estimate
+python main.py --dry-run --no-image
+```
+
+**Cost comparison:**
+- **With image**: $0.35 - $0.45 (includes fixed $0.30 image generation cost)
+- **Without image**: $0.04 - $0.10 (text-only, varies by token usage)
+
+Image generation costs a fixed $0.30 per image, making up the majority of the total cost. The range accounts for variations in token usage across different topics and iterations. Use `--no-image` when:
+- Budget is limited
+- Running multiple iterations for testing
+- Post topic works better without visuals
+- You plan to add images manually later
+
 **Example dry-run output:**
 ```
 LinkedIn Post Automation Multi-Agent System
@@ -301,8 +323,9 @@ Artifacts  :
   - runs/2025-12-07-a1b2c3/00_config.json
   - runs/2025-12-07-a1b2c3/dry_run_summary.json
 
-Estimated Cost: $0.12 USD
-Cost Range: $0.08 - $0.15 (varies by content complexity)
+Estimated Cost: $0.36 USD
+Cost Range: $0.35 - 0.45 (includes $0.30 image generation)
+💡 Tip: Use --no-image flag to save $0.30 and skip image generation
 
 Next LLM Call: topic_agent.select_topic()
 Model: gemini-2.5-pro (temperature: 0.7)
@@ -343,7 +366,7 @@ The dry-run creates a `dry_run_summary.json` file with detailed cost estimates:
 
 Each run generates:
 - **Text file**: `60_final_post.txt` - The completed LinkedIn post
-- **Image file**: `80_image.png` - AI-generated accompanying image
+- **Image file**: `80_image.png` - AI-generated accompanying image (unless `--no-image` flag is used)
 - **Artifacts**: Complete audit trail in the run directory
 
 ### Viewing Run Artifacts
