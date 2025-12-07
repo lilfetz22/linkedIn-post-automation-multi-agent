@@ -727,10 +727,39 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [x] Verify Conventional Commits enforcement (optional hook)
 
 ## Phase 12: Fallback & Resilience Edge Cases
-- [ ] Research Agent pivot logic (no sources scenario)
-- [ ] Writer simplified prompt fallback
-- [ ] Image prompt minimal fallback
-- [ ] Demonstrate each in tests with forced failure injection
+- [x] Research Agent pivot logic (no sources scenario)
+  - [x] Broaden search fallback before pivot (looser constraints, zero-source detection)
+  - [x] Memory bank/offline summary fallback before abort; mark artifacts with `fallback_used`
+  - [x] Log pivot reasons + final pivot count; tests cover forced no-source + fallback path
+- [x] Writer simplified prompt fallback
+  - [x] Deterministic short-post template when LLM fails or max shortening exceeded; flag `fallback_used`
+  - [x] Preserve persona essentials (hook → problem → solution → impact → action → sign-off) even in fallback
+  - [x] Tests inject LLM failures and oversize drafts to assert fallback artifact creation under 3000 chars
+- [x] Image prompt minimal fallback
+  - [x] Deterministic prompt builder with subject/mood extraction and explicit no-text clause
+  - [x] Auto-fallback when LLM fails or no-text validation fails; mark `fallback_used`
+  - [x] Tests force LLM failure and missing constraint to verify persisted fallback prompt
+- [x] Demonstrate each in tests with forced failure injection
+  - [x] Add orchestrator-level integration check that fallbacks still allow run completion
+- [x] **User Approval System for Fallbacks** (Enhancement)
+  - [x] Create `core/fallback_tracker.py` with `FallbackTracker` class
+    - [x] Interactive user approval prompts (yes/no/show_error options)
+    - [x] Persistent JSONL warning file (`fallback_warnings.jsonl`)
+    - [x] Fallback report generation for final output
+  - [x] Integrate FallbackTracker into all fallback agents (research, writer, image_prompt)
+    - [x] Record warning before initiating fallback
+    - [x] Request user approval before proceeding with fallback
+    - [x] Abort run if user declines (raise appropriate error)
+    - [x] Include `user_approved` flag in fallback metadata
+  - [x] Orchestrator integration
+    - [x] Initialize FallbackTracker at run start
+    - [x] Aggregate all fallback warnings into final output
+    - [x] Include fallback summary and report in run artifacts
+  - [x] Comprehensive test coverage
+    - [x] Mock user approval prompts in all agent tests
+    - [x] Test acceptance path (user approves fallback)
+    - [x] Test rejection path (user declines, run aborts)
+    - [x] Verify error handling tests work with fallback approval gating
 
 ## Phase 13: Performance & Scalability (Optional Future)
 - [ ] Batch memory bank ingestion if large corpus

@@ -32,6 +32,7 @@ from core.retry import (
 )
 from core.envelope import err
 from orchestrator import Orchestrator
+from core.fallback_tracker import FallbackTracker
 
 
 # =============================================================================
@@ -479,6 +480,15 @@ class TestAgentSpecificErrorScenarios:
         run_dir.mkdir(parents=True, exist_ok=True)
         return run_dir
 
+    @pytest.fixture
+    def mock_fallback_tracker(self, tmp_path):
+        """Mock fallback tracker."""
+        run_path = tmp_path / "fallback_test"
+        run_path.mkdir(exist_ok=True)
+        tracker = FallbackTracker(run_path)
+        tracker.request_user_approval = MagicMock(return_value=True)
+        return tracker
+
     def test_topic_agent_empty_database_triggers_llm_fallback(
         self, valid_config, mock_run_dir
     ):
@@ -516,7 +526,7 @@ class TestAgentSpecificErrorScenarios:
             mock_client.return_value.generate_text.assert_called_once()
 
     def test_research_agent_zero_results_triggers_data_not_found(
-        self, valid_config, mock_run_dir
+        self, valid_config, mock_run_dir, mock_fallback_tracker
     ):
         """Test Research Agent: zero search results triggers DataNotFoundError."""
         from agents import research_agent
@@ -533,15 +543,25 @@ class TestAgentSpecificErrorScenarios:
             }
             mock_client.return_value = mock_text
 
-            context = {"run_id": "test", "run_path": mock_run_dir}
+            context = {
+                "run_id": "test",
+                "run_path": mock_run_dir,
+                "fallback_tracker": mock_fallback_tracker,
+            }
             input_obj = {"topic": "Test Topic"}
+
+            # Simulate user rejecting the fallback
+            mock_fallback_tracker.request_user_approval.return_value = False
 
             # Research agent should return error envelope with DataNotFoundError
             result = research_agent.run(input_obj, context)
 
             assert result["status"] == "error"
             assert result["error"]["type"] == "DataNotFoundError"
-            assert "No sources found" in result["error"]["message"]
+            assert (
+                "No sources found" in result["error"]["message"]
+                or "User declined fallback" in result["error"]["message"]
+            )
             assert result["error"]["retryable"] is False
 
     def test_writer_agent_max_shortening_attempts_raises_validation_error(self):
@@ -555,6 +575,7 @@ class TestAgentSpecificErrorScenarios:
                 "agents.writer_agent.get_artifact_path", return_value="/tmp/draft.md"
             ),
             patch("agents.writer_agent.log_event"),
+            patch("builtins.input", return_value="no"),  # User declines fallback
         ):
 
             # Always return text that's too long
