@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.1.0 (2025-12-07)
+
+### Documentation
+
+- **phase12**: Update ROADMAP with user approval system enhancements
+  ([`f73ad77`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/f73ad7733a7f69e3c25a28fd383cc3e052225d62))
+
+### Features
+
+- Improve fallback resilience and test infrastructure
+  ([`46ee7d1`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/46ee7d1429b7707f941de876b5ef50da6301fd0a))
+
+- **phase12**: Implement user approval system for fallback workflows with FallbackTracker
+  ([`9098147`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/909814740b57dc408e5b1418724f82fea75b784c))
+
+
 ## v1.0.3 (2025-11-29)
 
 ### Bug Fixes
