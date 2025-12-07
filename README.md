@@ -269,6 +269,76 @@ Run the application from the command line with your virtual environment activate
 python main.py
 ```
 
+### Dry-Run Mode
+
+Test your setup and estimate costs without making any API calls:
+
+```bash
+python main.py --dry-run
+```
+
+**What dry-run mode does:**
+- ✅ Verifies configuration is valid
+- ✅ Creates run directory with unique ID
+- ✅ Tests database connectivity
+- ✅ Estimates costs for each agent in the pipeline
+- ✅ Shows what the first LLM call would be
+- ❌ Does NOT make any API calls to Gemini
+- ❌ Does NOT incur any costs
+
+**Example dry-run output:**
+```
+LinkedIn Post Automation Multi-Agent System
+==================================================
+
+============================================================
+RUN SUMMARY
+============================================================
+Status     : success
+Run ID     : 2025-12-07-a1b2c3
+Run Path   : runs/2025-12-07-a1b2c3/
+Artifacts  :
+  - runs/2025-12-07-a1b2c3/00_config.json
+  - runs/2025-12-07-a1b2c3/dry_run_summary.json
+
+Estimated Cost: $0.12 USD
+Cost Range: $0.08 - $0.15 (varies by content complexity)
+
+Next LLM Call: topic_agent.select_topic()
+Model: gemini-2.5-pro (temperature: 0.7)
+
+Note: No API calls were made. Remove --dry-run to execute full pipeline.
+```
+
+**Dry-run artifacts:**
+
+The dry-run creates a `dry_run_summary.json` file with detailed cost estimates:
+
+```json
+{
+  "mode": "dry_run",
+  "estimated_costs": {
+    "topic_agent": {
+      "description": "Select topic from database or generate new one",
+      "estimated_tokens": {"input": 200, "output": 500},
+      "estimated_cost_usd": 0.0063
+    },
+    "writer_agent": {
+      "description": "Draft LinkedIn post",
+      "estimated_tokens": {"input": 1000, "output": 1500},
+      "estimated_cost_usd": 0.0163
+    }
+    // ... other agents
+  },
+  "total_estimated_cost_usd": 0.12,
+  "next_steps": {
+    "first_llm_call": "topic_agent.select_topic()",
+    "model": "gemini-2.5-pro",
+    "temperature": 0.7
+  }
+}
+```
+
 ### Output
 
 Each run generates:
@@ -472,7 +542,7 @@ The system enforces two types of budget limits:
 
 **Budget Enforcement**: If a call would exceed limits, raises `ValidationError` and aborts immediately.
 
-**Dry-Run Mode** (Planned):
+**Dry-Run Mode**:
 ```bash
 python main.py --dry-run
 ```

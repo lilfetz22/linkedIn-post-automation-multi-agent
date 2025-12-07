@@ -24,10 +24,10 @@ from core.errors import ValidationError
 
 
 # Gemini pricing (as of 11/25/2025, verify at https://ai.google.dev/pricing)
-# Prices are per 1M tokens
-GEMINI_PRO_INPUT_PRICE = 0.00125  # $1.25 per 1M input tokens
-GEMINI_PRO_OUTPUT_PRICE = 0.01000  # $10.00 per 1M output tokens
-GEMINI_FLASH_IMAGE_PRICE = 0.000300  # $0.30 per image (estimate)
+# Prices are per 1M tokens (USD)
+GEMINI_PRO_INPUT_PRICE = 1.25  # $1.25 per 1M input tokens
+GEMINI_PRO_OUTPUT_PRICE = 10.00  # $10.00 per 1M output tokens
+GEMINI_FLASH_IMAGE_PRICE = 0.30  # $0.30 per image (estimate)
 
 
 @dataclass
@@ -38,6 +38,7 @@ class CostMetrics:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
+    is_estimate: bool = False  # True if dry-run mode
 
     def __post_init__(self):
         """Calculate cost based on token usage and model."""
