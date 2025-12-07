@@ -263,7 +263,7 @@ Each execution follows this sequence:
 
 ### Basic Execution
 
-Run the application from the command line:
+Run the application from the command line with your virtual environment activated:
 
 ```bash
 python main.py
@@ -886,8 +886,8 @@ Development progress is tracked in `ROADMAP.md`. The project follows a phased ap
 | **Phase 8** | Testing infrastructure & coverage | ✅ Complete |
 | **Phase 9** | Dependency management | ✅ Complete |
 | **Phase 10** | Documentation enhancements | ✅ Complete |
-| **Phase 11** | CI/CD workflows | 🔜 Planned |
-| **Phase 12** | Fallback & resilience edge cases | 🔜 Planned |
+| **Phase 11** | CI/CD workflows | ✅ Complete |
+| **Phase 12** | Fallback & resilience edge cases | ✅ Complete |
 | **Phase 13-14** | Performance & future enhancements | 📋 Backlog |
 
 ### Key Milestones
