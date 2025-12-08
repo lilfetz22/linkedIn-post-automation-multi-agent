@@ -261,7 +261,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--no-image",
         action="store_true",
-        help="Skip image generation (reduces cost to ~$0.06)",
+        help="Skip image generation (reduces cost to $0.04-$0.10 text-only)",
     )
     return parser.parse_args(argv)
 
