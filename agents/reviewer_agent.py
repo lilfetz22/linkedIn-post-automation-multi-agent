@@ -20,7 +20,9 @@ STEP_CODE = "50_review"
 MAX_CHAR_COUNT = 3000
 MAX_SHORTENING_ATTEMPTS = 3
 REVIEW_TEMPERATURE = 0.3  # Lower temperature for precise review work
-BLACKLIST_PATTERN = re.compile(r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE)
+BLACKLIST_PATTERN = re.compile(
+    r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE
+)
 
 
 def count_chars(text: str) -> int:
@@ -244,9 +246,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             grammar_checked, num_corrections = _apply_grammar_corrections(llm_revised)
 
             # Step 3: Blacklist scrubbing (hard block for forbidden phrases)
-            scrubbed_text, blacklist_hits = _scrub_blacklisted_phrases(
-                grammar_checked
-            )
+            scrubbed_text, blacklist_hits = _scrub_blacklisted_phrases(grammar_checked)
 
             # Log iteration
             char_count = count_chars(scrubbed_text)
