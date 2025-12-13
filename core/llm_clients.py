@@ -62,6 +62,9 @@ class GeminiTextClient:
         """
         Generate text from prompt with token usage tracking.
 
+        In dry-run mode, returns mock response with estimated token counts
+        without making actual API calls.
+
         Args:
             prompt: User prompt text
             temperature: Sampling temperature (0.0-1.0, default: 0.7)
@@ -75,6 +78,7 @@ class GeminiTextClient:
             - token_usage: Dict with "prompt_tokens" and "completion_tokens"
             - model: Model name used
             - grounding_metadata: Search grounding info (if enabled)
+            - dry_run: True if this is a mock response (only in dry-run mode)
 
         Raises:
             ModelError: If API call fails
@@ -88,6 +92,26 @@ class GeminiTextClient:
             >>> print(result["text"])
             >>> print(f"Tokens: {result['token_usage']}")
         """
+        from core.dry_run import is_dry_run
+
+        # Check if dry-run mode is enabled
+        if is_dry_run():
+            # Return mock response with estimated token counts
+            estimated_prompt_tokens = (
+                len(prompt) // 4
+            )  # Rough estimate: 4 chars per token
+            estimated_completion_tokens = max_output_tokens or 1000
+
+            return {
+                "text": "[DRY RUN] Mock response - no actual API call made",
+                "token_usage": {
+                    "prompt_tokens": estimated_prompt_tokens,
+                    "completion_tokens": estimated_completion_tokens,
+                },
+                "model": self.model_name,
+                "dry_run": True,
+            }
+
         try:
             # Use new client with grounding if requested
             if use_search_grounding:
@@ -200,6 +224,8 @@ class GeminiImageClient:
         """
         Generate image from text prompt and save to file.
 
+        In dry-run mode, creates a placeholder file without making actual API calls.
+
         Args:
             prompt: Image description prompt
             output_path: Path to save generated PNG file
@@ -210,6 +236,7 @@ class GeminiImageClient:
             Dict with keys:
             - image_path: Path where image was saved
             - model: Model name used
+            - dry_run: True if this is a mock response (only in dry-run mode)
 
         Raises:
             ModelError: If image generation or saving fails
@@ -222,10 +249,24 @@ class GeminiImageClient:
             ... )
             >>> print(f"Image saved to {result['image_path']}")
         """
-        try:
-            output_path = Path(output_path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+        from core.dry_run import is_dry_run
 
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Check if dry-run mode is enabled
+        if is_dry_run():
+            # Create placeholder file
+            with open(output_path, "w") as f:
+                f.write("[DRY RUN] Placeholder image file - no actual generation")
+
+            return {
+                "image_path": str(output_path),
+                "model": self.model_name,
+                "dry_run": True,
+            }
+
+        try:
             # Generate image
             response = self.model.generate_content(
                 prompt,

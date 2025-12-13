@@ -6,7 +6,20 @@ and orchestration of the multi-agent pipeline.
 
 Usage (PowerShell):
     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-    python main.py [--init-config] [--field "<field>"] [--run]
+    python main.py [--init-config] [--field "<field>"] [--run] [--dry-run]
+
+Examples:
+    # Run full pipeline
+    python main.py
+
+    # Test setup without API calls
+    python main.py --dry-run
+
+    # Run without image generation (lower cost)
+    python main.py --no-image
+
+    # Initialize config only
+    python main.py --init-config --field "Data Science (Optimizations & Time-Series Analysis)"
 """
 
 from __future__ import annotations
@@ -197,10 +210,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     """
     Parse command-line arguments for the multi-agent system.
 
-    Supports three optional flags:
+    Supports five optional flags:
     - --init-config: Initialize config.json without running pipeline
     - --field: Specify field value non-interactively
     - --run: Explicitly execute the pipeline
+    - --dry-run: Execute setup and estimate costs without making LLM calls
+    - --no-image: Skip image generation to reduce costs
 
     Args:
         argv: List of command-line argument strings (typically sys.argv[1:])
@@ -210,6 +225,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         - init_config (bool): True if --init-config flag provided
         - field (Optional[str]): Field value if --field provided
         - run (bool): True if --run flag provided
+        - dry_run (bool): True if --dry-run flag provided
+        - no_image (bool): True if --no-image flag provided
 
     Example:
         >>> args = parse_args(["--init-config", "--field", "Data Science"])
@@ -236,6 +253,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Execute the full pipeline (default behavior if no flags provided)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Execute setup and estimate costs without making LLM API calls",
+    )
+    parser.add_argument(
+        "--no-image",
+        action="store_true",
+        help="Skip image generation (reduces cost to $0.04-$0.10 text-only)",
+    )
     return parser.parse_args(argv)
 
 
@@ -246,13 +273,16 @@ def print_summary(result: dict) -> None:
     Displays run status, unique run identifier, run directory path,
     and paths to generated artifacts (final post and image) if available.
     Handles missing artifacts gracefully by only displaying what exists.
+    Shows cost estimates and next steps for dry-run mode.
 
     Args:
         result: Dictionary returned by Orchestrator.run() containing:
                - status: "success" or "error"
+               - mode: "dry_run" if in dry-run mode (optional)
                - run_id: Unique run identifier string
                - run_path: Path to run directory
                - artifacts: Optional dict with 'final_post' and 'image' keys
+               - estimated_cost_usd: Estimated cost for dry-run mode
 
     Output Format:
         ============================================================
@@ -272,6 +302,8 @@ def print_summary(result: dict) -> None:
         >>> print_summary(result)
     """
     status = result.get("status")
+    mode = result.get("mode")
+
     print("\n" + "=" * 60)
     print("RUN SUMMARY")
     print("=" * 60)
@@ -284,14 +316,52 @@ def print_summary(result: dict) -> None:
         print("Artifacts  :")
         final_post = artifacts.get("final_post")
         image = artifacts.get("image")
+        config = artifacts.get("config")
+        dry_run_summary = artifacts.get("dry_run_summary")
+
+        if config:
+            print(f"  - {config}")
+        if dry_run_summary:
+            print(f"  - {dry_run_summary}")
         if final_post:
             print(f"  - {final_post}")
         if image:
             print(f"  - {image}")
 
+    # Show cost estimates for dry-run mode
+    if mode == "dry_run":
+        print()
+        estimated_cost = result.get("estimated_cost_usd", 0)
+        print(f"Estimated Cost: ${estimated_cost:.2f} USD")
+
+        dry_run_summary = result.get("dry_run_summary", {})
+        cost_range = dry_run_summary.get("cost_range_usd", "0.35 - 0.45")
+        print(f"Cost Range: ${cost_range}")
+
+        # Show cost savings tip if available
+        cost_savings_tip = dry_run_summary.get("cost_savings_tip")
+        if cost_savings_tip:
+            print(f"💡 Tip: {cost_savings_tip}")
+
+        next_steps = dry_run_summary.get("next_steps", {})
+        if next_steps:
+            print()
+            print(f"Next LLM Call: {next_steps.get('first_llm_call', 'N/A')}")
+            model = next_steps.get('model', 'N/A')
+            temp = next_steps.get('temperature', 'N/A')
+            print(f"Model: {model} (temperature: {temp})")
+
+        print()
+        print(
+            "Note: No API calls were made. Remove --dry-run to execute full pipeline."
+        )
+
 
 def run_pipeline(
-    root: Path, non_interactive_field: Optional[str]
+    root: Path,
+    non_interactive_field: Optional[str],
+    dry_run: bool = False,
+    no_image: bool = False,
 ) -> Tuple[int, Optional[dict]]:
     """
     Execute the full multi-agent pipeline with configuration initialization.
@@ -304,6 +374,8 @@ def run_pipeline(
         root: Project root directory path
         non_interactive_field: Optional field value for non-interactive config creation.
                               If None and config doesn't exist, user will be prompted.
+        dry_run: If True, execute setup and estimate costs without making LLM calls
+        no_image: If True, skip image generation to reduce costs (~$0.30 savings)
 
     Returns:
         Tuple of (exit_code, result_dict) where:
@@ -326,7 +398,7 @@ def run_pipeline(
         "success"
     """
     config = ensure_config(root, non_interactive_field)
-    orchestrator = Orchestrator(config)
+    orchestrator = Orchestrator(config, dry_run=dry_run, no_image=no_image)
     result = orchestrator.run()
     print_summary(result)
     exit_code = 0 if result.get("status") == "success" else 1
@@ -385,7 +457,9 @@ def main(argv: Optional[list[str]] = None) -> int:
             return 0
 
         # Default behavior: run pipeline (with config onboarding)
-        code, _ = run_pipeline(root, args.field)
+        code, _ = run_pipeline(
+            root, args.field, dry_run=args.dry_run, no_image=args.no_image
+        )
         return code
 
     except (ValidationError, CorruptionError) as e:

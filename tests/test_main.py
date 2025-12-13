@@ -457,7 +457,9 @@ def test_run_pipeline_returns_exit_code_0_on_success(
 
     assert exit_code == 0
     assert result["status"] == "success"
-    mock_orchestrator_class.assert_called_once_with({"field": field})
+    mock_orchestrator_class.assert_called_once_with(
+        {"field": field}, dry_run=False, no_image=False
+    )
     mock_orchestrator.run.assert_called_once()
 
 
@@ -510,8 +512,10 @@ def test_run_pipeline_initializes_config_before_orchestrator(
     config_data = json.loads(config_file.read_text("utf-8"))
     assert config_data["field"] == field
 
-    # Verify orchestrator was called with correct config
-    mock_orchestrator_class.assert_called_once_with({"field": field})
+    # Verify Orchestrator was called with correct config
+    mock_orchestrator_class.assert_called_once_with(
+        {"field": field}, dry_run=False, no_image=False
+    )
 
 
 @patch("main.Orchestrator")

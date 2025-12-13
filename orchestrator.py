@@ -33,6 +33,7 @@ from core.errors import (
 from core.logging import log_event
 from core.cost_tracking import CostTracker
 from core.fallback_tracker import FallbackTracker
+from database.init_db import init_db
 
 # Import all agents
 from agents import (
@@ -64,12 +65,14 @@ class Orchestrator:
     MAX_CHAR_LOOP_ITERATIONS = 5
     MAX_TOPIC_PIVOTS = 2
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, dry_run: bool = False, no_image: bool = False):
         """
         Initialize orchestrator with configuration.
 
         Args:
             config (dict): Configuration dictionary with field selection
+            dry_run (bool): If True, execute setup and cost estimation without LLM calls
+            no_image (bool): If True, skip image generation to reduce costs
 
         Raises:
             ValidationError: If config is invalid
@@ -78,6 +81,8 @@ class Orchestrator:
             raise ValidationError("Configuration must include 'field'")
 
         self.config = config
+        self.dry_run = dry_run
+        self.no_image = no_image
         self.run_id = None
         self.run_path = None
         self.circuit_breaker = CircuitBreaker()
@@ -91,11 +96,23 @@ class Orchestrator:
             "agent_metrics": {},
             "char_loop_iterations": 0,
             "topic_pivots": 0,
+            "dry_run": dry_run,
         }
+        # Ensure database schema is up-to-date (idempotent)
+        init_db()
+
+        # Enable dry-run mode globally if requested
+        if dry_run:
+            from core.dry_run import enable_dry_run
+
+            enable_dry_run()
 
     def run(self) -> Dict[str, Any]:
         """
         Execute the complete pipeline.
+
+        In dry-run mode, only executes initialization and returns cost estimates
+        without making LLM API calls.
 
         Returns:
             dict: Final run summary with status and artifact paths
@@ -110,6 +127,10 @@ class Orchestrator:
             # Phase 5.1: Configuration & Initialization
             self._initialize_run()
 
+            # If dry-run mode, stop here and return summary
+            if self.dry_run:
+                return self._complete_dry_run()
+
             # Phase 5.3: Sequential Agent Pipeline (7 steps)
             # Step 1: Topic Selection
             topic = self._execute_topic_selection()
@@ -122,9 +143,10 @@ class Orchestrator:
             # Step 4-5: Writing and Review with character limit enforcement
             final_post = self._execute_writing_and_review_loop(structured_prompt)
 
-            # Phase 5.5: Image Generation Pipeline
-            image_prompt = self._execute_image_prompt_generation(final_post)
-            self._execute_image_generation(image_prompt)
+            # Phase 5.5: Image Generation Pipeline (optional based on --no-image flag)
+            if not self.no_image:
+                image_prompt = self._execute_image_prompt_generation(final_post)
+                self._execute_image_generation(image_prompt)
 
             # Phase 5.6: Run Completion
             return self._complete_run_success(final_post)
@@ -430,25 +452,157 @@ class Orchestrator:
             else ""
         )
 
+        # Build artifacts dictionary, conditionally including image
+        artifacts = {
+            "final_post": str(self.run_path / "60_final_post.txt"),
+            "fallback_warnings": (
+                str(self.fallback_tracker.warnings_file)
+                if self.fallback_tracker
+                else None
+            ),
+        }
+
+        # Only include image artifact if image generation was not skipped
+        if not self.no_image:
+            artifacts["image"] = str(self.run_path / "80_image.png")
+
         return {
             "status": "success",
             "run_id": self.run_id,
             "run_path": str(self.run_path),
-            "artifacts": {
-                "final_post": str(self.run_path / "60_final_post.txt"),
-                "image": str(self.run_path / "80_image.png"),
-                "fallback_warnings": (
-                    str(self.fallback_tracker.warnings_file)
-                    if self.fallback_tracker
-                    else None
-                ),
-            },
+            "artifacts": artifacts,
             "metrics": self.metrics,
             "cost": cost_summary,
             "fallback_summary": (
                 self.fallback_tracker.get_summary() if self.fallback_tracker else None
             ),
             "fallback_report": fallback_report,
+        }
+
+    def _complete_dry_run(self) -> Dict[str, Any]:
+        """
+        Complete dry-run mode execution with cost estimates and summary.
+
+        Returns:
+            dict: Dry-run summary with estimated costs and next steps
+        """
+        from core.cost_tracking import (
+            GEMINI_PRO_INPUT_PRICE,
+            GEMINI_PRO_OUTPUT_PRICE,
+            GEMINI_FLASH_IMAGE_PRICE,
+        )
+
+        log_event(self.run_id, "dry_run_complete", 1, "ok")
+
+        # Calculate estimated costs for typical run
+        estimated_costs = {
+            "topic_agent": {
+                "description": "Select topic from database or generate new one",
+                "estimated_tokens": {"input": 200, "output": 500},
+                "estimated_cost_usd": (200 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (500 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            },
+            "research_agent": {
+                "description": "Gather and synthesize research",
+                "estimated_tokens": {"input": 1000, "output": 800},
+                "estimated_cost_usd": (1000 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (800 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            },
+            "prompt_generator_agent": {
+                "description": "Transform topic into structured prompt",
+                "estimated_tokens": {"input": 800, "output": 600},
+                "estimated_cost_usd": (800 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (600 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            },
+            "writer_agent": {
+                "description": "Draft LinkedIn post (may require multiple iterations)",
+                "estimated_tokens": {"input": 1000, "output": 1500},
+                "estimated_cost_usd": (1000 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (1500 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            },
+            "reviewer_agent": {
+                "description": "Review and refine post",
+                "estimated_tokens": {"input": 1500, "output": 1500},
+                "estimated_cost_usd": (1500 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (1500 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            },
+        }
+
+        # Only include image generation if not disabled
+        if not self.no_image:
+            estimated_costs["image_prompt_agent"] = {
+                "description": "Generate image prompt",
+                "estimated_tokens": {"input": 1500, "output": 300},
+                "estimated_cost_usd": (1500 / 1_000_000) * GEMINI_PRO_INPUT_PRICE
+                + (300 / 1_000_000) * GEMINI_PRO_OUTPUT_PRICE,
+            }
+            estimated_costs["image_generator_agent"] = {
+                "description": "Generate AI image",
+                "estimated_tokens": {"input": 0, "output": 0},
+                "estimated_cost_usd": GEMINI_FLASH_IMAGE_PRICE,
+            }
+
+        total_estimated_cost = sum(
+            agent["estimated_cost_usd"] for agent in estimated_costs.values()
+        )
+
+        # Set cost range based on whether image generation is included
+        # Text costs vary by ~$0.04-0.10 depending on tokens/iterations
+        # Image generation adds fixed $0.30 cost
+        if self.no_image:
+            cost_range = "0.04 - 0.10 (text-only)"
+            cost_savings_note = None
+        else:
+            cost_range = "0.35 - 0.45 (includes $0.30 image generation)"
+            cost_savings_note = (
+                "Use --no-image flag to save $0.30 and skip image generation"
+            )
+
+        # Create dry-run summary file
+        dry_run_summary = {
+            "mode": "dry_run",
+            "timestamp": datetime.now().isoformat(),
+            "run_id": self.run_id,
+            "run_path": str(self.run_path),
+            "configuration": self.config,
+            "no_image": self.no_image,
+            "setup_verified": {
+                "config_loaded": True,
+                "run_directory_created": True,
+                "database_initialized": True,
+            },
+            "estimated_costs": estimated_costs,
+            "total_estimated_cost_usd": round(total_estimated_cost, 4),
+            "cost_range_usd": cost_range,
+            "next_steps": {
+                "first_llm_call": "topic_agent.select_topic()",
+                "model": "gemini-2.5-pro",
+                "temperature": 0.7,
+                "purpose": "Select unique topic from configured field",
+            },
+            "note": "No API calls were made. Remove --dry-run flag to execute full pipeline.",
+        }
+
+        # Add cost savings note if applicable
+        if cost_savings_note:
+            dry_run_summary["cost_savings_tip"] = cost_savings_note
+
+        # Save dry-run summary to run directory
+        dry_run_path = self.run_path / "dry_run_summary.json"
+        write_and_verify_json(dry_run_path, dry_run_summary)
+
+        return {
+            "status": "success",
+            "mode": "dry_run",
+            "run_id": self.run_id,
+            "run_path": str(self.run_path),
+            "artifacts": {
+                "config": str(self.run_path / "00_config.json"),
+                "dry_run_summary": str(dry_run_path),
+            },
+            "metrics": self.metrics,
+            "estimated_cost_usd": round(total_estimated_cost, 4),
+            "dry_run_summary": dry_run_summary,
         }
 
     def _handle_run_failure(self, error: Exception, stack_trace: str) -> Dict[str, Any]:
