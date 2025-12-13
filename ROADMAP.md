@@ -85,6 +85,7 @@
   - [x] Field enum values:
     - [x] "Data Science (Optimizations & Time-Series Analysis)"
     - [x] "Generative AI & AI Agents"
+    - [ ] Broaden field taxonomy beyond the two current options (expand enum, seeds, validation, config prompts, and tests)
   - [ ] Add guard: validate field value belongs to supported enum before selection (utility function)
 - [x] Add helper `database/operations.py`
   - [x] Context-managed `get_connection(db_path)` enabling foreign keys
@@ -770,6 +771,7 @@ Note: Unchecked items added for future granularity; can be scheduled before Phas
 - [ ] Scheduling (cron or Windows Task Scheduler integration)
 - [ ] Web UI dashboard for runs & artifacts
 - [ ] Advanced analytics on engagement (placeholder)
+- [ ] Broaden field taxonomy beyond just Data Science & Generative AI
 
 ## Milestone Tracking Summary
 | Milestone | Phases Included | Completion Target |
