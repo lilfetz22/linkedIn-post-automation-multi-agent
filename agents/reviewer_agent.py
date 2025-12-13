@@ -232,10 +232,12 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
             # Record cost
             if cost_tracker:
+                # Use new positional calling pattern: (model, prompt_tokens, completion_tokens, agent_name)
                 cost_tracker.record_call(
-                    model="gemini-2.5-pro",
-                    prompt_tokens=token_usage.get("prompt_tokens", 0),
-                    completion_tokens=token_usage.get("completion_tokens", 0),
+                    "gemini-2.5-pro",
+                    token_usage.get("prompt_tokens", 0),
+                    token_usage.get("completion_tokens", 0),
+                    agent_name="reviewer_agent",
                 )
 
             # Step 2: Local Grammar Checking
