@@ -452,19 +452,25 @@ class Orchestrator:
             else ""
         )
 
+        # Build artifacts dictionary, conditionally including image
+        artifacts = {
+            "final_post": str(self.run_path / "60_final_post.txt"),
+            "fallback_warnings": (
+                str(self.fallback_tracker.warnings_file)
+                if self.fallback_tracker
+                else None
+            ),
+        }
+
+        # Only include image artifact if image generation was not skipped
+        if not self.no_image:
+            artifacts["image"] = str(self.run_path / "80_image.png")
+
         return {
             "status": "success",
             "run_id": self.run_id,
             "run_path": str(self.run_path),
-            "artifacts": {
-                "final_post": str(self.run_path / "60_final_post.txt"),
-                "image": str(self.run_path / "80_image.png"),
-                "fallback_warnings": (
-                    str(self.fallback_tracker.warnings_file)
-                    if self.fallback_tracker
-                    else None
-                ),
-            },
+            "artifacts": artifacts,
             "metrics": self.metrics,
             "cost": cost_summary,
             "fallback_summary": (
