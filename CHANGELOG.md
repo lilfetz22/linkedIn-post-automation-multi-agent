@@ -2,6 +2,37 @@
 
 <!-- version list -->
 
+## v1.2.0 (2025-12-13)
+
+### Bug Fixes
+
+- Resolve flake8 line length issue in main.py
+  ([`1224284`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/12242849cd2df1e99b76a5c6f16b9ca0d4d7c908))
+
+- **orchestrator**: Omit image artifact in run summary when --no-image is set
+  ([`2717d07`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/2717d07fd0bd53ff7ac9b7836177d60f55f0a187))
+
+### Documentation
+
+- Add --no-image flag documentation and cost optimization section
+  ([`cdab745`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/cdab745fdd85f05ed8d03f83937693fc8fc7a157))
+
+- **readme**: Update README.md to clarify command line execution and mark phases 11 and 12 as
+  complete
+  ([`9f069b5`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/9f069b55b5662ea1a97bd9506208648c0494d718))
+
+### Features
+
+- Add --no-image CLI flag to skip image generation and reduce costs
+  ([`11c6dce`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/11c6dce3faf7343f272b339dd095a2284684e735))
+
+- Implement no_image parameter in orchestrator for cost optimization
+  ([`b882840`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/b88284009d124d166120542447dbb3432a51f1ce))
+
+- **dry-run**: Implement dry-run mode for cost estimation and setup verification
+  ([`afd2588`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/afd25884ebc5422144883b7cf691e2975d7cf493))
+
+
 ## v1.1.0 (2025-12-07)
 
 ### Documentation
