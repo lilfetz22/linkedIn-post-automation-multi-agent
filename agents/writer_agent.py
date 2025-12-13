@@ -8,6 +8,7 @@ Strategic planning is now handled by the Prompt Generator Agent
 
 from pathlib import Path
 from typing import Dict, Any
+import re
 import time
 
 from core.envelope import ok, err, validate_envelope
@@ -22,6 +23,7 @@ STEP_CODE = "40_draft"
 MAX_CHAR_COUNT = 3000
 MAX_SHORTENING_ATTEMPTS = 3
 TEMPERATURE = 0.8  # Higher temperature for creative writing
+BLACKLIST_PATTERN = re.compile(r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE)
 
 
 def count_chars(text: str) -> int:
@@ -71,11 +73,26 @@ def _format_structured_prompt_as_user_message(structured: Dict[str, Any]) -> str
 - Use short paragraphs, white space, **bold** for emphasis
 - Include quantifiable impact from the key metrics
 - Keep character count UNDER 3000 characters (excluding line breaks)
-- Sign off with "— Tech Audience Accelerator" at the end
+- Do NOT mention "Tech Audience Accelerator" (remove it entirely if it ever appears)
+
+Deliver a concise sign-off that fits the persona, but never reference external newsletters.
 
 Generate the complete LinkedIn post now."""
 
     return user_message
+
+
+def _scrub_blacklisted_phrases(text: str) -> tuple[str, int]:
+    """Remove forbidden phrases (e.g., Tech Audience Accelerator) from text.
+
+    Returns the scrubbed text and the number of substitutions performed.
+    """
+
+    scrubbed, replacements = re.subn(BLACKLIST_PATTERN, "", text)
+    # Tidy up spacing/newlines that may be left behind by removals
+    scrubbed = re.sub(r" {2,}", " ", scrubbed)
+    scrubbed = re.sub(r"\n{3,}", "\n\n", scrubbed).strip()
+    return scrubbed, replacements
 
 
 def _generate_draft_with_llm(
@@ -113,7 +130,7 @@ The previous draft was too long. Here it is:
 Please regenerate the post with the SAME core message and structure, \
 but shorten it to under 3000 characters (excluding line breaks). \
 Remove unnecessary elaboration, tighten phrasing, but preserve the hook, \
-analogy, metrics, and sign-off."""
+analogy, and metrics."""
 
     # Budget check with full prompt prior to LLM call
     if cost_tracker:
@@ -176,16 +193,14 @@ Solution: {solution}
 
 Impact: Expect {metrics_str} when you implement this calmly and consistently.
 
-Action: Try it today, share what broke, and keep the iteration tight.
-
-— Tech Audience Accelerator"""
+Action: Try it today, share what broke, and keep the iteration tight."""
 
     # Guardrail: ensure we stay under limit even with unexpected long fields
-    SIGNOFF_BUFFER = 50  # Buffer for sign-off text (~30 chars)
+    SAFETY_BUFFER = 50  # Buffer for any minor additions downstream
 
-    if count_chars(fallback_post) >= MAX_CHAR_COUNT - SIGNOFF_BUFFER:
-        trimmed = fallback_post[: MAX_CHAR_COUNT - SIGNOFF_BUFFER]
-        fallback_post = f"{trimmed}\n\n— Tech Audience Accelerator"
+    if count_chars(fallback_post) >= MAX_CHAR_COUNT - SAFETY_BUFFER:
+        trimmed = fallback_post[: MAX_CHAR_COUNT - SAFETY_BUFFER]
+        fallback_post = trimmed.strip()
 
     return fallback_post
 
@@ -228,6 +243,9 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 structured, previous_draft, cost_tracker
             )
 
+            # Remove any blacklisted phrases before further processing/persistence
+            draft, blacklist_hits = _scrub_blacklisted_phrases(draft)
+
             # Record cost (if cost tracker provided)
             if cost_tracker:
                 cost_tracker.record_call(
@@ -248,6 +266,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 model="gemini-2.5-pro",
                 token_usage={
                     "char_count": char_count,
+                    "blacklist_removed": blacklist_hits,
                     "shortening_attempt": shortening_attempts,
                 },
             )
