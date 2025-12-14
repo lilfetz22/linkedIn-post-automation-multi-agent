@@ -2,6 +2,59 @@
 
 <!-- version list -->
 
+## v1.4.0 (2025-12-14)
+
+### Bug Fixes
+
+- **agents/image-generator**: Simplify print statements in standalone test output
+  ([`e276882`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/e276882b6d789e05a005d70e1e2a38804d3e0306))
+
+- **core/llm-clients**: Use correct response_modalities value for image generation
+  ([`0e495b0`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/0e495b04cb430800e911afdaba6b45a717470ed5))
+
+- **core/llm_clients**: Format note for clarity in image generation response modalities
+  ([`d5d1f4c`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/d5d1f4c465925138530950ac650393ee868c8bb4))
+
+- **cost_tracking**: Accept keyword args in record_call for backwards-compatible API
+  ([`b628570`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/b628570e86f6f10e10709ce6b6b7b28074dda654))
+
+- **cost_tracking**: Make agent_name_or_model optional to support pure keyword calls
+  ([`9f9a1c1`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/9f9a1c158643771873efab0a41b0d5b34b821c58))
+
+- **orchestrator**: Record agent failure metrics when circuit breaker trips\n\nAdd explicit except
+  CircuitBreakerTrippedError in _execute_agent_with_retry() to log duration and error details before
+  propagating. This ensures un_failed.json and metrics capture the failed step even if the breaker
+  opens mid-execution.
+  ([`a131de0`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/a131de0c271b457086e61b2b0b992bafdffbabdb))
+
+- **retry**: Treat Gemini quota/rate-limit errors as non-retryable to avoid futile retries and
+  circuit breaker trips\n\nAdd _is_quota_or_rate_limit_error() to detect RESOURCE_EXHAUSTED/quota
+  exceeded/rate limit messages. When detected, flip etryable to false and surface actionable
+  guidance. This prevents exponential backoff from hammering the API and stops breaker from
+  accumulating failures on quota issues.\n\nImpact:\n- More graceful aborts under quota
+  exhaustion\n- Clearer error messaging for remediation\n- Preserves circuit breaker for genuine
+  transient failures
+  ([`1055678`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/105567827c62baea2145b51a3fbc76b99b7897da))
+
+- **reviewer**: Scrub forbidden newsletter mentions and improve review pipeline
+  ([`c42e5eb`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/c42e5eb80dd6f1025a9ca86e8d5aaa2b8c57feee))
+
+- **reviewer**: Use positional args when recording cost and include agent name
+  ([`a30c6fa`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/a30c6fad77e31b761bc7bed43860f882792ca651))
+
+- **writer**: Remove newsletter sign-off and scrub forbidden mentions
+  ([`c7efe0d`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/c7efe0d794e97653f7de1fe207d8b92631878a93))
+
+- **writer_agent**: Accept structured_prompt string and use it as LLM prompt
+  ([`f827069`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/f82706969d68647d07073088b331bd53fc040213))
+
+### Features
+
+- **agents/image-generator**: Capture full tracebacks on ModelError and add standalone CLI for
+  testing
+  ([`b608511`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/b608511ed9415cb9867d3e789fc654fa2fbcbc42))
+
+
 ## v1.3.0 (2025-12-13)
 
 
