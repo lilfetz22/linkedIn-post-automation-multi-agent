@@ -138,37 +138,69 @@ class CostTracker:
     def record_call(
         self,
         agent_name_or_model: str,
-        metrics_or_prompt_tokens: "CostMetrics | int" = 0,
+        metrics_or_prompt_tokens: "CostMetrics | int | None" = 0,
         completion_tokens: Optional[int] = None,
         agent_name: Optional[str] = None,
+        **kwargs,
     ):
         """
         Record an API call and update cost tracking.
 
         Supports two calling patterns:
         1. Old pattern: record_call(agent_name, metrics: CostMetrics)
-        2. New pattern: record_call(model, prompt_tokens, completion_tokens, agent_name)
+        2. New pattern (positional): record_call(model, prompt_tokens, completion_tokens, agent_name)
+        3. New pattern (keyword-friendly):
+           record_call(model="...", prompt_tokens=123, completion_tokens=456, agent_name="...")
 
         Args:
             agent_name_or_model: Agent name (old) or model name (new)
             metrics_or_prompt_tokens: CostMetrics object (old) or prompt tokens count (new)
             completion_tokens: Number of output tokens (new pattern only)
             agent_name: Agent name (new pattern only)
+            **kwargs: Optional keyword equivalents (model, prompt_tokens, completion_tokens, agent_name)
 
         Raises:
             ValidationError: If budget limits would be exceeded
         """
+        # Normalize keyword-based calls for backward compatibility
+        model_kw = kwargs.pop("model", None)
+        prompt_tokens_kw = kwargs.pop("prompt_tokens", None)
+        completion_tokens_kw = kwargs.pop("completion_tokens", None)
+        agent_name_kw = kwargs.pop("agent_name", None)
+
+        if kwargs:
+            unsupported = ", ".join(kwargs.keys())
+            raise ValidationError(f"Unsupported keyword arguments: {unsupported}")
+
+        model = model_kw or agent_name_or_model
+        prompt_or_metrics = (
+            prompt_tokens_kw
+            if prompt_tokens_kw is not None
+            else metrics_or_prompt_tokens
+        )
+        completion_tokens_val = (
+            completion_tokens_kw
+            if completion_tokens_kw is not None
+            else completion_tokens
+        )
+        agent = agent_name_kw or agent_name
+
         # Determine which calling pattern is being used
-        if isinstance(metrics_or_prompt_tokens, CostMetrics):
+        if isinstance(prompt_or_metrics, CostMetrics) and model_kw is None:
             # Old pattern: record_call(agent_name, metrics)
             agent = agent_name_or_model
-            metrics = metrics_or_prompt_tokens
+            metrics = prompt_or_metrics
         else:
             # New pattern: record_call(model, prompt_tokens, completion_tokens, agent_name)
-            model = agent_name_or_model
-            prompt_tokens = metrics_or_prompt_tokens if metrics_or_prompt_tokens else 0
-            completion_tokens = completion_tokens if completion_tokens else 0
-            agent = agent_name
+            if model is None or model == "":
+                raise ValidationError(
+                    "model must be provided when recording cost with token counts"
+                )
+
+            prompt_tokens = int(prompt_or_metrics) if prompt_or_metrics else 0
+            completion_tokens_val = (
+                int(completion_tokens_val) if completion_tokens_val else 0
+            )
 
             # Validate that agent_name is provided when using new pattern
             if not agent:
@@ -181,7 +213,7 @@ class CostTracker:
             metrics = CostMetrics(
                 model=model,
                 input_tokens=prompt_tokens,
-                output_tokens=completion_tokens,
+                output_tokens=completion_tokens_val,
             )
 
         # Check limits BEFORE recording
