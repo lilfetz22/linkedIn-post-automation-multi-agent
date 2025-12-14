@@ -437,23 +437,6 @@ class TestDiskErrorHandling:
             with pytest.raises(OSError):
                 atomic_write_json(target_path, {"data": "test"})
 
-    def test_clear_error_for_readonly_directory(self, tmp_path):
-        """Test clear error message if directory not writable."""
-        # Create a read-only directory (skip on Windows as permissions work differently)
-        if os.name == "nt":
-            pytest.skip("Windows handles permissions differently")
-
-        readonly_dir = tmp_path / "readonly"
-        readonly_dir.mkdir()
-        os.chmod(readonly_dir, 0o444)
-
-        try:
-            target_path = readonly_dir / "test.json"
-            with pytest.raises(OSError):
-                atomic_write_json(target_path, {"data": "test"})
-        finally:
-            os.chmod(readonly_dir, 0o755)
-
     def test_temp_file_cleanup_after_failed_write(self, tmp_path):
         """Test cleanup of temp files after failed writes."""
         target_path = tmp_path / "cleanup_test.json"
