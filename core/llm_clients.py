@@ -271,7 +271,8 @@ class GeminiImageClient:
             response = self.model.generate_content(
                 prompt,
                 generation_config={
-                    # NOTE: Gemini SDK (as of 2024-05, see https://ai.google.dev/docs/gemini_api_generate_content#response_modalities)
+                    # NOTE: Gemini SDK (as of 2024-05, see
+                    # https://ai.google.dev/docs/gemini_api_generate_content#response_modalities)
                     # requires "IMAGE" (all caps) for response_modalities. "Image" (title case) will not work.
                     "response_modalities": ["IMAGE"],
                 },
