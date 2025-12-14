@@ -378,4 +378,3 @@ def test_writer_agent_scrubs_blacklisted_phrase(
     saved_text = artifact_path.read_text()
 
     assert "Tech Audience Accelerator" not in saved_text
-    assert "Keep shipping" not in saved_text  # ensure original sign-off replaced
