@@ -289,7 +289,7 @@ if __name__ == "__main__":
     }
 
     print(f"\n{'='*60}")
-    print(f"STANDALONE IMAGE GENERATOR TEST")
+    print("STANDALONE IMAGE GENERATOR TEST")
     print(f"{'='*60}")
     print(f"Run ID: {test_run_id}")
     print(f"Prompt File: {args.prompt_file}")
@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
     # Display results
     print(f"\n{'='*60}")
-    print(f"RESULT")
+    print("RESULT")
     print(f"{'='*60}")
     print(json.dumps(result, indent=2, default=str))
     print(f"{'='*60}\n")
@@ -320,21 +320,21 @@ if __name__ == "__main__":
         image_path = result["data"]["image_path"]
         generation_info = result["data"]["generation_info"]
 
-        print(f"✓ Success!")
+        print("✓ Success!")
         print(f"  Image saved to: {image_path}")
         print(f"  Model: {generation_info.get('model')}")
 
         if generation_info.get("fallback_used"):
             print(f"  ⚠ Fallback used: {generation_info.get('fallback_reason')}")
             if "full_traceback" in generation_info:
-                print(f"\n  Full Traceback:")
+                print("\n  Full Traceback:")
                 print(f"  {'-'*56}")
                 for line in generation_info["full_traceback"].split("\n"):
                     print(f"  {line}")
         else:
             print(f"  Duration: {generation_info.get('duration_ms')}ms")
     else:
-        print(f"✗ Failed!")
+        print("✗ Failed!")
         print(f"  Error: {result['error']['type']}")
         print(f"  Message: {result['error']['message']}")
 
