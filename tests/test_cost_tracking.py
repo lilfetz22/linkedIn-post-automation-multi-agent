@@ -231,7 +231,9 @@ class TestCostTracker:
         tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
 
         with pytest.raises(ValidationError, match="agent_name must be provided"):
-            tracker.record_call(model="gemini-2.5-pro", prompt_tokens=1000, completion_tokens=500)
+            tracker.record_call(
+                model="gemini-2.5-pro", prompt_tokens=1000, completion_tokens=500
+            )
 
     def test_record_call_unsupported_kwargs_raises_error(self):
         """Test that unsupported keyword arguments raise error."""
