@@ -164,3 +164,101 @@ class TestCostTracker:
         captured = capsys.readouterr()
         assert "Warning" in captured.out or "⚠️" in captured.out
         assert "exceeds" in captured.out
+
+    def test_record_call_legacy_pattern(self):
+        """Test record_call with legacy CostMetrics pattern."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        metrics = CostMetrics(
+            model="gemini-2.5-pro", input_tokens=1000, output_tokens=500
+        )
+        tracker.record_call("test_agent", metrics)
+
+        assert tracker.api_call_count == 1
+        assert tracker.total_cost_usd > 0
+        assert "test_agent" in tracker.costs_by_agent
+
+    def test_record_call_positional_pattern(self):
+        """Test record_call with new positional arguments pattern."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        tracker.record_call("gemini-2.5-pro", 1000, 500, "test_agent")
+
+        assert tracker.api_call_count == 1
+        assert tracker.total_cost_usd > 0
+        assert "test_agent" in tracker.costs_by_agent
+
+    def test_record_call_keyword_pattern(self):
+        """Test record_call with pure keyword arguments pattern."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        tracker.record_call(
+            model="gemini-2.5-pro",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            agent_name="test_agent",
+        )
+
+        assert tracker.api_call_count == 1
+        assert tracker.total_cost_usd > 0
+        assert "test_agent" in tracker.costs_by_agent
+
+    def test_record_call_mixed_keyword_pattern(self):
+        """Test record_call with mixed positional and keyword arguments."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        # First arg positional, rest as keywords
+        tracker.record_call(
+            "gemini-2.5-pro",
+            prompt_tokens=1000,
+            completion_tokens=500,
+            agent_name="test_agent",
+        )
+
+        assert tracker.api_call_count == 1
+        assert tracker.total_cost_usd > 0
+        assert "test_agent" in tracker.costs_by_agent
+
+    def test_record_call_missing_model_raises_error(self):
+        """Test that calling without model raises clear error."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        with pytest.raises(ValidationError, match="model must be provided"):
+            tracker.record_call(prompt_tokens=1000, completion_tokens=500)
+
+    def test_record_call_missing_agent_name_raises_error(self):
+        """Test that calling without agent_name raises clear error."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        with pytest.raises(ValidationError, match="agent_name must be provided"):
+            tracker.record_call(
+                model="gemini-2.5-pro", prompt_tokens=1000, completion_tokens=500
+            )
+
+    def test_record_call_unsupported_kwargs_raises_error(self):
+        """Test that unsupported keyword arguments raise error."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        with pytest.raises(ValidationError, match="Unsupported keyword arguments"):
+            tracker.record_call(
+                model="gemini-2.5-pro",
+                prompt_tokens=1000,
+                completion_tokens=500,
+                agent_name="test_agent",
+                unsupported_arg="foo",
+            )
+
+    def test_record_call_image_model_keyword(self):
+        """Test record_call with image model using keyword pattern."""
+        tracker = CostTracker(max_cost_usd=1.0, max_api_calls=10)
+
+        tracker.record_call(
+            model="gemini-2.5-flash-image",
+            prompt_tokens=0,
+            completion_tokens=0,
+            agent_name="image_agent",
+        )
+
+        assert tracker.api_call_count == 1
+        assert tracker.total_cost_usd == GEMINI_FLASH_IMAGE_PRICE
+        assert "image_agent" in tracker.costs_by_agent

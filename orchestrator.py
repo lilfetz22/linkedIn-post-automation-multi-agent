@@ -258,6 +258,14 @@ class Orchestrator:
                 "error": str(e),
             }
             raise
+        except CircuitBreakerTrippedError as e:
+            agent_duration = int((time.time() - agent_start) * 1000)
+            self.metrics["agent_metrics"][agent_name] = {
+                "duration_ms": agent_duration,
+                "status": "failed",
+                "error": str(e),
+            }
+            raise
 
     def _execute_topic_selection(self) -> str:
         """Execute Topic Agent (Phase 5.3 - Step 1)."""

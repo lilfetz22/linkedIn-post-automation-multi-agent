@@ -6,6 +6,7 @@ Includes character count validation loop with hashtag removal logic.
 
 from pathlib import Path
 from typing import Dict, Any
+import re
 import time
 
 from core.envelope import ok, err, validate_envelope
@@ -19,6 +20,9 @@ STEP_CODE = "50_review"
 MAX_CHAR_COUNT = 3000
 MAX_SHORTENING_ATTEMPTS = 3
 REVIEW_TEMPERATURE = 0.3  # Lower temperature for precise review work
+BLACKLIST_PATTERN = re.compile(
+    r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE
+)
 
 
 def count_chars(text: str) -> int:
@@ -46,6 +50,18 @@ def _remove_hashtags(text: str) -> str:
         return "\n".join(lines[: last_content_idx + 1])
 
     return text
+
+
+def _scrub_blacklisted_phrases(text: str) -> tuple[str, int]:
+    """Remove forbidden phrases (e.g., Tech Audience Accelerator) from text.
+
+    Returns the scrubbed text and the number of substitutions performed.
+    """
+
+    scrubbed, replacements = re.subn(BLACKLIST_PATTERN, "", text)
+    scrubbed = re.sub(r" {2,}", " ", scrubbed)
+    scrubbed = re.sub(r"\n{3,}", "\n\n", scrubbed).strip()
+    return scrubbed, replacements
 
 
 def _apply_grammar_corrections(text: str) -> tuple[str, int]:
@@ -110,6 +126,7 @@ and Witty Expert persona consistency.
 - Maintain the core message, analogy, and metrics
 - Shorten by removing unnecessary elaboration and tightening phrasing
 - Preserve the hook, problem, solution, impact, and sign-off structure
+- Remove any mention of "Tech Audience Accelerator" or similar newsletter names
 - Keep Witty Expert persona (intellectual sparkle, fresh analogies, dry wit)
 - Do NOT include hashtags at the end
 - Character count MUST be under 3000 (excluding line breaks)
@@ -133,6 +150,7 @@ and persona consistency (Witty Expert).
 **Instructions:**
 - Make minor revisions to improve flow and coherence
 - Fix any persona inconsistencies (e.g., cliché analogies, academic tone)
+- Remove any mention of "Tech Audience Accelerator" or similar newsletter names
 - Preserve the core message and structure
 - Return ONLY the revised post, no explanations"""
 
@@ -216,17 +234,22 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
             # Record cost
             if cost_tracker:
+                # Use new positional calling pattern: (model, prompt_tokens, completion_tokens, agent_name)
                 cost_tracker.record_call(
-                    model="gemini-2.5-pro",
-                    prompt_tokens=token_usage.get("prompt_tokens", 0),
-                    completion_tokens=token_usage.get("completion_tokens", 0),
+                    "gemini-2.5-pro",
+                    token_usage.get("prompt_tokens", 0),
+                    token_usage.get("completion_tokens", 0),
+                    agent_name="reviewer_agent",
                 )
 
             # Step 2: Local Grammar Checking
             grammar_checked, num_corrections = _apply_grammar_corrections(llm_revised)
 
+            # Step 3: Blacklist scrubbing (hard block for forbidden phrases)
+            scrubbed_text, blacklist_hits = _scrub_blacklisted_phrases(grammar_checked)
+
             # Log iteration
-            char_count = count_chars(grammar_checked)
+            char_count = count_chars(scrubbed_text)
             log_event(
                 run_id,
                 "reviewer",
@@ -237,11 +260,12 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 token_usage={
                     "char_count": char_count,
                     "grammar_corrections": num_corrections,
+                    "blacklist_removed": blacklist_hits,
                     "shortening_attempt": shortening_attempts,
                 },
             )
 
-            # Step 3: Character Count Validation
+            # Step 4: Character Count Validation
             if char_count < MAX_CHAR_COUNT:
                 # Success! Prepare response
                 changes = {
@@ -249,6 +273,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                         "coherence_review" if llm_revised != draft_text else "none"
                     ),
                     "grammar_corrections": num_corrections,
+                    "blacklist_removed": blacklist_hits,
                     "hashtags_removed": False,
                     "shortening_attempts": shortening_attempts,
                 }
@@ -257,7 +282,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     "original": original_text,
                     "llm_revised": llm_revised,
                     "grammar_checked": grammar_checked,
-                    "revised": grammar_checked,
+                    "revised": scrubbed_text,
                     "changes": changes,
                     "char_count": char_count,
                     "iterations": shortening_attempts + 1,
@@ -273,7 +298,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
             # Too long - try hashtag removal first
             if shortening_attempts == 0:
-                text_without_hashtags = _remove_hashtags(grammar_checked)
+                text_without_hashtags = _remove_hashtags(scrubbed_text)
                 char_count_no_hashtags = count_chars(text_without_hashtags)
 
                 if char_count_no_hashtags < MAX_CHAR_COUNT:
@@ -281,6 +306,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     changes = {
                         "llm_changes": "coherence_review",
                         "grammar_corrections": num_corrections,
+                        "blacklist_removed": blacklist_hits,
                         "hashtags_removed": True,
                         "shortening_attempts": 0,
                     }
@@ -303,7 +329,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                     return response
 
                 # Hashtag removal wasn't enough, need to shorten
-                grammar_checked = text_without_hashtags
+                scrubbed_text = text_without_hashtags
 
             # Still too long - retry with shortening instruction
             shortening_attempts += 1
@@ -314,7 +340,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 )
 
             # Prepare for next iteration
-            draft_text = grammar_checked
+            draft_text = scrubbed_text
             shortening_instruction = (
                 f"Revise to under 3000 characters with minor adjustments. "
                 f"Current: {char_count} characters."

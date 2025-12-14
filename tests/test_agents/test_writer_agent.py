@@ -52,13 +52,23 @@ Ever feel like Redis is a race car engine that's either overheating or underperf
 
 **The Action:** Try this one-line config change today.
 
-— Tech Audience Accelerator"""
+— Keep shipping"""
 
 
 @pytest.fixture
 def mock_long_draft():
     """Sample long draft (over 3000 chars)."""
     return "A" * 3100  # Exceeds MAX_CHAR_COUNT
+
+
+@pytest.fixture
+def mock_short_draft_with_blacklist():
+    """Draft that incorrectly includes the blacklisted phrase."""
+    return """**Redis Optimization**
+
+Great content here.
+
+— Tech Audience Accelerator"""
 
 
 @pytest.fixture
@@ -330,4 +340,41 @@ def test_writer_agent_formats_prompt_correctly(
     assert "Redis Optimization Strategies" in call_prompt
     assert "Hard to balance memory vs latency" in call_prompt
     assert "Like tuning a race car engine" in call_prompt
-    assert "Tech Audience Accelerator" in call_prompt
+    assert "Do NOT mention \"Tech Audience Accelerator\"" in call_prompt
+    assert "— Tech Audience Accelerator" not in call_prompt
+
+
+@patch("agents.writer_agent.load_system_prompt")
+@patch("agents.writer_agent.get_text_client")
+def test_writer_agent_scrubs_blacklisted_phrase(
+    mock_get_client,
+    mock_load_prompt,
+    temp_run_dir,
+    sample_structured_prompt,
+    mock_short_draft_with_blacklist,
+    mock_cost_tracker,
+):
+    """Ensure writer removes forbidden phrases before saving draft."""
+    mock_load_prompt.return_value = "You are the Witty Expert persona."
+
+    mock_client = MagicMock()
+    mock_client.generate_text.return_value = {
+        "text": mock_short_draft_with_blacklist,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 200},
+    }
+    mock_get_client.return_value = mock_client
+
+    input_obj = {"structured_prompt": sample_structured_prompt}
+    context = {
+        "run_id": "test-run-009",
+        "run_path": temp_run_dir,
+        "cost_tracker": mock_cost_tracker,
+    }
+
+    response = run(input_obj, context)
+
+    assert response["status"] == "ok"
+    artifact_path = temp_run_dir / "40_draft.md"
+    saved_text = artifact_path.read_text()
+
+    assert "Tech Audience Accelerator" not in saved_text

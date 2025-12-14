@@ -49,6 +49,20 @@ class CircuitBreakerTrippedError(Exception):
     pass
 
 
+def _is_quota_or_rate_limit_error(message: str) -> bool:
+    """Detect quota or rate limit exhaustion markers in an error message."""
+
+    lowered = message.lower()
+    keywords = [
+        "resource_exhausted",
+        "quota exceeded",
+        "exceeded your current quota",
+        "rate limit",
+    ]
+
+    return any(keyword in lowered for keyword in keywords)
+
+
 def exponential_backoff(attempt: int, base_seconds: float = 1.0) -> float:
     """
     Calculate exponential backoff delay.
@@ -120,6 +134,14 @@ def execute_with_retries(
 
         except BaseAgentError as e:
             last_error = e
+
+            if e.retryable and _is_quota_or_rate_limit_error(str(e)):
+                # Quota/rate limit exhaustion is not recoverable within a run
+                e.retryable = False
+                e.message = (
+                    f"{str(e)} | Resolve quota/billing or wait for limits to reset."
+                )
+                raise
 
             # Non-retryable errors abort immediately
             if not e.retryable:

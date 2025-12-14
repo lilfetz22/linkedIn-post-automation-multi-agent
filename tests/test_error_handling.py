@@ -188,6 +188,36 @@ class TestExponentialBackoff:
         mock_sleep.assert_not_called()  # No backoff for non-retryable
 
 
+class TestQuotaExhaustionHandling:
+    """Test that quota exhaustion is treated as non-retryable to avoid breaker trips."""
+
+    def test_quota_error_skips_retries_and_backoff(self):
+        """Quota errors should not trigger retries or circuit breaker increments."""
+
+        breaker = CircuitBreaker()
+        call_count = 0
+
+        def quota_failure():
+            nonlocal call_count
+            call_count += 1
+            raise BaseAgentError(
+                "Text generation failed: 429 RESOURCE_EXHAUSTED. Quota exceeded",
+                retryable=True,
+            )
+
+        with patch("core.retry.time.sleep") as mock_sleep:
+            with pytest.raises(BaseAgentError) as exc_info:
+                execute_with_retries(
+                    quota_failure, max_attempts=3, circuit_breaker=breaker
+                )
+
+        assert "RESOURCE_EXHAUSTED" in str(exc_info.value)
+        assert exc_info.value.retryable is False
+        assert call_count == 1
+        assert breaker.consecutive_failures == 0
+        mock_sleep.assert_not_called()
+
+
 # =============================================================================
 # Test Suite: Circuit Breaker Behavior
 # =============================================================================

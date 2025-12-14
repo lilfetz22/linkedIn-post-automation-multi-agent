@@ -156,6 +156,31 @@ def test_execute_agent_with_retry_handles_validation_error(
     )
 
 
+@patch("orchestrator.execute_with_retries")
+def test_execute_agent_with_retry_logs_circuit_breaker_failure(
+    mock_retry, orchestrator_with_config
+):
+    """Circuit breaker trips should still record agent failure metrics."""
+
+    mock_retry.side_effect = CircuitBreakerTrippedError("breaker tripped")
+
+    orchestrator_with_config.run_id = "test-run"
+    orchestrator_with_config.run_path = Path("/tmp/test-run")
+    orchestrator_with_config.context = {
+        "run_id": "test-run",
+        "run_path": Path("/tmp/test-run"),
+    }
+
+    with pytest.raises(CircuitBreakerTrippedError):
+        orchestrator_with_config._execute_agent_with_retry(
+            "test_agent", Mock(), {"input": "data"}
+        )
+
+    metrics = orchestrator_with_config.metrics["agent_metrics"]["test_agent"]
+    assert metrics["status"] == "failed"
+    assert "breaker tripped" in metrics["error"]
+
+
 # Test Suite: Sequential Agent Pipeline (5.3)
 
 

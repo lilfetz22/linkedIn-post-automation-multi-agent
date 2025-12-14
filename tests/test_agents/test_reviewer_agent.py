@@ -5,7 +5,12 @@ from pathlib import Path
 import pytest
 from unittest.mock import patch, MagicMock
 
-from agents.reviewer_agent import run, count_chars, _remove_hashtags
+from agents.reviewer_agent import (
+    run,
+    count_chars,
+    _remove_hashtags,
+    _scrub_blacklisted_phrases,
+)
 from core.envelope import validate_envelope
 
 
@@ -97,6 +102,9 @@ def test_reviewer_agent_success(
     # Verify artifact persistence
     artifact_path = temp_run_dir / "50_review.json"
     assert artifact_path.exists()
+
+    # Ensure forbidden phrases are removed
+    assert "Tech Audience Accelerator" not in response["data"]["revised"]
 
     # Verify LLM was called
     mock_client.generate_text.assert_called_once()
@@ -328,6 +336,20 @@ def test_remove_hashtags():
     assert "#redis" not in result
     assert "Tech Audience Accelerator" in result
     assert result.strip().endswith("Tech Audience Accelerator")
+
+
+def test_scrub_blacklisted_phrases():
+    """Ensure scrub removes forbidden newsletter references."""
+    text_with_blacklist = """Great content here.
+
+— Tech Audience Accelerator
+Another line mentioning tech audience accelerator inside."""
+
+    scrubbed, hits = _scrub_blacklisted_phrases(text_with_blacklist)
+
+    assert hits >= 1
+    assert "Tech Audience Accelerator" not in scrubbed
+    assert "tech audience accelerator" not in scrubbed.lower()
 
 
 def test_remove_hashtags_no_hashtags():
