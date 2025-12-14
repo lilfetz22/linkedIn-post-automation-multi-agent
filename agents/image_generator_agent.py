@@ -5,6 +5,7 @@ Falls back to placeholder PNG if generation fails.
 """
 
 import time
+import traceback
 from pathlib import Path
 from typing import Dict, Any
 
@@ -78,7 +79,7 @@ def _generate_image_with_gemini(
                 model="gemini-2.5-flash-image",
                 prompt_tokens=0,  # Image models don't expose token counts
                 completion_tokens=0,
-                agent_name="image_generator_agent"
+                agent_name="image_generator_agent",
             )
 
         generation_info = {
@@ -151,6 +152,24 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             )
 
         except ModelError as e:
+            # Capture full traceback for debugging
+            full_traceback = traceback.format_exc()
+
+            # Log the actual error with full traceback before falling back
+            log_event(
+                run_id,
+                "image_generation",
+                attempt,
+                "error",
+                error_type="ModelError",
+                model="gemini-2.5-flash-image",
+                token_usage={
+                    "error_message": str(e),
+                    "traceback": full_traceback,
+                    "will_fallback": True,
+                },
+            )
+
             # Fallback to placeholder PNG
             _write_placeholder_png(artifact_path)
             image_path = str(artifact_path)
@@ -158,6 +177,7 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 "model": "placeholder",
                 "fallback_used": True,
                 "fallback_reason": str(e),
+                "full_traceback": full_traceback,
             }
 
             log_event(
@@ -169,6 +189,8 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
                 token_usage={
                     "fallback": True,
                     "reason": "gemini_generation_failed",
+                    "original_error": str(e),
+                    "traceback": full_traceback,
                 },
             )
 
@@ -210,3 +232,110 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             run_id, "image_generation", attempt, "error", error_type=type(e).__name__
         )
         return response
+
+
+if __name__ == "__main__":
+    """
+    Standalone CLI mode for testing image generation.
+
+    Usage:
+        python -m agents.image_generator_agent --prompt-file path/to/70_image_prompt.txt
+        python -m agents.image_generator_agent --prompt-file runs/2025-12-14-c0cfd1/70_image_prompt.txt
+    """
+    import argparse
+    import json
+    from datetime import datetime
+
+    parser = argparse.ArgumentParser(
+        description="Test image generation agent standalone"
+    )
+    parser.add_argument(
+        "--prompt-file",
+        required=True,
+        help="Path to image prompt text file (e.g., 70_image_prompt.txt)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Output directory for generated image (default: runs/test-image-{timestamp})",
+    )
+    parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Run ID for logging (default: test-image-{timestamp})",
+    )
+
+    args = parser.parse_args()
+
+    # Create test context
+    timestamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
+    test_run_id = args.run_id or f"test-image-{timestamp}"
+
+    if args.output_dir:
+        test_run_path = Path(args.output_dir)
+    else:
+        test_run_path = Path("runs") / test_run_id
+
+    test_run_path.mkdir(parents=True, exist_ok=True)
+
+    context = {
+        "run_id": test_run_id,
+        "run_path": test_run_path,
+        "cost_tracker": None,  # Disable cost tracking for standalone testing
+    }
+
+    input_obj = {
+        "image_prompt_path": args.prompt_file,
+    }
+
+    print(f"\n{'='*60}")
+    print(f"STANDALONE IMAGE GENERATOR TEST")
+    print(f"{'='*60}")
+    print(f"Run ID: {test_run_id}")
+    print(f"Prompt File: {args.prompt_file}")
+    print(f"Output Dir: {test_run_path}")
+    print(f"{'='*60}\n")
+
+    # Read and display prompt
+    try:
+        prompt_content = Path(args.prompt_file).read_text(encoding="utf-8")
+        print(f"Image Prompt:\n{'-'*60}")
+        print(prompt_content)
+        print(f"{'-'*60}\n")
+    except Exception as e:
+        print(f"Error reading prompt file: {e}\n")
+
+    # Run the agent
+    print("Running image generation...")
+    result = run(input_obj, context)
+
+    # Display results
+    print(f"\n{'='*60}")
+    print(f"RESULT")
+    print(f"{'='*60}")
+    print(json.dumps(result, indent=2, default=str))
+    print(f"{'='*60}\n")
+
+    if result["status"] == "ok":
+        image_path = result["data"]["image_path"]
+        generation_info = result["data"]["generation_info"]
+
+        print(f"✓ Success!")
+        print(f"  Image saved to: {image_path}")
+        print(f"  Model: {generation_info.get('model')}")
+
+        if generation_info.get("fallback_used"):
+            print(f"  ⚠ Fallback used: {generation_info.get('fallback_reason')}")
+            if "full_traceback" in generation_info:
+                print(f"\n  Full Traceback:")
+                print(f"  {'-'*56}")
+                for line in generation_info["full_traceback"].split("\n"):
+                    print(f"  {line}")
+        else:
+            print(f"  Duration: {generation_info.get('duration_ms')}ms")
+    else:
+        print(f"✗ Failed!")
+        print(f"  Error: {result['error']['type']}")
+        print(f"  Message: {result['error']['message']}")
+
+    print()
