@@ -23,7 +23,9 @@ STEP_CODE = "40_draft"
 MAX_CHAR_COUNT = 3000
 MAX_SHORTENING_ATTEMPTS = 3
 TEMPERATURE = 0.8  # Higher temperature for creative writing
-BLACKLIST_PATTERN = re.compile(r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE)
+BLACKLIST_PATTERN = re.compile(
+    r"\s*[-—–]?\s*Tech Audience Accelerator\s*", re.IGNORECASE
+)
 
 
 def count_chars(text: str) -> int:
@@ -31,16 +33,22 @@ def count_chars(text: str) -> int:
     return len(text.replace("\n", "").replace("\r", ""))
 
 
-def _format_structured_prompt_as_user_message(structured: Dict[str, Any]) -> str:
-    """Format structured prompt dict into natural language user prompt.
+def _format_structured_prompt_as_user_message(structured: str | Dict[str, Any]) -> str:
+    """Format structured prompt into user message for LLM.
 
     Args:
-        structured: Structured prompt from Prompt Generator Agent
+        structured: Either a pre-formatted string from Prompt Generator Agent,
+                   or a legacy dict structure with individual fields
 
     Returns:
         Formatted user prompt for LLM
     """
-    # Extract all fields from structured prompt
+    # If structured is already a string (new format from Prompt Generator),
+    # it's a complete prompt ready to use - just return it
+    if isinstance(structured, str):
+        return structured
+
+    # Legacy path: If it's a dict with individual fields (for backward compatibility)
     topic = structured.get("topic_title", "Unknown Topic")
     audience = structured.get("target_audience", "technical professionals")
     pain_point = structured.get("pain_point", "")
@@ -101,7 +109,7 @@ def _generate_draft_with_llm(
     """Generate LinkedIn post draft using Gemini LLM.
 
     Args:
-        structured: Structured prompt from Prompt Generator Agent
+        structured: Dict containing 'structured_prompt' key with the formatted prompt string
         shortening_context: Optional previous draft that was too long
 
     Returns:
@@ -113,8 +121,12 @@ def _generate_draft_with_llm(
     # Load Witty Expert persona from system_prompts.md
     system_prompt = load_system_prompt("witty_expert")
 
+    # Extract the structured_prompt string from the input dict
+    # (Prompt Generator Agent returns {"topic": "...", "structured_prompt": "..."})
+    structured_prompt_text = structured.get("structured_prompt", structured)
+
     # Format structured prompt as user message
-    user_message = _format_structured_prompt_as_user_message(structured)
+    user_message = _format_structured_prompt_as_user_message(structured_prompt_text)
 
     # If this is a shortening attempt, add context
     if shortening_context:
@@ -296,11 +308,11 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         # Should never reach here due to loop logic, but defensive
         raise ValidationError(
             "Max shortening attempts (3) exceeded; post still exceeds 3000 characters",
-            error_code="MAX_SHORTENING_EXCEEDED"
+            error_code="MAX_SHORTENING_EXCEEDED",
         )
     except ValidationError as e:
         # If we exhausted shortening attempts, fall back to deterministic template
-        if getattr(e, 'error_code', None) == "MAX_SHORTENING_EXCEEDED":
+        if getattr(e, "error_code", None) == "MAX_SHORTENING_EXCEEDED":
             # Request user approval before proceeding with fallback
             warning = fallback_tracker.record_warning(
                 agent_name="writer_agent",
