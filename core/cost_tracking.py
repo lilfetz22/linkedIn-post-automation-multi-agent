@@ -137,7 +137,7 @@ class CostTracker:
 
     def record_call(
         self,
-        agent_name_or_model: str,
+        agent_name_or_model: str = None,
         metrics_or_prompt_tokens: "CostMetrics | int | None" = 0,
         completion_tokens: Optional[int] = None,
         agent_name: Optional[str] = None,
