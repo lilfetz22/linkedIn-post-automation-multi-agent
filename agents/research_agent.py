@@ -2,7 +2,6 @@
 
 Conducts research on a given topic using LLM-powered synthesis.
 Generates sources and summary for the selected topic.
-TODO: Integrate external web search API (Tavily, SerpAPI, or Google Custom Search).
 """
 
 from pathlib import Path
@@ -73,10 +72,8 @@ def _memory_bank_fallback(topic: str) -> Dict[str, Any] | None:
 
 def _conduct_llm_research(topic: str, cost_tracker=None) -> Dict[str, Any]:
     """
-    Use LLM to generate research synthesis for a topic.
-
-    TODO: Replace with actual web search API integration (Tavily, SerpAPI, etc.)
-    For now, leverages LLM's knowledge to synthesize key points.
+    Use LLM to generate research synthesis for a topic, utilizing web search grounding
+    call from within Google Gemini API
 
     Args:
         topic: The topic to research
