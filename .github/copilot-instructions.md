@@ -95,7 +95,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 This is required for venv activation and Python script execution.
 
 ### Standard Workflow
-1. **First-time setup**: Prompt user to select field (Data Science or Gen AI), save to `config.json`
+1. **First-time setup**: Prompt user to enter their field of expertise (accepts any custom field), save to `config.json`
 2. **Execution**: `python main.py` triggers orchestrator, creates unique run directory
 3. **Debugging**: Check `events.jsonl` and per-run `run_failed.json` for failures
 4. **Testing**: Validate retry logic, artifact integrity, character limit loop, fallback activation

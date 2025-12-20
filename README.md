@@ -253,9 +253,13 @@ Each execution follows this sequence:
 
 5. **First-time setup**
    
-	On first run, you'll be prompted to select your field of expertise:
+	On first run, you'll be prompted to enter your field of expertise. You can enter any field you specialize in:
 	- Data Science (Optimizations & Time-Series Analysis)
 	- Generative AI & AI Agents
+	- Software Engineering (Cloud Architecture)
+	- DevOps & Infrastructure
+	- Machine Learning Operations
+	- Or any custom field of your choice
    
 	Your selection is saved in `config.json`.
 
@@ -614,13 +618,29 @@ This will execute all logic up to the first LLM call, allowing you to:
 
 ### Field Selection
 
-Edit `config.json` to change your field:
+Edit `config.json` to change your field. You can use any field of expertise you wish:
 ```json
 {
-  "field": "Data Science (Optimizations & Time-Series Analysis)"
+  "field": "Your custom field here (e.g., Data Science, Machine Learning, Cloud Architecture)"
 }
 ```
 
+**Example fields:**
+- `"Data Science (Optimizations & Time-Series Analysis)"`
+- `"Generative AI & AI Agents"`
+- `"Software Engineering (Cloud Architecture)"`
+- `"DevOps & Infrastructure"`
+- `"Machine Learning Operations"`
+- Any other field you specialize in
+
+**How field choice affects topic selection and cost**
+
+- The two pre-seeded fields  
+  - `"Data Science (Optimizations & Time-Series Analysis)"`  
+  - `"Generative AI & AI Agents"`  
+  use the `potential_topics` table in `database/topics.db` for topic selection. For these, the Topic Agent selects topics via SQLite queries only (no extra LLM call for topic selection).
+- When you use any other custom field (for example, `"Software Engineering (Cloud Architecture)"` or your own niche), the Topic Agent typically will not find matching topics in the database and will **fall back to LLM-based topic generation**. This requires an additional LLM API call and therefore increases cost for each run that needs a new topic.
+- If you want to use a custom field **without** paying the extra LLM cost for topic selection, you can seed your own topics into the database (for your custom field value) using `database/init_db.py` or a similar initialization step. Once seeded, your custom field behaves like the pre-seeded ones and uses database queries first.
 ### Character Limits
 
 The system enforces a 3000-character limit for LinkedIn posts. If a post exceeds this, it's automatically sent back to the Writer Agent for shortening.
