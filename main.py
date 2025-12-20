@@ -39,6 +39,8 @@ from orchestrator import Orchestrator
 EXAMPLE_FIELDS = [
     "Data Science (Optimizations & Time-Series Analysis)",
     "Generative AI & AI Agents",
+    "Software Engineering (Cloud Architecture)",
+    "DevOps & Infrastructure",
 ]
 
 
@@ -100,8 +102,6 @@ def prompt_select_field() -> str:
     print("Examples:")
     for example in EXAMPLE_FIELDS:
         print(f"  - {example}")
-    print("  - Software Engineering (Cloud Architecture)")
-    print("  - DevOps & Infrastructure")
     print()
 
     while True:
