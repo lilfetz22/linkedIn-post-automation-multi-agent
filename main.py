@@ -35,7 +35,8 @@ from core.errors import ValidationError, CorruptionError
 from orchestrator import Orchestrator
 
 
-ALLOWED_FIELDS = [
+# Example fields (users can enter any field they wish)
+EXAMPLE_FIELDS = [
     "Data Science (Optimizations & Time-Series Analysis)",
     "Generative AI & AI Agents",
 ]
@@ -43,64 +44,75 @@ ALLOWED_FIELDS = [
 
 def validate_field(value: str) -> str:
     """
-    Validate that the provided field value is in ALLOWED_FIELDS.
+    Validate that the provided field value is a non-empty string.
 
     Args:
-        value: Field string to validate against ALLOWED_FIELDS list
+        value: Field string to validate (any non-empty string is accepted)
 
     Returns:
         The validated field string (same as input if valid)
 
     Raises:
-        ValidationError: If value is not in ALLOWED_FIELDS
+        ValidationError: If value is empty or only whitespace
 
     Example:
         >>> validate_field("Data Science (Optimizations & Time-Series Analysis)")
         "Data Science (Optimizations & Time-Series Analysis)"
-        >>> validate_field("Invalid Field")
-        ValidationError: Invalid field. Choose one of: ...
+        >>> validate_field("Custom Machine Learning Field")
+        "Custom Machine Learning Field"
+        >>> validate_field("")
+        ValidationError: Field cannot be empty
     """
-    if value not in ALLOWED_FIELDS:
-        raise ValidationError(
-            "Invalid field. Choose one of: " + ", ".join(ALLOWED_FIELDS)
-        )
-    return value
+    if not value or not value.strip():
+        raise ValidationError("Field cannot be empty")
+    return value.strip()
 
 
 def prompt_select_field() -> str:
     """
-    Interactively prompt user to select a field from ALLOWED_FIELDS.
+    Interactively prompt user to enter their field of expertise.
 
-    Displays numbered menu of available fields and validates user input.
-    Continues prompting until valid selection is made.
+    Displays example fields and accepts any non-empty string as input.
+    Continues prompting until valid input is provided.
 
     Returns:
-        Selected field string from ALLOWED_FIELDS
+        User-entered field string (non-empty)
 
     Notes:
         This function implements an infinite retry loop, prompting
-        repeatedly until user provides valid numeric input within
-        the allowed range (1 to len(ALLOWED_FIELDS)).
+        repeatedly until user provides non-empty input. Users can
+        enter any custom field they wish.
 
     Example:
         >>> field = prompt_select_field()
-        Select your field of expertise:
-          1. Data Science (Optimizations & Time-Series Analysis)
-          2. Generative AI & AI Agents
-        Enter number (1-2): 1
+        Enter your field of expertise.
+        Examples:
+          - Data Science (Optimizations & Time-Series Analysis)
+          - Generative AI & AI Agents
+          - Software Engineering (Cloud Architecture)
+          - DevOps & Infrastructure
+
+        Your field: Machine Learning Operations
         >>> print(field)
-        "Data Science (Optimizations & Time-Series Analysis)"
+        "Machine Learning Operations"
     """
-    print("Select your field of expertise:")
-    for idx, val in enumerate(ALLOWED_FIELDS, start=1):
-        print(f"  {idx}. {val}")
+    print("\nEnter your field of expertise.")
+    print("Examples:")
+    for example in EXAMPLE_FIELDS:
+        print(f"  - {example}")
+    print("  - Software Engineering (Cloud Architecture)")
+    print("  - DevOps & Infrastructure")
+    print()
+
     while True:
-        raw = input("Enter number (1-{}): ".format(len(ALLOWED_FIELDS))).strip()
-        if raw.isdigit():
-            i = int(raw)
-            if 1 <= i <= len(ALLOWED_FIELDS):
-                return ALLOWED_FIELDS[i - 1]
-        print("Invalid selection. Please try again.")
+        raw = input("Your field: ").strip()
+        if raw:
+            try:
+                return validate_field(raw)
+            except ValidationError as e:
+                print(f"Error: {e}. Please try again.")
+        else:
+            print("Field cannot be empty. Please try again.")
 
 
 def config_path(root: Path) -> Path:
@@ -126,7 +138,7 @@ def load_config(root: Path) -> Optional[dict]:
     Load and validate configuration from config.json.
 
     Reads config.json from the project root, validates its structure,
-    and ensures the 'field' value is in ALLOWED_FIELDS.
+    and ensures the 'field' value is a non-empty string.
 
     Args:
         root: Project root directory path
@@ -137,7 +149,7 @@ def load_config(root: Path) -> Optional[dict]:
 
     Raises:
         ValidationError: If config.json exists but is missing 'field' key
-                        or field value is not in ALLOWED_FIELDS
+                        or field value is empty
         CorruptionError: If config.json contains invalid JSON that cannot be parsed
 
     Example:
@@ -347,8 +359,8 @@ def print_summary(result: dict) -> None:
         if next_steps:
             print()
             print(f"Next LLM Call: {next_steps.get('first_llm_call', 'N/A')}")
-            model = next_steps.get('model', 'N/A')
-            temp = next_steps.get('temperature', 'N/A')
+            model = next_steps.get("model", "N/A")
+            temp = next_steps.get("temperature", "N/A")
             print(f"Model: {model} (temperature: {temp})")
 
         print()
