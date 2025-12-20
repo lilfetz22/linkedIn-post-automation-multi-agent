@@ -253,9 +253,13 @@ Each execution follows this sequence:
 
 5. **First-time setup**
    
-	On first run, you'll be prompted to select your field of expertise:
+	On first run, you'll be prompted to enter your field of expertise. You can enter any field you specialize in:
 	- Data Science (Optimizations & Time-Series Analysis)
 	- Generative AI & AI Agents
+	- Software Engineering (Cloud Architecture)
+	- DevOps & Infrastructure
+	- Machine Learning Operations
+	- Or any custom field of your choice
    
 	Your selection is saved in `config.json`.
 
@@ -614,12 +618,20 @@ This will execute all logic up to the first LLM call, allowing you to:
 
 ### Field Selection
 
-Edit `config.json` to change your field:
+Edit `config.json` to change your field. You can use any field of expertise you wish:
 ```json
 {
-  "field": "Data Science (Optimizations & Time-Series Analysis)"
+  "field": "Your custom field here (e.g., Data Science, Machine Learning, Cloud Architecture)"
 }
 ```
+
+**Example fields:**
+- `"Data Science (Optimizations & Time-Series Analysis)"`
+- `"Generative AI & AI Agents"`
+- `"Software Engineering (Cloud Architecture)"`
+- `"DevOps & Infrastructure"`
+- `"Machine Learning Operations"`
+- Any other field you specialize in
 
 ### Character Limits
 
