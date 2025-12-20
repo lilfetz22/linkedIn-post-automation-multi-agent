@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.5.0 (2025-12-20)
+
+### Documentation
+
+- **github**: Update first-time setup wording to accept any custom field
+  ([`fd8c220`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/fd8c2201dcb0aa5b8db67a706561f13b5d5a52a0))
+
+- **readme**: Clarify field selection and examples for freeform fields
+  ([`6c9ca8c`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/6c9ca8c24a5d2f0392b430e536a18dfc84df3e88))
+
+### Features
+
+- **config**: Allow arbitrary custom field input in CLI and config
+  ([`4ae2c19`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/4ae2c192ba5b00ccd326850d301c6b22894b3203))
+
+
 ## v1.4.0 (2025-12-14)
 
 ### Bug Fixes
