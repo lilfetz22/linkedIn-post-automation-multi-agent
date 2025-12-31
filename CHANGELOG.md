@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.0 (2025-12-31)
+
+### Features
+
+- **prompt-generator**: Enforce template headings and add self-repair pass; aggregate token usage
+  ([`9fea4b6`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/9fea4b652ed5de39ec4f8a2a8b7746a272f44764))
+
+
 ## v1.5.0 (2025-12-20)
 
 ### Documentation
