@@ -19,6 +19,18 @@ from core.cost_tracking import CostMetrics
 STEP_CODE = "25_structured_prompt"
 
 
+def _merge_token_usage(*usages: Dict[str, Any]) -> Dict[str, int]:
+    """Combine token usage dictionaries by summing prompt/completion tokens."""
+
+    total = {"prompt_tokens": 0, "completion_tokens": 0}
+    for usage in usages:
+        if not usage:
+            continue
+        total["prompt_tokens"] += usage.get("prompt_tokens", 0)
+        total["completion_tokens"] += usage.get("completion_tokens", 0)
+    return total
+
+
 def _validate_prompt_structure(prompt_text: str) -> None:
     """
     Validate that the prompt follows the required template structure.
@@ -88,6 +100,10 @@ def _generate_structured_prompt(
 
     user_message = f"""Raw topic and research to transform into a structured prompt:
 
+Return output in the exact template with every heading present. If any detail is thin,
+still include the heading and write a concise placeholder (e.g., "N/A"). Never drop
+**Key Metrics/Facts:** or **The Simple Solution/Code Snippet:**.
+
 **Topic:** {topic}
 
 **Research Summary:**
@@ -112,13 +128,60 @@ Please transform this into the structured prompt format as defined in your instr
     )
 
     prompt_text = result["text"].strip()
+    token_usage = _merge_token_usage(result.get("token_usage"))
 
-    # Validate structure
-    _validate_prompt_structure(prompt_text)
+    try:
+        _validate_prompt_structure(prompt_text)
+    except ValidationError as exc:
+        if "missing required sections" not in str(exc).lower():
+            raise
+
+        # Attempt a single self-repair pass to fill missing headings
+        repair_message = f"""Format fixer: rewrite the previous attempt to strictly match the template.
+All headings must appear even if you need to write a concise placeholder like "N/A".
+Keep the substance, preserve any analogies, and avoid adding extra sections.
+
+Template to satisfy:
+
+Generate a LinkedIn post using the Witty Expert persona.
+
+**Topic:** ...
+
+**Target Audience:** ...
+
+**Audience's Core Pain Point:** ...
+
+**Key Metrics/Facts:** ...
+
+**The Simple Solution/Code Snippet:** ...
+
+Topic: {topic}
+Research summary: {research.get("summary", "No summary available")}
+Sources: {sources_text}
+
+Previous attempt that missed sections:
+{prompt_text}
+"""
+
+        if cost_tracker:
+            cost_tracker.check_budget("gemini-2.5-pro", repair_message)
+
+        repair_result = client.generate_text(
+            prompt=repair_message,
+            system_instruction=system_prompt,
+            temperature=0.3,
+            max_output_tokens=2000,
+        )
+
+        prompt_text = repair_result["text"].strip()
+        token_usage = _merge_token_usage(token_usage, repair_result.get("token_usage"))
+
+        # Validate repaired output (propagate error if still invalid)
+        _validate_prompt_structure(prompt_text)
 
     return {
         "structured_prompt_text": prompt_text,
-        "token_usage": result.get("token_usage", {}),
+        "token_usage": token_usage,
     }
 
 
