@@ -153,6 +153,59 @@ def test_prompt_generator_rejects_cliche_analogies(temp_run_dir, sample_research
         assert "cliché" in response["error"]["message"].lower()
 
 
+def test_prompt_generator_repairs_missing_sections(temp_run_dir, sample_research):
+    """Ensure agent self-repairs when LLM omits required sections."""
+
+    input_obj = {"topic": "Prompt reliability", "research": sample_research}
+    context = {"run_id": "test-run-006", "run_path": temp_run_dir}
+
+    missing_sections = """Generate a LinkedIn post using the Witty Expert persona.
+
+**Topic:** Prompt Reliability
+
+**Target Audience:** ML Engineers
+
+**Audience's Core Pain Point:** Outputs are inconsistent
+"""
+
+    repaired_prompt = """Generate a LinkedIn post using the Witty Expert persona.
+
+**Topic:** Prompt Reliability
+
+**Target Audience:** ML Engineers
+
+**Audience's Core Pain Point:** Outputs are inconsistent
+
+**Key Metrics/Facts:** LLM calls can fluctuate without guardrails.
+
+**The Simple Solution/Code Snippet:** Enforce templates with post-processing.
+"""
+
+    mock_llm_responses = [
+        {
+            "text": missing_sections,
+            "token_usage": {"prompt_tokens": 50, "completion_tokens": 100},
+        },
+        {
+            "text": repaired_prompt,
+            "token_usage": {"prompt_tokens": 60, "completion_tokens": 120},
+        },
+    ]
+
+    with patch("agents.prompt_generator_agent.get_text_client") as mock_client:
+        mock_client.return_value.generate_text.side_effect = mock_llm_responses
+
+        response = run(input_obj, context)
+
+        validate_envelope(response)
+        assert response["status"] == "ok"
+        structured = response["data"]["structured_prompt"]
+        assert "**Key Metrics/Facts:**" in structured
+        assert "**The Simple Solution/Code Snippet:**" in structured
+        # Should have required both calls (initial + repair)
+        assert mock_client.return_value.generate_text.call_count == 2
+
+
 def test_prompt_generator_validates_required_sections(temp_run_dir, sample_research):
     """Test that validation checks for all required sections."""
     # Test validation function directly
