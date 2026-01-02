@@ -67,6 +67,9 @@ events.jsonl
 # Database journals
 *.db-journal
 
+# Database files (operational data)
+database/topics.db
+
 # Accidentally created files
 =*.*
 next_task_instructions.md
