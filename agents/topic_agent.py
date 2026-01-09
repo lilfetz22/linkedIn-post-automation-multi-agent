@@ -16,17 +16,99 @@ from core.logging import log_event
 from core.run_context import get_artifact_path
 from core.llm_clients import get_text_client
 from core.cost_tracking import CostMetrics
-from database.operations import select_new_topic, get_recent_topics
+from database.operations import (
+    select_new_topic,
+    get_recent_topics,
+    get_all_used_topics,
+    bulk_insert_topics,
+)
 
 
 STEP_CODE = "10_topic"
+
+
+def _generate_topics_batch_with_llm(
+    field: str, used_topics: List[str], cost_tracker=None
+) -> List[str]:
+    """
+    Use LLM to generate 10 new topics when database is exhausted.
+
+    Args:
+        field: The field to generate topics for
+        used_topics: List of already-used topics to avoid
+        cost_tracker: Optional cost tracker for budget management
+
+    Returns:
+        List of 10 new topic strings
+
+    Raises:
+        ModelError: If LLM call fails
+    """
+    used_prompts_list = "\n   -   ".join(used_topics) if used_topics else "None"
+
+    prompt = f"""**Role:** Topic Generator
+
+**Objective:** Generate 10 distinct and relevant topics within the specified "Field of Interest."
+
+**Constraints:**
+1.  **Exclusion:** Do not repeat any topics listed in "Already Used Topics."
+2.  **Depth:** You may delve deeper into the *themes* or *concepts* of previously used topics, but the generated topic itself must be a new, distinct formulation.
+3.  **Relevance:** All generated topics must be directly relevant to the "Field of Interest."
+4.  **Quantity:** Provide exactly 10 new topics.
+
+**Input:**
+
+**Field of Interest:** {field}
+
+**Already Used Topics:**
+-   {used_prompts_list}
+
+**Output Format:**
+A numbered list of 10 new topics."""
+
+    # Check budget before API call
+    if cost_tracker:
+        cost_tracker.check_budget("gemini-2.5-pro", prompt)
+
+    client = get_text_client()
+    result = client.generate_text(
+        prompt=prompt,
+        temperature=0.8,  # Higher temperature for creative topic generation
+        max_output_tokens=2000,
+        use_search_grounding=True,  # Enable Google Search for current trends
+    )
+
+    # Parse numbered list response
+    text = result["text"].strip()
+    lines = text.split("\n")
+    topics = []
+
+    for line in lines:
+        line = line.strip()
+        # Match lines like "1. Topic text" or "- Topic text"
+        if line and (line[0].isdigit() or line.startswith("-")):
+            # Remove numbering and dashes
+            if line[0].isdigit():
+                # Format: "1. Topic text"
+                topic = line.split(".", 1)[1].strip() if "." in line else line
+            else:
+                # Format: "- Topic text"
+                topic = line[1:].strip()
+            if topic:
+                topics.append(topic)
+
+    if not topics:
+        raise ModelError("LLM failed to generate any valid topics")
+
+    # Return first 10 (should be exactly 10)
+    return topics[:10]
 
 
 def _generate_topics_with_llm(
     field: str, recent_topics: List[str], cost_tracker=None
 ) -> str:
     """
-    Use LLM to generate a new topic when database is empty.
+    Use LLM to generate a single new topic when database is empty.
 
     Args:
         field: The field to generate topics for
@@ -112,6 +194,12 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
 
     input_obj expects: {"field": str, "db_path": optional str}
     context expects: {"run_id": str, "run_path": Path, "cost_tracker": optional CostTracker}
+
+    Behavior:
+    1. Try to select an unused topic from the database
+    2. If all unused topics are exhausted, generate 10 new topics and insert them
+    3. Then try again to select one
+    4. If database is completely empty, use LLM fallback for a single topic
     """
     run_id = context["run_id"]
     run_path: Path = context["run_path"]
@@ -133,30 +221,72 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             else select_new_topic(field=field)
         )
 
-        # If database is empty, use LLM fallback
+        # If no topic found, check if all are exhausted or database is empty
         if not topic_data:
-            recent = get_recent_topics(limit=10, db_path=db_path) if db_path else []
+            # Get all used topics in this field
+            used_topics = (
+                get_all_used_topics(field=field, db_path=db_path)
+                if db_path
+                else get_all_used_topics(field=field)
+            )
 
-            try:
-                topic = _generate_topics_with_llm(field, recent, cost_tracker)
-                topic_data = {"topic": topic}
-
-                # Track cost if tracker provided
-                if cost_tracker:
-                    # Estimate cost (this is a fallback, actual usage tracked in client)
-                    cost_metrics = CostMetrics(
-                        model="gemini-2.5-pro",
-                        input_tokens=500,  # Estimate
-                        output_tokens=1000,  # Estimate
+            # If there are used topics, we're exhausted - generate 10 new ones
+            if used_topics:
+                try:
+                    new_topics = _generate_topics_batch_with_llm(
+                        field, used_topics, cost_tracker
                     )
-                    cost_tracker.record_call("topic_agent_llm_fallback", cost_metrics)
-                    metrics_dict["cost_usd"] = cost_metrics.cost_usd
+                    # Insert the new topics into the database
+                    if db_path:
+                        bulk_insert_topics(new_topics, field, db_path)
+                    else:
+                        bulk_insert_topics(new_topics, field)
 
-            except (ModelError, json.JSONDecodeError) as llm_err:
-                # LLM fallback failed
-                raise DataNotFoundError(
-                    f"No topics in database and LLM fallback failed: {str(llm_err)}"
-                )
+                    # Now try to select again
+                    topic_data = (
+                        select_new_topic(field=field, db_path=db_path)
+                        if db_path
+                        else select_new_topic(field=field)
+                    )
+
+                    if cost_tracker:
+                        cost_metrics = CostMetrics(
+                            model="gemini-2.5-pro",
+                            input_tokens=500,  # Estimate
+                            output_tokens=1500,  # Estimate for 10 topics
+                        )
+                        cost_tracker.record_call(
+                            "topic_agent_batch_generation", cost_metrics
+                        )
+                        metrics_dict["cost_usd"] = cost_metrics.cost_usd
+
+                except (ModelError, json.JSONDecodeError) as llm_err:
+                    raise DataNotFoundError(
+                        f"All topics exhausted and LLM batch generation failed: {str(llm_err)}"
+                    )
+            else:
+                # Database is truly empty - use single topic fallback
+                recent = get_recent_topics(limit=10, db_path=db_path) if db_path else []
+
+                try:
+                    topic = _generate_topics_with_llm(field, recent, cost_tracker)
+                    topic_data = {"topic": topic}
+
+                    if cost_tracker:
+                        cost_metrics = CostMetrics(
+                            model="gemini-2.5-pro",
+                            input_tokens=500,  # Estimate
+                            output_tokens=1000,  # Estimate
+                        )
+                        cost_tracker.record_call(
+                            "topic_agent_llm_fallback", cost_metrics
+                        )
+                        metrics_dict["cost_usd"] = cost_metrics.cost_usd
+
+                except (ModelError, json.JSONDecodeError) as llm_err:
+                    raise DataNotFoundError(
+                        f"No topics in database and LLM fallback failed: {str(llm_err)}"
+                    )
 
         artifact_path = get_artifact_path(run_path, STEP_CODE)
         write_and_verify_json(artifact_path, topic_data)
