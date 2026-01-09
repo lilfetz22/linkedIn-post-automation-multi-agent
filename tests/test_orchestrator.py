@@ -90,7 +90,7 @@ def test_initialize_run_creates_directory(
     assert orch.context["run_id"] == "2025-11-16-abc123"
     assert orch.context["run_path"] == mock_run_dir
 
-    mock_create_dir.assert_called_once_with()
+    mock_create_dir.assert_called_once_with(run_number=None)
     mock_write.assert_called_once()
     mock_log.assert_called_once_with("2025-11-16-abc123", "initialization", 1, "ok")
 
@@ -204,6 +204,66 @@ def test_execute_topic_selection_success(mock_topic_agent, orchestrator_with_con
         topic = orchestrator_with_config._execute_topic_selection()
 
     assert topic == "Python AsyncIO"
+    # Verify topic is stored in context
+    assert orchestrator_with_config.context["topic"] == "Python AsyncIO"
+
+
+@patch("orchestrator.record_posted_topic")
+def test_complete_run_success_records_topic(
+    mock_record, orchestrator_with_config, mock_run_dir
+):
+    """Test that _complete_run_success records the topic as posted."""
+    orchestrator_with_config.run_id = "test-run-record"
+    orchestrator_with_config.run_path = mock_run_dir
+    orchestrator_with_config.context = {
+        "run_id": "test-run-record",
+        "run_path": mock_run_dir,
+        "topic": "Test Topic for Recording",
+    }
+    orchestrator_with_config.cost_tracker = Mock()
+    orchestrator_with_config.cost_tracker.get_summary.return_value = {
+        "total_cost_usd": 0.0
+    }
+
+    # Create required artifact
+    final_post_path = mock_run_dir / "60_final_post.txt"
+    final_post_path.write_text("Test post content", encoding="utf-8")
+
+    with patch("orchestrator.log_event"):
+        result = orchestrator_with_config._complete_run_success("Test post content")
+
+    assert result["status"] == "success"
+    # Verify record_posted_topic was called with the topic
+    mock_record.assert_called_once_with("Test Topic for Recording")
+
+
+@patch("orchestrator.record_posted_topic")
+def test_complete_run_success_no_topic_in_context(
+    mock_record, orchestrator_with_config, mock_run_dir
+):
+    """Test that _complete_run_success handles missing topic gracefully."""
+    orchestrator_with_config.run_id = "test-run-no-topic"
+    orchestrator_with_config.run_path = mock_run_dir
+    orchestrator_with_config.context = {
+        "run_id": "test-run-no-topic",
+        "run_path": mock_run_dir,
+        # No topic in context
+    }
+    orchestrator_with_config.cost_tracker = Mock()
+    orchestrator_with_config.cost_tracker.get_summary.return_value = {
+        "total_cost_usd": 0.0
+    }
+
+    # Create required artifact
+    final_post_path = mock_run_dir / "60_final_post.txt"
+    final_post_path.write_text("Test post content", encoding="utf-8")
+
+    with patch("orchestrator.log_event"):
+        result = orchestrator_with_config._complete_run_success("Test post content")
+
+    assert result["status"] == "success"
+    # record_posted_topic should not be called if topic is missing
+    mock_record.assert_not_called()
 
 
 @patch("orchestrator.research_agent")
