@@ -155,7 +155,7 @@ def test_image_prompt_agent_empty_final_post(temp_run_dir, mock_fallback_tracker
 
 
 @patch("agents.image_prompt_agent.get_text_client")
-def test_image_prompt_agent_validates_no_text_constraint(
+def test_image_prompt_agent_validates_no_text_constraint_with_fallback(
     mock_get_client,
     temp_run_dir,
     sample_final_post,
@@ -163,7 +163,7 @@ def test_image_prompt_agent_validates_no_text_constraint(
     mock_cost_tracker,
     mock_fallback_tracker,
 ):
-    """Test that agent validates no-text constraint is present."""
+    """Test that agent validates no-text constraint and falls back when tracker present."""
     # Mock LLM to return invalid prompt (missing no-text constraint)
     mock_client = MagicMock()
     mock_client.generate_text.return_value = {
@@ -191,14 +191,49 @@ def test_image_prompt_agent_validates_no_text_constraint(
 
 
 @patch("agents.image_prompt_agent.get_text_client")
-def test_image_prompt_agent_llm_failure(
+def test_image_prompt_agent_validates_no_text_constraint_without_fallback_tracker(
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_invalid_prompt,
+    mock_cost_tracker,
+):
+    """Test that agent returns error when no-text validation fails and no fallback tracker."""
+    # Mock LLM to return invalid prompt (missing no-text constraint)
+    mock_client = MagicMock()
+    mock_client.generate_text.return_value = {
+        "text": sample_invalid_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
+    mock_get_client.return_value = mock_client
+
+    input_obj = {"final_post": sample_final_post}
+    context = {
+        "run_id": "test-run-004b",
+        "run_path": temp_run_dir,
+        "cost_tracker": mock_cost_tracker,
+        # NOTE: No fallback_tracker provided - this is the critical test case
+    }
+
+    response = run(input_obj, context)
+
+    # Should return error status since no fallback tracker available
+    validate_envelope(response)
+    assert response["status"] == "error"
+    assert response["error"]["type"] == "ValidationError"
+    assert "no text" in response["error"]["message"].lower()
+
+
+@patch("agents.image_prompt_agent.get_text_client")
+def test_image_prompt_agent_llm_failure_with_fallback(
     mock_get_client,
     temp_run_dir,
     sample_final_post,
     mock_cost_tracker,
     mock_fallback_tracker,
 ):
-    """Test error handling when LLM call fails."""
+    """Test error handling when LLM call fails with fallback tracker present."""
     # Mock LLM client to raise exception
     mock_client = MagicMock()
     mock_client.generate_text.side_effect = Exception("API timeout")
@@ -217,6 +252,39 @@ def test_image_prompt_agent_llm_failure(
     # Should fall back to deterministic prompt
     assert response["status"] == "ok"
     assert response["data"].get("fallback_used") is True
+
+
+@patch("agents.image_prompt_agent.get_text_client")
+def test_image_prompt_agent_llm_failure_without_fallback_tracker(
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    mock_cost_tracker,
+):
+    """Test error handling when LLM call fails and no fallback tracker available."""
+    # Mock LLM client to raise exception
+    mock_client = MagicMock()
+    mock_client.generate_text.side_effect = Exception("API timeout")
+    mock_get_client.return_value = mock_client
+
+    input_obj = {"final_post": sample_final_post}
+    context = {
+        "run_id": "test-run-005b",
+        "run_path": temp_run_dir,
+        "cost_tracker": mock_cost_tracker,
+        # NOTE: No fallback_tracker provided
+    }
+
+    response = run(input_obj, context)
+
+    # Should return error status since no fallback tracker available
+    validate_envelope(response)
+    assert response["status"] == "error"
+    assert response["error"]["type"] == "ModelError"
+    assert (
+        "API timeout" in response["error"]["message"]
+        or "failed" in response["error"]["message"].lower()
+    )
 
 
 def test_validate_no_text_constraint_accepts_valid():
@@ -366,3 +434,67 @@ def test_image_prompt_agent_cost_tracking_integration(
     mock_cost_tracker.record_call.assert_called_once()
     call_kwargs = mock_cost_tracker.record_call.call_args.kwargs
     assert call_kwargs["model"] == "gemini-2.5-pro"
+
+
+@patch("agents.image_prompt_agent.get_text_client")
+def test_image_prompt_agent_fallback_rejected_by_user(
+    mock_get_client,
+    temp_run_dir,
+    sample_final_post,
+    sample_invalid_prompt,
+    mock_cost_tracker,
+    mock_fallback_tracker,
+):
+    """Test that agent returns error when user rejects fallback."""
+    # Mock LLM to return invalid prompt
+    mock_client = MagicMock()
+    mock_client.generate_text.return_value = {
+        "text": sample_invalid_prompt,
+        "token_usage": {"prompt_tokens": 100, "completion_tokens": 50},
+        "model": "gemini-2.5-pro",
+    }
+    mock_get_client.return_value = mock_client
+
+    # Mock user rejection of fallback
+    mock_fallback_tracker.request_user_approval = MagicMock(return_value=False)
+
+    input_obj = {"final_post": sample_final_post}
+    context = {
+        "run_id": "test-run-009",
+        "run_path": temp_run_dir,
+        "cost_tracker": mock_cost_tracker,
+        "fallback_tracker": mock_fallback_tracker,
+    }
+
+    response = run(input_obj, context)
+
+    # Should return error since user rejected fallback
+    validate_envelope(response)
+    assert response["status"] == "error"
+    assert response["error"]["type"] == "ValidationError"
+
+
+def test_image_prompt_agent_none_context_values(temp_run_dir, sample_final_post):
+    """Test that agent handles None values in context gracefully."""
+    input_obj = {"final_post": sample_final_post}
+    context = {
+        "run_id": "test-run-010",
+        "run_path": temp_run_dir,
+        "cost_tracker": None,
+        "fallback_tracker": None,
+    }
+
+    # This should not crash even with None trackers
+    # (will fail at LLM call, but that's expected without mocking)
+    # The important part is that None checks don't cause AttributeError
+    with patch("agents.image_prompt_agent.get_text_client") as mock_get_client:
+        mock_client = MagicMock()
+        mock_client.generate_text.side_effect = Exception("Test error")
+        mock_get_client.return_value = mock_client
+
+        response = run(input_obj, context)
+
+        # Should return error without crashing
+        validate_envelope(response)
+        assert response["status"] == "error"
+        assert response["error"]["type"] == "ModelError"
