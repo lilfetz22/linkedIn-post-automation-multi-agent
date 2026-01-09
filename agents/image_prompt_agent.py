@@ -209,6 +209,16 @@ def run(input_obj: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
             else f"LLM image prompt generation failed: {str(e)}"
         )
 
+        # Check if fallback_tracker exists before using it
+        if fallback_tracker is None:
+            # If no fallback tracker, return error (cannot request user approval)
+            response = err(type(e).__name__, str(e), retryable=e.retryable)
+            validate_envelope(response)
+            log_event(
+                run_id, "image_prompt", attempt, "error", error_type=type(e).__name__
+            )
+            return response
+
         warning = fallback_tracker.record_warning(
             agent_name="image_prompt_agent",
             reason=reason,
