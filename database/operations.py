@@ -36,6 +36,18 @@ def get_recent_topics(limit: int = 10, db_path: str = DEFAULT_DB_PATH) -> List[s
         return [r[0] for r in rows]
 
 
+def get_all_used_topics(field: str, db_path: str = DEFAULT_DB_PATH) -> List[str]:
+    """Return all topics marked as used = TRUE for the given field."""
+    with get_connection(db_path) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT topic_name FROM potential_topics WHERE field = ? AND used = TRUE ORDER BY id ASC;",
+            (field,),
+        )
+        rows = cur.fetchall()
+        return [r[0] for r in rows]
+
+
 def record_posted_topic(
     topic_name: str, date_posted: Optional[str] = None, db_path: str = DEFAULT_DB_PATH
 ) -> None:
@@ -47,6 +59,26 @@ def record_posted_topic(
             "INSERT INTO previous_topics(topic_name, date_posted) VALUES (?, ?);",
             (topic_name, ts),
         )
+        conn.commit()
+
+
+def bulk_insert_topics(
+    topics: List[str], field: str, db_path: str = DEFAULT_DB_PATH
+) -> None:
+    """Insert multiple topics into potential_topics with used = FALSE.
+
+    Args:
+        topics: List of topic strings to insert
+        field: The field these topics belong to
+        db_path: Path to database
+    """
+    with get_connection(db_path) as conn:
+        cur = conn.cursor()
+        for topic in topics:
+            cur.execute(
+                "INSERT INTO potential_topics(topic_name, field, used) VALUES (?, ?, FALSE);",
+                (topic, field),
+            )
         conn.commit()
 
 
