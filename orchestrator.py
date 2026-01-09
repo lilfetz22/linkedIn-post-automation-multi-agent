@@ -19,7 +19,7 @@ import time
 import traceback
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, Callable
+from typing import Dict, Any, Callable, Optional
 
 from core.run_context import create_run_dir, get_artifact_path
 from core.retry import CircuitBreaker, execute_with_retries, CircuitBreakerTrippedError
@@ -45,6 +45,7 @@ from agents import (
     image_prompt_agent,
     image_generator_agent,
 )
+from database.operations import record_posted_topic
 
 
 class Orchestrator:
@@ -65,7 +66,7 @@ class Orchestrator:
     MAX_CHAR_LOOP_ITERATIONS = 5
     MAX_TOPIC_PIVOTS = 2
 
-    def __init__(self, config: dict, dry_run: bool = False, no_image: bool = False):
+    def __init__(self, config: dict, dry_run: bool = False, no_image: bool = False, run_number: Optional[int] = None):
         """
         Initialize orchestrator with configuration.
 
@@ -73,6 +74,8 @@ class Orchestrator:
             config (dict): Configuration dictionary with field selection
             dry_run (bool): If True, execute setup and cost estimation without LLM calls
             no_image (bool): If True, skip image generation to reduce costs
+            run_number: Optional sequential run number for multi-run execution.
+                       Used to distinguish multiple runs on the same day in folder names.
 
         Raises:
             ValidationError: If config is invalid
@@ -83,6 +86,7 @@ class Orchestrator:
         self.config = config
         self.dry_run = dry_run
         self.no_image = no_image
+        self.run_number = run_number
         self.run_id = None
         self.run_path = None
         self.circuit_breaker = CircuitBreaker()
@@ -167,8 +171,8 @@ class Orchestrator:
 
     def _initialize_run(self) -> None:
         """Initialize run directory, context, and save config (Phase 5.1)."""
-        # Create unique run directory
-        self.run_id, self.run_path = create_run_dir()
+        # Create unique run directory with optional run number for multi-run execution
+        self.run_id, self.run_path = create_run_dir(run_number=self.run_number)
 
         # Initialize fallback tracker
         self.fallback_tracker = FallbackTracker(self.run_path)
@@ -278,6 +282,9 @@ class Orchestrator:
         topic = response["data"].get("topic")
         if not topic:
             raise ValidationError("Topic agent returned no topic")
+
+        # Store topic in context for later recording
+        self.context["topic"] = topic
 
         return topic
 
@@ -449,6 +456,11 @@ class Orchestrator:
     def _complete_run_success(self, final_post: str) -> Dict[str, Any]:
         """Mark run as complete and return summary (Phase 5.6)."""
         log_event(self.run_id, "run_complete", 1, "ok")
+
+        # Record the topic as posted to the database
+        topic = self.context.get("topic")
+        if topic:
+            record_posted_topic(topic)
 
         # Add cost summary to metrics
         cost_summary = self.cost_tracker.get_summary()
