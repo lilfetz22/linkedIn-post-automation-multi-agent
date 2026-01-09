@@ -222,12 +222,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     """
     Parse command-line arguments for the multi-agent system.
 
-    Supports five optional flags:
+    Supports six optional flags:
     - --init-config: Initialize config.json without running pipeline
     - --field: Specify field value non-interactively
     - --run: Explicitly execute the pipeline
     - --dry-run: Execute setup and estimate costs without making LLM calls
     - --no-image: Skip image generation to reduce costs
+    - --runs: Number of sequential runs to execute (default: 1, min: 1, max: 100)
 
     Args:
         argv: List of command-line argument strings (typically sys.argv[1:])
@@ -239,6 +240,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         - run (bool): True if --run flag provided
         - dry_run (bool): True if --dry-run flag provided
         - no_image (bool): True if --no-image flag provided
+        - runs (int): Number of runs to execute (default: 1)
 
     Example:
         >>> args = parse_args(["--init-config", "--field", "Data Science"])
@@ -246,6 +248,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         True
         >>> args.field
         "Data Science"
+        >>> args = parse_args(["--runs", "3"])
+        >>> args.runs
+        3
     """
     parser = argparse.ArgumentParser(
         description="LinkedIn Post Automation Multi-Agent System"
@@ -274,6 +279,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--no-image",
         action="store_true",
         help="Skip image generation (reduces cost to $0.04-$0.10 text-only)",
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        default=1,
+        choices=range(1, 101),
+        help="Number of sequential runs to execute (default: 1, max: 100)",
     )
     return parser.parse_args(argv)
 
@@ -374,6 +386,7 @@ def run_pipeline(
     non_interactive_field: Optional[str],
     dry_run: bool = False,
     no_image: bool = False,
+    run_number: Optional[int] = None,
 ) -> Tuple[int, Optional[dict]]:
     """
     Execute the full multi-agent pipeline with configuration initialization.
@@ -388,6 +401,8 @@ def run_pipeline(
                               If None and config doesn't exist, user will be prompted.
         dry_run: If True, execute setup and estimate costs without making LLM calls
         no_image: If True, skip image generation to reduce costs (~$0.30 savings)
+        run_number: Optional sequential run number for multi-run execution.
+                   Used to distinguish multiple runs on the same day.
 
     Returns:
         Tuple of (exit_code, result_dict) where:
@@ -408,9 +423,17 @@ def run_pipeline(
         0
         >>> result["status"]
         "success"
+        >>> # For multi-run execution
+        >>> exit_code, result = run_pipeline(
+        ...     Path.cwd(),
+        ...     "Data Science",
+        ...     run_number=2
+        ... )
     """
     config = ensure_config(root, non_interactive_field)
-    orchestrator = Orchestrator(config, dry_run=dry_run, no_image=no_image)
+    orchestrator = Orchestrator(
+        config, dry_run=dry_run, no_image=no_image, run_number=run_number
+    )
     result = orchestrator.run()
     print_summary(result)
     exit_code = 0 if result.get("status") == "success" else 1
@@ -421,14 +444,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     """
     Main entry point for LinkedIn Post Automation Multi-Agent System.
 
-    Handles CLI workflow with three modes:
+    Handles CLI workflow with four modes:
     1. Config initialization only (--init-config without --run)
-    2. Full pipeline execution (default or with --run flag)
-    3. Interactive or non-interactive configuration setup
+    2. Single pipeline execution (default or with --run flag)
+    3. Multi-run execution (--runs > 1)
+    4. Interactive or non-interactive configuration setup
 
     The function ensures configuration exists before pipeline execution,
-    handles user interruptions gracefully, and provides comprehensive
-    error handling for validation, corruption, and I/O issues.
+    handles user interruptions gracefully, supports sequential multi-run
+    execution with run numbering, and provides comprehensive error handling
+    for validation, corruption, and I/O issues.
 
     Args:
         argv: Optional list of command-line arguments. If None, uses sys.argv[1:].
@@ -436,8 +461,9 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     Returns:
         Exit code integer:
-        - 0: Successful execution (config initialized or pipeline completed)
-        - 1: Error occurred (validation failure, corruption, I/O error, or user interruption)
+        - 0: Successful execution (config initialized, all runs completed, or pipeline completed)
+        - 1: Error occurred (validation failure, corruption, I/O error, user interruption,
+              or pipeline failure)
 
     Raises:
         Does not raise exceptions; all errors are caught and return exit code 1.
@@ -449,11 +475,17 @@ def main(argv: Optional[list[str]] = None) -> int:
         # Initialize config non-interactively:
         $ python main.py --init-config --field "Data Science (Optimizations & Time-Series Analysis)"
 
-        # Run pipeline with existing config:
+        # Run pipeline once (default):
         $ python main.py
 
         # Run pipeline with non-interactive config creation:
         $ python main.py --field "Generative AI & AI Agents"
+
+        # Run pipeline 3 times sequentially:
+        $ python main.py --runs 3
+
+        # Run 5 times with no image generation:
+        $ python main.py --runs 5 --no-image
     """
     print("LinkedIn Post Automation Multi-Agent System")
     print("=" * 50)
@@ -468,11 +500,30 @@ def main(argv: Optional[list[str]] = None) -> int:
             print(json.dumps(cfg, indent=2))
             return 0
 
-        # Default behavior: run pipeline (with config onboarding)
-        code, _ = run_pipeline(
-            root, args.field, dry_run=args.dry_run, no_image=args.no_image
-        )
-        return code
+        # Multi-run execution logic
+        all_runs_successful = True
+        for run_num in range(1, args.runs + 1):
+            if args.runs > 1:
+                print(f"\n{'=' * 50}")
+                print(f"Run {run_num} of {args.runs}")
+                print(f"{'=' * 50}")
+
+            code, result = run_pipeline(
+                root,
+                args.field,
+                dry_run=args.dry_run,
+                no_image=args.no_image,
+                run_number=run_num if args.runs > 1 else None,
+            )
+
+            if code != 0:
+                all_runs_successful = False
+                # Stop on first failure
+                if args.runs > 1:
+                    print(f"\nRun {run_num} failed. Stopping multi-run execution.")
+                return code
+
+        return 0 if all_runs_successful else 1
 
     except (ValidationError, CorruptionError) as e:
         print(f"Error: {e}")
