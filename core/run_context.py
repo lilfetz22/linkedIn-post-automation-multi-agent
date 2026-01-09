@@ -8,35 +8,47 @@ to store all inputs, outputs, and intermediate artifacts.
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 
-def create_run_dir(base: str = "runs") -> Tuple[str, Path]:
+def create_run_dir(base: str = "runs", run_number: Optional[int] = None) -> Tuple[str, Path]:
     """
     Create a unique run directory with timestamp and random ID.
 
-    Directory format: {YYYY-MM-DD}-{shortId}/
+    Directory format (without run_number): {YYYY-MM-DD}-{shortId}/
     Example: 2025-11-09-a3f9d2/
+
+    Directory format (with run_number): {YYYY-MM-DD}-{run_number}-{shortId}/
+    Example: 2025-11-09-3-a3f9d2/
 
     Args:
         base: Base directory for all runs (default: "runs")
+        run_number: Optional sequential run number for multi-run execution.
+                   When provided, the folder name will include the run number.
 
     Returns:
         Tuple of (run_id, run_path)
-        - run_id: Unique identifier like "2025-11-09-a3f9d2"
+        - run_id: Unique identifier like "2025-11-09-a3f9d2" or "2025-11-09-3-a3f9d2"
         - run_path: Absolute Path object to the created directory
 
     Example:
         >>> run_id, run_path = create_run_dir()
         >>> print(run_id)
         "2025-11-09-a3f9d2"
+        >>> run_id, run_path = create_run_dir(run_number=1)
+        >>> print(run_id)
+        "2025-11-09-1-a3f9d2"
         >>> print(run_path)
-        Path("C:/Users/.../runs/2025-11-09-a3f9d2")
+        Path("C:/Users/.../runs/2025-11-09-1-a3f9d2")
     """
     # Generate unique run ID
     date_prefix = datetime.now().strftime("%Y-%m-%d")
     short_id = str(uuid.uuid4())[:6]
-    run_id = f"{date_prefix}-{short_id}"
+
+    if run_number is not None:
+        run_id = f"{date_prefix}-{run_number}-{short_id}"
+    else:
+        run_id = f"{date_prefix}-{short_id}"
 
     # Create directory
     base_path = Path(base)
