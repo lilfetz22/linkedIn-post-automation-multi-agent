@@ -312,6 +312,66 @@ Image generation costs a fixed $0.30 per image, making up the majority of the to
 - Post topic works better without visuals
 - You plan to add images manually later
 
+### Multi-Run Execution
+
+Generate multiple LinkedIn posts sequentially in a single command with automatic run numbering:
+
+```bash
+# Generate 3 posts sequentially
+python main.py --runs 3
+
+# Generate 5 posts without images (cost optimization)
+python main.py --runs 5 --no-image
+
+# Multi-run with custom field
+python main.py --runs 3 --field "Data Science (Optimizations & Time-Series Analysis)"
+```
+
+**Folder Naming Convention:**
+- **Single run** (default): `2026-01-09-c94d6e`
+- **Multi-run**: `2026-01-09-1-c94d6e`, `2026-01-09-2-f72a1b`, `2026-01-09-3-e5d3c2`
+
+The run number makes it easy to:
+- Identify the order of runs on the same day
+- Track which posts have already been generated
+- Resume workflows without confusion
+
+**Behavior:**
+- Executes runs 1 through N sequentially
+- Stops immediately on first failure (fail-fast pattern)
+- Prints status summary after each run
+- Each run creates an independent folder with all artifacts
+
+**Example Multi-Run Output:**
+```
+LinkedIn Post Automation Multi-Agent System
+==================================================
+
+==================================================
+Run 1 of 3
+==================================================
+Status     : success
+Run ID     : 2026-01-09-1-a3f9d2
+Run Path   : runs/2026-01-09-1-a3f9d2/
+...
+
+==================================================
+Run 2 of 3
+==================================================
+Status     : success
+Run ID     : 2026-01-09-2-b4e1f3
+Run Path   : runs/2026-01-09-2-b4e1f3/
+...
+
+==================================================
+Run 3 of 3
+==================================================
+Status     : success
+Run ID     : 2026-01-09-3-c5d2a1
+Run Path   : runs/2026-01-09-3-c5d2a1/
+...
+```
+
 **Example dry-run output:**
 ```
 LinkedIn Post Automation Multi-Agent System
