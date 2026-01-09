@@ -13,6 +13,8 @@ from database.operations import (
     get_recent_topics,
     record_posted_topic,
     select_new_topic,
+    get_all_used_topics,
+    bulk_insert_topics,
 )
 
 
@@ -129,3 +131,166 @@ def test_all_functions_accept_db_path_override(tmp_path):
 
     sel2 = select_new_topic(DEFAULT_FIELD_DS, recent_limit=10, db_path=db_path2)
     assert sel2 is None  # No seeded topics
+
+
+def test_get_all_used_topics(tmp_path):
+    """Test get_all_used_topics returns only used topics for a field."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+    seed_potential_topics(DEFAULT_SEED_ROWS, db_path)
+
+    # Get all used topics for DS field
+    used = get_all_used_topics(DEFAULT_FIELD_DS, db_path=db_path)
+
+    # Initially all should be unused, so empty list
+    assert used == []
+
+    # Select a topic (marks it as used)
+    sel = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel is not None
+
+    # Now get_all_used_topics should return the selected topic
+    used = get_all_used_topics(DEFAULT_FIELD_DS, db_path=db_path)
+    assert len(used) == 1
+    assert used[0] == sel["topic"]
+
+    # Select another
+    sel2 = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel2 is not None
+    assert sel2["topic"] != sel["topic"]
+
+    # Should have 2 used topics
+    used = get_all_used_topics(DEFAULT_FIELD_DS, db_path=db_path)
+    assert len(used) == 2
+
+
+def test_get_all_used_topics_filters_by_field(tmp_path):
+    """Test get_all_used_topics only returns topics for requested field."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+    seed_potential_topics(DEFAULT_SEED_ROWS, db_path)
+
+    # Use a DS topic
+    select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+
+    # Use a GAI topic
+    select_new_topic(DEFAULT_FIELD_GAI, db_path=db_path)
+
+    # Get used topics for each field
+    ds_used = get_all_used_topics(DEFAULT_FIELD_DS, db_path=db_path)
+    gai_used = get_all_used_topics(DEFAULT_FIELD_GAI, db_path=db_path)
+
+    # Each should have exactly 1 used topic
+    assert len(ds_used) == 1
+    assert len(gai_used) == 1
+
+    # Should be different topics
+    assert ds_used[0] != gai_used[0]
+
+
+def test_bulk_insert_topics(tmp_path):
+    """Test bulk_insert_topics inserts multiple topics as unused."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+
+    new_topics = [
+        "Topic A",
+        "Topic B",
+        "Topic C",
+    ]
+
+    # Insert new topics
+    bulk_insert_topics(new_topics, DEFAULT_FIELD_DS, db_path=db_path)
+
+    # Verify all are in database as unused
+    conn = sqlite3.connect(db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT topic_name, used FROM potential_topics WHERE field = ? ORDER BY id ASC;",
+            (DEFAULT_FIELD_DS,),
+        )
+        rows = cur.fetchall()
+    finally:
+        conn.close()
+
+    assert len(rows) == 3
+    for i, (topic_name, used) in enumerate(rows):
+        assert topic_name == new_topics[i]
+        # SQLite stores FALSE as 0
+        assert used == 0
+
+
+def test_bulk_insert_topics_preserves_field(tmp_path):
+    """Test bulk_insert_topics preserves the field."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+
+    new_topics = ["New Topic 1", "New Topic 2"]
+
+    # Insert for DS field
+    bulk_insert_topics(new_topics, DEFAULT_FIELD_DS, db_path=db_path)
+
+    # Verify field is correct
+    conn = sqlite3.connect(db_path)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT field FROM potential_topics WHERE topic_name = ?;",
+            ("New Topic 1",),
+        )
+        row = cur.fetchone()
+    finally:
+        conn.close()
+
+    assert row is not None
+    assert row[0] == DEFAULT_FIELD_DS
+
+
+def test_bulk_insert_then_select_workflow(tmp_path):
+    """Test the complete workflow: exhaust topics, generate and insert new ones, select from new pool."""
+    db_path = os.path.join(tmp_path, "topics.db")
+    init_db(db_path)
+
+    # Create a minimal set of topics
+    initial_topics = [
+        ("Topic 1", DEFAULT_FIELD_DS),
+        ("Topic 2", DEFAULT_FIELD_DS),
+    ]
+    seed_potential_topics(initial_topics, db_path)
+
+    # Select all initial topics
+    sel1 = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel1 is not None
+    assert sel1["topic"] == "Topic 1"
+
+    sel2 = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel2 is not None
+    assert sel2["topic"] == "Topic 2"
+
+    # Try to select again - now that all are exhausted, the fallback kicks in
+    # and select_new_topic will try to find a used topic that's not in recent history.
+    # Since we haven't recorded any topics in previous_topics, it will return
+    # the first used topic (Topic 1) again
+    sel3 = select_new_topic(DEFAULT_FIELD_DS, recent_limit=10, db_path=db_path)
+    # With fallback behavior, it returns the first used topic since no unused ones exist
+    # and there's no recent history to filter it out
+    assert sel3 is not None
+    assert sel3["topic"] in ["Topic 1", "Topic 2"]
+
+    # Get all used topics
+    used = get_all_used_topics(DEFAULT_FIELD_DS, db_path=db_path)
+    assert len(used) == 2
+
+    # Generate and insert new topics
+    new_topics = ["Topic 3", "Topic 4", "Topic 5"]
+    bulk_insert_topics(new_topics, DEFAULT_FIELD_DS, db_path=db_path)
+
+    # Now should be able to select a new unused topic
+    sel4 = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel4 is not None
+    assert sel4["topic"] == "Topic 3"
+
+    sel5 = select_new_topic(DEFAULT_FIELD_DS, db_path=db_path)
+    assert sel5 is not None
+    assert sel5["topic"] == "Topic 4"
