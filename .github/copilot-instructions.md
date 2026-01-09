@@ -25,6 +25,12 @@ This is a **multi-agent orchestration system** that generates LinkedIn posts thr
 9. Image Generation → `80_image.png`
 10. Final Output → `60_final_post.txt`
 
+**Multi-Run Execution**: Users can run multiple posts sequentially using the `--runs` flag:
+```powershell
+python main.py --runs 3
+```
+This creates folders with sequential numbering: `2026-01-09-1-c94d6e`, `2026-01-09-2-f72a1b`, `2026-01-09-3-e5d3c2`
+
 **Artifact Integrity**: Immediately re-parse any JSON written to disk. If parse fails, raise `CorruptionError` and abort.
 
 ## Key Implementation Patterns
@@ -87,18 +93,52 @@ project_spec.md   # Complete technical specification
 
 ## Development Workflow
 
-### PowerShell Execution Policy (CRITICAL)
+### PowerShell Execution & Syntax (CRITICAL)
+
+**1. Environment Setup:**
 **MUST run before any terminal commands on Windows:**
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 This is required for venv activation and Python script execution.
 
+**2. Syntax Constraints:**
+*   **NEVER use `| head`**: The `head` command is a Unix/Linux utility and **does not exist** in standard PowerShell. It will cause errors.
+*   **ALWAYS use `Select-Object`**: To limit output rows, you must use:
+    ```powershell
+    | Select-Object -First N
+    ```
+    *(Example: `Get-ChildItem | Select-Object -First 100`)*
+
 ### Standard Workflow
 1. **First-time setup**: Prompt user to enter their field of expertise (accepts any custom field), save to `config.json`
-2. **Execution**: `python main.py` triggers orchestrator, creates unique run directory
-3. **Debugging**: Check `events.jsonl` and per-run `run_failed.json` for failures
-4. **Testing**: Validate retry logic, artifact integrity, character limit loop, fallback activation
+2. **Single execution**: `python main.py` triggers orchestrator, creates unique run directory
+3. **Multi-run execution**: `python main.py --runs 3` executes 3 sequential runs with numbered folders
+4. **Debugging**: Check `events.jsonl` and per-run `run_failed.json` for failures
+5. **Testing**: Validate retry logic, artifact integrity, character limit loop, fallback activation
+
+### CLI Options
+
+```powershell
+# Single run (default behavior)
+python main.py
+
+# Multi-run execution with numbered folders
+python main.py --runs 3
+
+# Multi-run with cost optimization
+python main.py --runs 5 --no-image
+
+# Dry-run mode (cost estimation only)
+python main.py --dry-run
+
+# Initialize config only
+python main.py --init-config --field "Data Science (Optimizations & Time-Series Analysis)"
+```
+
+**Run Folder Naming Convention**:
+- Single run (default): `{YYYY-MM-DD}-{shortId}` (e.g., `2026-01-09-c94d6e`)
+- Multi-run: `{YYYY-MM-DD}-{run_number}-{shortId}` (e.g., `2026-01-09-1-c94d6e`, `2026-01-09-2-f72a1b`)
 
 ### Test Driven Development (TDD)
 **ALWAYS write tests before implementation**. This project requires extremely high test coverage.
