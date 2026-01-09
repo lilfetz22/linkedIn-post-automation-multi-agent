@@ -2,6 +2,42 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-01-09)
+
+### Bug Fixes
+
+- **image_prompt_agent**: Handle missing fallback_tracker before using it
+  ([`99db9c6`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/99db9c6bb75a28b016557701c7cb2ff8b4a3acc8))
+
+### Documentation
+
+- **copilot-instructions**: Document multi-run usage, PowerShell guidance, and CLI options
+  ([`d0422d0`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/d0422d0ff6c8c51c21192ac38209bdc8d494981e))
+
+- **multi-run**: Add MULTI_RUN_FEATURE.md summarizing implementation, tests, and usage
+  ([`a2d18ad`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/a2d18ad9db1a7d8f4abb48c4741a935093e9d65c))
+
+- **readme**: Add multi-run usage, behavior, and example output
+  ([`56e21ad`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/56e21ad1955ff959e703f5ddd69654e1dd24646c))
+
+### Features
+
+- **cli**: Add --runs option and multi-run sequential execution
+  ([`32a9bc6`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/32a9bc61de116eddc0d69700dc14e2fdcdfabcae))
+
+- **database**: Add helpers to fetch used topics and bulk insert new topics
+  ([`5d28862`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/5d28862c1e5c7a4bfb0f878f9580bf7d27a7a5e0))
+
+- **orchestrator**: Accept run_number for multi-run runs and record posted topics
+  ([`c18c7e3`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/c18c7e3b9996033a27ebe7e44d17a12908d6546a))
+
+- **run_context**: Support optional run_number for multi-run folder naming
+  ([`f4cfe7c`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/f4cfe7c86d9069121f5d13ae7361bf601726f59d))
+
+- **topic_agent**: Add LLM batch topic generation and DB replenishment
+  ([`4a02459`](https://github.com/lilfetz22/linkedIn-post-automation-multi-agent/commit/4a0245947681405dab99025adc72310b04d63735))
+
+
 ## v1.6.0 (2025-12-31)
 
 ### Features
